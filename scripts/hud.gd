@@ -313,6 +313,63 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(slider_scale)
 
+	# FXAA (Fast Approximate Anti-Aliasing)
+	var chk_fxaa = CheckBox.new()
+	chk_fxaa.text = "FXAA сглаживание"
+	chk_fxaa.button_pressed = (get_viewport().screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA)
+	chk_fxaa.toggled.connect(func(pressed):
+		if pressed:
+			get_viewport().screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
+		else:
+			get_viewport().screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+	)
+	vbox.add_child(chk_fxaa)
+
+	# SSAO (Ambient Occlusion)
+	var chk_ssao = CheckBox.new()
+	chk_ssao.text = "Затенение окружения (SSAO)"
+	chk_ssao.button_pressed = false
+	chk_ssao.toggled.connect(func(pressed):
+		var cam = get_viewport().get_camera_3d()
+		if cam and cam.environment:
+			cam.environment.ssao_enabled = pressed
+	)
+	vbox.add_child(chk_ssao)
+
+	# SSR (Screen Space Reflections)
+	var chk_ssr = CheckBox.new()
+	chk_ssr.text = "Отражения в пространстве экрана (SSR)"
+	chk_ssr.button_pressed = false
+	chk_ssr.toggled.connect(func(pressed):
+		var cam = get_viewport().get_camera_3d()
+		if cam and cam.environment:
+			cam.environment.ssr_enabled = pressed
+	)
+	vbox.add_child(chk_ssr)
+
+	# Max FPS Limit
+	var lbl_fps = Label.new()
+	lbl_fps.text = "Ограничение FPS"
+	vbox.add_child(lbl_fps)
+
+	var option_fps = OptionButton.new()
+	option_fps.add_item("Без ограничений (0)", 0)
+	option_fps.add_item("30 FPS", 30)
+	option_fps.add_item("60 FPS", 60)
+	option_fps.add_item("120 FPS", 120)
+	option_fps.add_item("144 FPS", 144)
+	
+	var current_fps = Engine.max_fps
+	for i in range(option_fps.item_count):
+		if option_fps.get_item_id(i) == current_fps:
+			option_fps.selected = i
+			break
+
+	option_fps.item_selected.connect(func(index):
+		Engine.max_fps = option_fps.get_item_id(index)
+	)
+	vbox.add_child(option_fps)
+
 	vbox.add_child(HSeparator.new())
 
 	var btn_back = Button.new()
