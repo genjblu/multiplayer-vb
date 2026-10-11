@@ -108,6 +108,15 @@ func _build_hud_elements() -> void:
 	)
 	btn_vbox.add_child(btn_ads)
 
+	# Кнопка Меню (Пауза) для Android (не видна на ПК)
+	var btn_menu = Button.new()
+	btn_menu.text = "Меню / Пауза"
+	btn_menu.custom_minimum_size = Vector2(200, 42)
+	btn_menu.pressed.connect(func():
+		_toggle_pause()
+	)
+	btn_vbox.add_child(btn_menu)
+
 func _input(event: InputEvent) -> void:
 	if not player or not player.is_multiplayer_authority():
 		return

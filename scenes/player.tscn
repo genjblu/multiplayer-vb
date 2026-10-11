@@ -20,8 +20,13 @@ properties/2/path = NodePath("Head:rotation")
 properties/2/spawn = true
 properties/2/replication_mode = 1
 
-[sub_resource type="BoxMesh" id="BoxMesh_gun"]
-size = Vector3(0.12, 0.12, 0.7)
+[sub_resource type="BoxMesh" id="BoxMesh_dqkch"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_qlg0r"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_tuyoq"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_fjrip"]
 
 [node name="Player" type="CharacterBody3D" unique_id=433830383]
 script = ExtResource("1_3vyb7")
@@ -53,10 +58,21 @@ unique_name_in_owner = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
 visible = false
 
-[node name="WeaponMesh" type="MeshInstance3D" parent="Head/Camera3D" unique_id=581920384]
-unique_name_in_owner = true
+[node name="WeaponPistol" type="MeshInstance3D" parent="Head/Camera3D" unique_id=497732328]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.2, -0.4)
-mesh = SubResource("BoxMesh_gun")
+mesh = SubResource("BoxMesh_dqkch")
+
+[node name="WeaponAssault" type="MeshInstance3D" parent="Head/Camera3D" unique_id=1025459564]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.2, -0.4)
+mesh = SubResource("BoxMesh_qlg0r")
+
+[node name="WeaponShotgun" type="MeshInstance3D" parent="Head/Camera3D" unique_id=1909592711]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.2, -0.4)
+mesh = SubResource("BoxMesh_tuyoq")
+
+[node name="WeaponSniper" type="MeshInstance3D" parent="Head/Camera3D" unique_id=763702614]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.2, -0.4)
+mesh = SubResource("BoxMesh_fjrip")
 
 [node name="TouchUI" type="CanvasLayer" parent="." unique_id=1700401374]
 unique_name_in_owner = true

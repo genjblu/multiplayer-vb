@@ -88,7 +88,10 @@ var button_touches: Dictionary = {}  # индекс пальца -> действ
 @onready var camera: Camera3D = %Camera3D
 @onready var weapon_ray: RayCast3D = %WeaponRay
 @onready var muzzle_flash: OmniLight3D = %MuzzleFlash
-@onready var weapon_mesh: MeshInstance3D = %WeaponMesh
+@onready var weapon_pistol: MeshInstance3D = $Head/Camera3D/WeaponPistol
+@onready var weapon_assault: MeshInstance3D = $Head/Camera3D/WeaponAssault
+@onready var weapon_shotgun: MeshInstance3D = $Head/Camera3D/WeaponShotgun
+@onready var weapon_sniper: MeshInstance3D = $Head/Camera3D/WeaponSniper
 @onready var touch_ui: CanvasLayer = %TouchUI
 @onready var synchronizer: MultiplayerSynchronizer = %MultiplayerSynchronizer
 
@@ -157,6 +160,8 @@ func _ready() -> void:
 	else:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
+var current_weapon_node: MeshInstance3D = null
+
 func _switch_weapon(type: WeaponType) -> void:
 	current_weapon = type
 	var stats = weapon_stats[current_weapon]
@@ -164,9 +169,26 @@ func _switch_weapon(type: WeaponType) -> void:
 	current_ammo = max_ammo
 	reserve_ammo = stats["reserve"]
 
-	if weapon_mesh and weapon_mesh.mesh is BoxMesh:
-		var box: BoxMesh = weapon_mesh.mesh as BoxMesh
-		box.size = stats["mesh_size"]
+	if weapon_pistol: weapon_pistol.visible = false
+	if weapon_assault: weapon_assault.visible = false
+	if weapon_shotgun: weapon_shotgun.visible = false
+	if weapon_sniper: weapon_sniper.visible = false
+
+	match current_weapon:
+		WeaponType.PISTOL:
+			current_weapon_node = weapon_pistol
+		WeaponType.ASSAULT:
+			current_weapon_node = weapon_assault
+		WeaponType.SHOTGUN:
+			current_weapon_node = weapon_shotgun
+		WeaponType.SNIPER:
+			current_weapon_node = weapon_sniper
+
+	if current_weapon_node:
+		current_weapon_node.visible = true
+		if current_weapon_node.mesh is BoxMesh:
+			var box: BoxMesh = current_weapon_node.mesh as BoxMesh
+			box.size = stats["mesh_size"]
 
 	ammo_changed.emit(current_ammo, reserve_ammo)
 	weapon_changed.emit(stats["name"])
@@ -305,7 +327,8 @@ func _physics_process(delta: float) -> void:
 	camera.fov = lerp(camera.fov, target_fov, delta * 15.0)
 
 	var target_weapon_pos = Vector3(0, -0.12, -0.35) if is_ads else Vector3(0.2, -0.2, -0.4)
-	weapon_mesh.position = weapon_mesh.position.lerp(target_weapon_pos, delta * 15.0)
+	if current_weapon_node:
+		current_weapon_node.position = current_weapon_node.position.lerp(target_weapon_pos, delta * 15.0)
 
 	if not is_on_floor():
 		velocity.y -= gravity * delta
