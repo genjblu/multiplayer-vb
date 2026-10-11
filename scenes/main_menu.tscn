@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://btj35nhk7kjmi"]
+
+[ext_resource type="Script" uid="uid://6y30gbl83etl" path="res://scripts/main_menu.gd" id="1_l6cm7"]
+
+[node name="MainMenu" type="Control" unique_id=210663154]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_l6cm7")
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1237441099]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=1225483137]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/PanelContainer" unique_id=535292064]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer" unique_id=958466041]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=327280878]
+layout_mode = 2
+text = "3D FPS MULTIPLAYER"
+horizontal_alignment = 1
+
+[node name="HSeparator1" type="HSeparator" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1726232684]
+layout_mode = 2
+
+[node name="PortHBox" type="HBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=241822458]
+layout_mode = 2
+
+[node name="PortLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/PortHBox" unique_id=1948881318]
+layout_mode = 2
+text = "Порт:"
+
+[node name="PortInput" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/PortHBox" unique_id=2123509510]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "7777"
+
+[node name="HostButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=296696142]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "Создать сервер (Host)"
+
+[node name="HSeparator2" type="HSeparator" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=502906717]
+layout_mode = 2
+
+[node name="IPHBox" type="HBoxContainer" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1883714471]
+layout_mode = 2
+
+[node name="IPLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/IPHBox" unique_id=1217045884]
+layout_mode = 2
+text = "IP:"
+
+[node name="IPInput" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer/IPHBox" unique_id=208810220]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "127.0.0.1"
+
+[node name="JoinButton" type="Button" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1359658132]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+text = "Подключиться (Join)"
+
+[node name="HSeparator3" type="HSeparator" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=170817087]
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=77068572]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Статус: Ожидание..."
+horizontal_alignment = 1

@@ -1,0 +1,164 @@
+[gd_scene format=3 uid="uid://be1ufswox1bvb"]
+
+[ext_resource type="Script" uid="uid://dikx6ehmi2wgb" path="res://scripts/player.gd" id="1_3vyb7"]
+[ext_resource type="Script" uid="uid://dd7q1tbilrxlv" path="res://scripts/hud.gd" id="2_g2els"]
+[ext_resource type="Texture2D" uid="uid://dn67b4hu7pqv1" path="res://icon.svg" id="3_qhqgy"]
+[ext_resource type="Script" uid="uid://dtag37lvwr24a" path="res://scripts/virtual_joystick.gd" id="4_dqkch"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_g2els"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_qhqgy"]
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_player"]
+properties/0/path = NodePath(".:sync_position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:sync_rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("Head:rotation")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+
+[sub_resource type="BoxMesh" id="BoxMesh_gun"]
+size = Vector3(0.12, 0.12, 0.7)
+
+[node name="Player" type="CharacterBody3D" unique_id=433830383]
+script = ExtResource("1_3vyb7")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1710694542]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_g2els")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1789159928]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_qhqgy")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=65983181]
+unique_name_in_owner = true
+replication_config = SubResource("SceneReplicationConfig_player")
+
+[node name="Head" type="Node3D" parent="." unique_id=1297426971]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0)
+
+[node name="Camera3D" type="Camera3D" parent="Head" unique_id=401373945]
+unique_name_in_owner = true
+
+[node name="WeaponRay" type="RayCast3D" parent="Head/Camera3D" unique_id=476339574]
+unique_name_in_owner = true
+target_position = Vector3(0, 0, -50)
+
+[node name="MuzzleFlash" type="OmniLight3D" parent="Head/Camera3D" unique_id=604548396]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+visible = false
+
+[node name="WeaponMesh" type="MeshInstance3D" parent="Head/Camera3D" unique_id=581920384]
+unique_name_in_owner = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.2, -0.4)
+mesh = SubResource("BoxMesh_gun")
+
+[node name="TouchUI" type="CanvasLayer" parent="." unique_id=1700401374]
+unique_name_in_owner = true
+script = ExtResource("2_g2els")
+
+[node name="TouchOverlay" type="Control" parent="TouchUI" unique_id=1128403026]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="JumpButton" type="TouchScreenButton" parent="TouchUI/TouchOverlay" unique_id=1727915889]
+unique_name_in_owner = true
+position = Vector2(1000, 450)
+scale = Vector2(0.8, 0.8)
+texture_normal = ExtResource("3_qhqgy")
+
+[node name="FireButton" type="TouchScreenButton" parent="TouchUI/TouchOverlay" unique_id=1272850130]
+unique_name_in_owner = true
+position = Vector2(850, 400)
+scale = Vector2(1.2, 1.2)
+texture_normal = ExtResource("3_qhqgy")
+
+[node name="JoystickBase" type="Panel" parent="TouchUI/TouchOverlay" unique_id=440307853]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 150)
+layout_mode = 0
+offset_left = 50.0
+offset_top = 450.0
+offset_right = 50.0
+offset_bottom = 450.0
+script = ExtResource("4_dqkch")
+knob_path = NodePath("JoystickKnob")
+
+[node name="JoystickKnob" type="Sprite2D" parent="TouchUI/TouchOverlay/JoystickBase" unique_id=790685861]
+unique_name_in_owner = true
+position = Vector2(75, 75)
+texture = ExtResource("3_qhqgy")
+
+[node name="HUDContainer" type="Control" parent="TouchUI/TouchOverlay" unique_id=817084831]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CenterCrosshair" type="CenterContainer" parent="TouchUI/TouchOverlay/HUDContainer" unique_id=2012995425]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -3.0
+offset_top = -3.0
+offset_right = 3.0
+offset_bottom = 3.0
+mouse_filter = 2
+
+[node name="Crosshair" type="ColorRect" parent="TouchUI/TouchOverlay/HUDContainer/CenterCrosshair" unique_id=994042193]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(6, 6)
+layout_mode = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0.8)
+
+[node name="HealthVBox" type="VBoxContainer" parent="TouchUI/TouchOverlay/HUDContainer" unique_id=679326478]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 0
+mouse_filter = 2
+
+[node name="HealthLabel" type="Label" parent="TouchUI/TouchOverlay/HUDContainer/HealthVBox" unique_id=1047422813]
+layout_mode = 2
+text = "Здоровье:"
+
+[node name="HealthBar" type="ProgressBar" parent="TouchUI/TouchOverlay/HUDContainer/HealthVBox" unique_id=1967945243]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 2
+mouse_filter = 2
+value = 100.0
+
+[node name="AmmoLabel" type="Label" parent="TouchUI/TouchOverlay/HUDContainer/HealthVBox" unique_id=1849182914]
+unique_name_in_owner = true
+layout_mode = 2
+text = "30 / 90"
+
+[node name="DisconnectLabel" type="Label" parent="TouchUI/TouchOverlay/HUDContainer" unique_id=2051304756]
+visible = false
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -101.0
+offset_top = -11.5
+offset_right = 101.0
+offset_bottom = 11.5
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_font_sizes/font_size = 32
+text = "СОЕДИНЕНИЕ ПОТЕРЯНО"
