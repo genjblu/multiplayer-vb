@@ -10,6 +10,8 @@ var player: CharacterBody3D
 var current_spread: float = 6.0
 var hit_flash_timer: float = 0.0
 
+var viewmodel: ViewmodelRenderer
+
 var pause_menu: Control
 var settings_menu: Control
 var audio_slider: HSlider
@@ -68,6 +70,14 @@ func _ready() -> void:
 
 	_build_pause_menu()
 	_build_hud_elements()
+	var weapon_root_node = player.get_node_or_null("Head/Camera3D")
+	if weapon_root_node:
+		viewmodel = ViewmodelRenderer.new()
+		add_child(viewmodel)
+		move_child(viewmodel, 0)  # рисовать под HUD
+		viewmodel.setup(weapon_root_node)
+	else:
+		push_warning("ViewmodelRenderer: узел оружия не найден, проверь путь")
 
 func _is_mobile() -> bool:
 	return OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"] or ProjectSettings.get_setting("input_devices/pointing/emulate_touch_from_mouse")

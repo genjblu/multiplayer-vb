@@ -143,6 +143,7 @@ func _ready() -> void:
 		return
 
 	camera.make_current()
+
 	health_changed.emit(health)
 	ammo_changed.emit(current_ammo, reserve_ammo)
 
@@ -327,10 +328,13 @@ func _physics_process(delta: float) -> void:
 		die()
 		return
 
-	is_ads = Input.is_action_pressed("ads") or touch_ads
-	
-	# Автоматическая стрельба для автомата
-	is_firing = Input.is_action_pressed("fire") or touch_fire
+	if is_mobile:
+		# На телефоне игнорируем мышь, эмулируемую из касаний
+		is_ads = touch_ads
+		is_firing = touch_fire
+	else:
+		is_ads = Input.is_action_pressed("ads") or touch_ads
+		is_firing = Input.is_action_pressed("fire") or touch_fire
 	if current_weapon == WeaponType.ASSAULT and is_firing and not is_reloading:
 		fire_timer -= delta
 		if fire_timer <= 0.0:
