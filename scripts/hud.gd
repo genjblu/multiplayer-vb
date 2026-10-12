@@ -17,9 +17,25 @@ var is_paused: bool = false
 var ping_label: Label
 var weapon_button: Button
 
+# --- Элементы настроек (поля класса, чтобы лямбды не работали с копиями) ---
+var chk_fullscreen: CheckBox
+var chk_vsync: CheckBox
+var option_msaa: OptionButton
+var chk_glow: CheckBox
+var slider_scale: HSlider
+var chk_fxaa: CheckBox
+var chk_ssao: CheckBox
+var chk_ssr: CheckBox
+var btn_potato: Button
+var option_fps: OptionButton
+
+# --- Режим картошки ---
+var is_potato_mode: bool = false
+var saved_settings: Dictionary = {}
+
 func _ready() -> void:
 	player = owner if owner is CharacterBody3D else get_parent()
-	
+
 	if not player or not player.is_multiplayer_authority():
 		queue_free()
 		return
@@ -41,7 +57,7 @@ func _ready() -> void:
 	_on_ammo_changed(player.current_ammo, player.reserve_ammo)
 
 	# Показываем мобильный интерфейс
-	if OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"] or ProjectSettings.get_setting("input_devices/pointing/emulate_touch_from_mouse"):
+	if _is_mobile():
 		if has_node("TouchOverlay/JumpButton"): $TouchOverlay/JumpButton.show()
 		if has_node("TouchOverlay/FireButton"): $TouchOverlay/FireButton.show()
 		if has_node("TouchOverlay/JoystickBase"): $TouchOverlay/JoystickBase.show()
@@ -53,9 +69,22 @@ func _ready() -> void:
 	_build_pause_menu()
 	_build_hud_elements()
 
+func _is_mobile() -> bool:
+	return OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"] or ProjectSettings.get_setting("input_devices/pointing/emulate_touch_from_mouse")
+
+# Environment может лежать в WorldEnvironment, а не в камере
+func _get_env() -> Environment:
+	var cam = get_viewport().get_camera_3d()
+	if cam and cam.environment:
+		return cam.environment
+	var we = get_tree().root.find_child("WorldEnvironment", true, false)
+	if we is WorldEnvironment:
+		return we.environment
+	return null
+
 func _build_hud_elements() -> void:
 	var hud_container = $TouchOverlay/HUDContainer if has_node("TouchOverlay/HUDContainer") else self
-	var is_mobile = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"] or ProjectSettings.get_setting("input_devices/pointing/emulate_touch_from_mouse")
+	var is_mobile = _is_mobile()
 
 	# Ping label (Top Right) - visible on all platforms
 	ping_label = Label.new()
@@ -112,9 +141,7 @@ func _build_hud_elements() -> void:
 	var btn_menu = Button.new()
 	btn_menu.text = "Меню / Пауза"
 	btn_menu.custom_minimum_size = Vector2(200, 42)
-	btn_menu.pressed.connect(func():
-		_toggle_pause()
-	)
+	btn_menu.pressed.connect(_toggle_pause)
 	btn_vbox.add_child(btn_menu)
 
 func _input(event: InputEvent) -> void:
@@ -249,7 +276,7 @@ func _build_settings_menu() -> void:
 	lbl_video.text = "Видео и Продвинутая Графика"
 	vbox.add_child(lbl_video)
 
-	var chk_fullscreen = CheckBox.new()
+	chk_fullscreen = CheckBox.new()
 	chk_fullscreen.text = "Полноэкранный режим"
 	chk_fullscreen.button_pressed = (DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN)
 	chk_fullscreen.toggled.connect(func(pressed):
@@ -260,7 +287,7 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(chk_fullscreen)
 
-	var chk_vsync = CheckBox.new()
+	chk_vsync = CheckBox.new()
 	chk_vsync.text = "Вертикальная синхронизация (VSync)"
 	chk_vsync.button_pressed = (DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED)
 	chk_vsync.toggled.connect(func(pressed):
@@ -276,35 +303,36 @@ func _build_settings_menu() -> void:
 	lbl_msaa.text = "Сглаживание (MSAA)"
 	vbox.add_child(lbl_msaa)
 
-	var option_msaa = OptionButton.new()
+	option_msaa = OptionButton.new()
 	option_msaa.add_item("Отключено", Viewport.MSAA_DISABLED)
 	option_msaa.add_item("2x MSAA", Viewport.MSAA_2X)
 	option_msaa.add_item("4x MSAA", Viewport.MSAA_4X)
 	option_msaa.add_item("8x MSAA", Viewport.MSAA_8X)
-	option_msaa.selected = get_viewport().msaa_3d
+	option_msaa.selected = option_msaa.get_item_index(get_viewport().msaa_3d)
 	option_msaa.item_selected.connect(func(index):
-		get_viewport().msaa_3d = index
+		get_viewport().msaa_3d = option_msaa.get_item_id(index)
 	)
 	vbox.add_child(option_msaa)
 
 	# Glow / Bloom
-	var chk_glow = CheckBox.new()
+	chk_glow = CheckBox.new()
 	chk_glow.text = "Свечение (Bloom / Glow)"
-	chk_glow.button_pressed = true
+	var env_init = _get_env()
+	chk_glow.button_pressed = env_init.glow_enabled if env_init else true
 	chk_glow.toggled.connect(func(pressed):
-		var env = get_viewport().get_camera_3d()
-		if env and env.environment:
-			env.environment.glow_enabled = pressed
+		var env = _get_env()
+		if env:
+			env.glow_enabled = pressed
 	)
 	vbox.add_child(chk_glow)
 
-	# Resolution / Scaling Scale
+	# Resolution Scale
 	var lbl_scale = Label.new()
 	lbl_scale.text = "Масштаб разрешения (Resolution Scale)"
 	vbox.add_child(lbl_scale)
 
-	var slider_scale = HSlider.new()
-	slider_scale.min_value = 0.5
+	slider_scale = HSlider.new()
+	slider_scale.min_value = 0.35
 	slider_scale.max_value = 1.0
 	slider_scale.step = 0.05
 	slider_scale.value = get_viewport().scaling_3d_scale
@@ -313,8 +341,8 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(slider_scale)
 
-	# FXAA (Fast Approximate Anti-Aliasing)
-	var chk_fxaa = CheckBox.new()
+	# FXAA
+	chk_fxaa = CheckBox.new()
 	chk_fxaa.text = "FXAA сглаживание"
 	chk_fxaa.button_pressed = (get_viewport().screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA)
 	chk_fxaa.toggled.connect(func(pressed):
@@ -325,46 +353,43 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(chk_fxaa)
 
-	# SSAO (Ambient Occlusion)
-	var chk_ssao = CheckBox.new()
+	# SSAO
+	chk_ssao = CheckBox.new()
 	chk_ssao.text = "Затенение окружения (SSAO)"
-	chk_ssao.button_pressed = false
+	chk_ssao.button_pressed = env_init.ssao_enabled if env_init else false
 	chk_ssao.toggled.connect(func(pressed):
-		var cam = get_viewport().get_camera_3d()
-		if cam and cam.environment:
-			cam.environment.ssao_enabled = pressed
+		var env = _get_env()
+		if env:
+			env.ssao_enabled = pressed
 	)
 	vbox.add_child(chk_ssao)
 
-	# SSR (Screen Space Reflections)
-	var chk_ssr = CheckBox.new()
+	# SSR
+	chk_ssr = CheckBox.new()
 	chk_ssr.text = "Отражения в пространстве экрана (SSR)"
-	chk_ssr.button_pressed = false
+	chk_ssr.button_pressed = env_init.ssr_enabled if env_init else false
 	chk_ssr.toggled.connect(func(pressed):
-		var cam = get_viewport().get_camera_3d()
-		if cam and cam.environment:
-			cam.environment.ssr_enabled = pressed
+		var env = _get_env()
+		if env:
+			env.ssr_enabled = pressed
 	)
 	vbox.add_child(chk_ssr)
 
-	# Max FPS Limit
-	var lbl_fps = Label.new()
-	lbl_fps.text = "Ограничение FPS"
-	vbox.add_child(lbl_fps)
+	# Potato Graphics Preset Toggle
+	btn_potato = Button.new()
+	btn_potato.text = "🥔 Режим Ультра-Картошка: Выкл"
+	btn_potato.pressed.connect(_toggle_potato_mode)
+	vbox.add_child(btn_potato)
 
-	var option_fps = OptionButton.new()
+	vbox.add_child(HSeparator.new())
+
+	option_fps = OptionButton.new()
 	option_fps.add_item("Без ограничений (0)", 0)
 	option_fps.add_item("30 FPS", 30)
 	option_fps.add_item("60 FPS", 60)
 	option_fps.add_item("120 FPS", 120)
 	option_fps.add_item("144 FPS", 144)
-	
-	var current_fps = Engine.max_fps
-	for i in range(option_fps.item_count):
-		if option_fps.get_item_id(i) == current_fps:
-			option_fps.selected = i
-			break
-
+	_sync_fps_option()
 	option_fps.item_selected.connect(func(index):
 		Engine.max_fps = option_fps.get_item_id(index)
 	)
@@ -381,6 +406,116 @@ func _build_settings_menu() -> void:
 	vbox.add_child(btn_back)
 
 	add_child(settings_menu)
+
+func _sync_fps_option() -> void:
+	if not option_fps:
+		return
+	for i in range(option_fps.item_count):
+		if option_fps.get_item_id(i) == Engine.max_fps:
+			option_fps.selected = i
+			return
+	option_fps.selected = -1
+
+# ---------------------------------------------------------------------------
+# Режим Ультра-Картошка
+# ---------------------------------------------------------------------------
+func _toggle_potato_mode() -> void:
+	is_potato_mode = !is_potato_mode
+	var vp = get_viewport()
+	var cam = vp.get_camera_3d()
+	var env = _get_env()
+
+	if is_potato_mode:
+		# Запоминаем текущие настройки, чтобы вернуть именно их
+		saved_settings = {
+			"vsync": DisplayServer.window_get_vsync_mode(),
+			"msaa": vp.msaa_3d,
+			"aa": vp.screen_space_aa,
+			"scale": vp.scaling_3d_scale,
+			"fps": Engine.max_fps,
+			"far": cam.far if cam else 4000.0,
+		}
+		if env:
+			saved_settings["glow"] = env.glow_enabled
+			saved_settings["ssao"] = env.ssao_enabled
+			saved_settings["ssr"] = env.ssr_enabled
+			saved_settings["vfog"] = env.volumetric_fog_enabled
+			saved_settings["fog"] = env.fog_enabled
+			saved_settings["sdfgi"] = env.sdfgi_enabled
+			saved_settings["tonemap"] = env.tonemap_mode
+
+		btn_potato.text = "🥔 Режим Ультра-Картошка: Вкл"
+
+		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+		vp.msaa_3d = Viewport.MSAA_DISABLED
+		vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+		vp.scaling_3d_scale = 0.35
+		Engine.max_fps = 60
+
+		if cam:
+			cam.far = 100.0
+		if env:
+			env.glow_enabled = false
+			env.ssao_enabled = false
+			env.ssr_enabled = false
+			env.volumetric_fog_enabled = false
+			env.fog_enabled = false
+			env.sdfgi_enabled = false
+			env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+
+		for node in get_tree().get_nodes_in_group("directional_lights"):
+			if node is DirectionalLight3D:
+				node.shadow_enabled = false
+
+		print("Ultra-Potato mode ON | env=", env, " vsync=", DisplayServer.window_get_vsync_mode())
+	else:
+		btn_potato.text = "🥔 Режим Ультра-Картошка: Выкл"
+
+		DisplayServer.window_set_vsync_mode(saved_settings.get("vsync", DisplayServer.VSYNC_ENABLED))
+		vp.msaa_3d = saved_settings.get("msaa", Viewport.MSAA_2X)
+		vp.screen_space_aa = saved_settings.get("aa", Viewport.SCREEN_SPACE_AA_FXAA)
+		vp.scaling_3d_scale = saved_settings.get("scale", 1.0)
+		Engine.max_fps = saved_settings.get("fps", 0)
+
+		if cam:
+			cam.far = saved_settings.get("far", 4000.0)
+		if env and saved_settings.has("glow"):
+			env.glow_enabled = saved_settings["glow"]
+			env.ssao_enabled = saved_settings["ssao"]
+			env.ssr_enabled = saved_settings["ssr"]
+			env.volumetric_fog_enabled = saved_settings["vfog"]
+			env.fog_enabled = saved_settings["fog"]
+			env.sdfgi_enabled = saved_settings["sdfgi"]
+			env.tonemap_mode = saved_settings["tonemap"]
+
+		for node in get_tree().get_nodes_in_group("directional_lights"):
+			if node is DirectionalLight3D:
+				node.shadow_enabled = true
+
+		print("Normal graphics mode restored")
+
+	_sync_settings_ui()
+
+# Приводит элементы интерфейса в соответствие с реальными настройками
+func _sync_settings_ui() -> void:
+	var vp = get_viewport()
+	var env = _get_env()
+
+	if chk_vsync:
+		chk_vsync.set_pressed_no_signal(DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED)
+	if option_msaa:
+		option_msaa.selected = option_msaa.get_item_index(vp.msaa_3d)
+	if slider_scale:
+		slider_scale.set_value_no_signal(vp.scaling_3d_scale)
+	if chk_fxaa:
+		chk_fxaa.set_pressed_no_signal(vp.screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA)
+	if env:
+		if chk_glow: chk_glow.set_pressed_no_signal(env.glow_enabled)
+		if chk_ssao: chk_ssao.set_pressed_no_signal(env.ssao_enabled)
+		if chk_ssr: chk_ssr.set_pressed_no_signal(env.ssr_enabled)
+	_sync_fps_option()
+
+# ---------------------------------------------------------------------------
 
 func _process(delta: float) -> void:
 	if not player:

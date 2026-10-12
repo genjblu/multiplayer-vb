@@ -22,7 +22,7 @@ glow_enabled = true
 [node name="Arena" type="Node3D" unique_id=2100838575]
 script = ExtResource("1_e05a3")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1790312215]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1790312215 groups=["directional_lights"]]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 10, 0)
 shadow_enabled = true
 
@@ -31,7 +31,6 @@ environment = SubResource("Environment_arena")
 
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="." unique_id=535486961]
 spawn_path = NodePath("..")
-spawnable_scenes = PackedStringArray("res://scenes/player.tscn")
 
 [node name="SpawnPoints" type="Node3D" parent="." unique_id=1358824495]
 

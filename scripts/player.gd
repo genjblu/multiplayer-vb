@@ -74,6 +74,11 @@ var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var touch_look_index: int = -1
 var recoil_pitch: float = 0.0
 
+var fire_timer: float = 0.0
+@export var assault_fire_rate: float = 0.12  # интервал между выстрелами автомата (сек)
+var is_firing: bool = false
+var touch_fire: bool = false
+
 # --- Мобильное управление ---
 var is_mobile: bool = false
 var touch_move: Vector2 = Vector2.ZERO
@@ -287,7 +292,8 @@ func touch_action(action: String, pressed: bool) -> void:
 		return
 	match action:
 		"fire":
-			if pressed and not is_reloading:
+			touch_fire = pressed
+			if pressed and not is_reloading and current_weapon != WeaponType.ASSAULT:
 				shoot()
 		"reload":
 			if pressed and not is_reloading and current_ammo < max_ammo and reserve_ammo > 0:
@@ -322,6 +328,17 @@ func _physics_process(delta: float) -> void:
 		return
 
 	is_ads = Input.is_action_pressed("ads") or touch_ads
+	
+	# Автоматическая стрельба для автомата
+	is_firing = Input.is_action_pressed("fire") or touch_fire
+	if current_weapon == WeaponType.ASSAULT and is_firing and not is_reloading:
+		fire_timer -= delta
+		if fire_timer <= 0.0:
+			shoot()
+			fire_timer = assault_fire_rate
+	else:
+		fire_timer = 0.0
+
 	var stats = weapon_stats[current_weapon]
 	var target_fov = stats["ads_fov"] if is_ads else 75.0
 	camera.fov = lerp(camera.fov, target_fov, delta * 15.0)
