@@ -2,8 +2,10 @@
 
 [ext_resource type="Script" uid="uid://dikx6ehmi2wgb" path="res://scripts/player.gd" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://dd7q1tbilrxlv" path="res://scripts/hud.gd" id="2_g2els"]
+[ext_resource type="ArrayMesh" uid="uid://ddro1iux5ppsi" path="res://models/weapons/AK47.fbx" id="2_tuyoq"]
 [ext_resource type="Texture2D" uid="uid://dn67b4hu7pqv1" path="res://icon.svg" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://dtag37lvwr24a" path="res://scripts/virtual_joystick.gd" id="4_dqkch"]
+[ext_resource type="Script" uid="uid://cyapmoridem1" path="res://scenes/fps_label.gd" id="5_qlg0r"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_g2els"]
 
@@ -21,8 +23,6 @@ properties/2/spawn = true
 properties/2/replication_mode = 1
 
 [sub_resource type="BoxMesh" id="BoxMesh_dqkch"]
-
-[sub_resource type="BoxMesh" id="BoxMesh_qlg0r"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_tuyoq"]
 
@@ -63,8 +63,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.2, -0.4)
 mesh = SubResource("BoxMesh_dqkch")
 
 [node name="WeaponAssault" type="MeshInstance3D" parent="Head/Camera3D" unique_id=1025459564]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.2, -0.4)
-mesh = SubResource("BoxMesh_qlg0r")
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0.2, -0.20000005, -0.4)
+mesh = ExtResource("2_tuyoq")
 
 [node name="WeaponShotgun" type="MeshInstance3D" parent="Head/Camera3D" unique_id=1909592711]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.2, -0.4)
@@ -178,3 +178,17 @@ offset_bottom = 11.5
 theme_override_colors/font_color = Color(1, 0, 0, 1)
 theme_override_font_sizes/font_size = 32
 text = "СОЕДИНЕНИЕ ПОТЕРЯНО"
+
+[node name="FPSLabel" type="Label" parent="TouchUI/TouchOverlay/HUDContainer" unique_id=675498601]
+visible = false
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -80.0
+offset_top = 51.0
+offset_right = -35.0
+offset_bottom = 74.0
+grow_horizontal = 0
+text = "FPS: ~"
+script = ExtResource("5_qlg0r")

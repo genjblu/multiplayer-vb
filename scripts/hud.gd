@@ -5,6 +5,7 @@ extends CanvasLayer
 @onready var disconnect_label: Label = get_node("../DisconnectLabel") if has_node("../DisconnectLabel") else null
 @onready var crosshair: Control = %Crosshair if has_node("%Crosshair") else null
 @onready var touch_overlay: Control = $TouchOverlay if has_node("TouchOverlay") else null
+@onready var fps_label: Label = $TouchOverlay/HUDContainer/FPSLabel
 
 var player: CharacterBody3D
 var current_spread: float = 6.0
@@ -28,6 +29,7 @@ var slider_scale: HSlider
 var chk_fxaa: CheckBox
 var chk_ssao: CheckBox
 var chk_ssr: CheckBox
+var chk_fps: CheckBox
 var btn_potato: Button
 var option_fps: OptionButton
 
@@ -384,7 +386,17 @@ func _build_settings_menu() -> void:
 			env.ssr_enabled = pressed
 	)
 	vbox.add_child(chk_ssr)
-
+	
+	chk_fps = CheckBox.new()
+	chk_fps.text = "Показать счётчик FPS"
+	chk_fps.toggled.connect(func(pressed):
+		if pressed:
+			fps_label.visible = true
+		else:
+			fps_label.visible = false
+	)
+	vbox.add_child(chk_fps)
+		
 	# Potato Graphics Preset Toggle
 	btn_potato = Button.new()
 	btn_potato.text = "🥔 Режим Ультра-Картошка: Выкл"
