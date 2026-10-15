@@ -18,6 +18,7 @@ sky = SubResource("Sky_arena")
 ambient_light_source = 2
 ambient_light_color = Color(0.4, 0.4, 0.4, 1)
 tonemap_mode = 2
+ssao_enabled = true
 glow_enabled = true
 
 [sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_olpmc"]
@@ -32,6 +33,8 @@ script = ExtResource("1_e05a3")
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1790312215 groups=["directional_lights"]]
 transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 10, 0)
 shadow_enabled = true
+directional_shadow_split_1 = 0.05
+directional_shadow_blend_splits = true
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=909601243]
 environment = SubResource("Environment_arena")

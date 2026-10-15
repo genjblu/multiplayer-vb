@@ -25,7 +25,9 @@ var weapon_stats = {
 		"reserve": 60,
 		"recoil": 0.02,
 		"ads_fov": 55.0,
-		"mesh_size": Vector3(0.08, 0.08, 0.4)
+		"mesh_size": Vector3(0.08, 0.08, 0.4),
+		"hip_pos": Vector3(0.18, -0.22, -0.35),
+		"ads_pos": Vector3(0, -0.12, -0.3)
 	},
 	WeaponType.ASSAULT: {
 		"name": "Автомат",
@@ -34,7 +36,9 @@ var weapon_stats = {
 		"reserve": 90,
 		"recoil": 0.035,
 		"ads_fov": 45.0,
-		"mesh_size": Vector3(0.1, 0.1, 0.7)
+		"mesh_size": Vector3(0.1, 0.1, 0.7),
+		"hip_pos": Vector3(0.2, -0.2, -0.4),
+		"ads_pos": Vector3(0.08, -0.17, -0.35)
 	},
 	WeaponType.SHOTGUN: {
 		"name": "Дробовик",
@@ -44,7 +48,9 @@ var weapon_stats = {
 		"reserve": 32,
 		"recoil": 0.09,
 		"ads_fov": 60.0,
-		"mesh_size": Vector3(0.12, 0.12, 0.8)
+		"mesh_size": Vector3(0.12, 0.12, 0.8),
+		"hip_pos": Vector3(0.22, -0.24, -0.45),
+		"ads_pos": Vector3(0, -0.14, -0.38)
 	},
 	WeaponType.SNIPER: {
 		"name": "Снайперская винтовка",
@@ -53,7 +59,9 @@ var weapon_stats = {
 		"reserve": 20,
 		"recoil": 0.16,
 		"ads_fov": 20.0,
-		"mesh_size": Vector3(0.08, 0.08, 1.1)
+		"mesh_size": Vector3(0.08, 0.08, 1.1),
+		"hip_pos": Vector3(0.22, -0.22, -0.5),
+		"ads_pos": Vector3(0, -0.13, -0.4)
 	}
 }
 
@@ -143,6 +151,13 @@ func _ready() -> void:
 		return
 
 	camera.make_current()
+	GameStats.register_name.rpc_id(1, GameStats.local_nick)
+	# Своё тело не должно затенять свою же камеру и руки
+	var body_mesh = get_node_or_null("MeshInstance3D")
+	if body_mesh:
+		body_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		body_mesh.set_layer_mask_value(1, false)
+		body_mesh.set_layer_mask_value(3, true)
 
 	health_changed.emit(health)
 	ammo_changed.emit(current_ammo, reserve_ammo)
@@ -175,10 +190,18 @@ func _switch_weapon(type: WeaponType) -> void:
 	current_ammo = max_ammo
 	reserve_ammo = stats["reserve"]
 
-	if weapon_pistol: weapon_pistol.visible = false
-	if weapon_assault: weapon_assault.visible = false
-	if weapon_shotgun: weapon_shotgun.visible = false
-	if weapon_sniper: weapon_sniper.visible = false
+	if weapon_pistol: 
+		weapon_pistol.visible = false
+		weapon_pistol.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if weapon_assault: 
+		weapon_assault.visible = false
+		weapon_assault.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if weapon_shotgun: 
+		weapon_shotgun.visible = false
+		weapon_shotgun.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if weapon_sniper: 
+		weapon_sniper.visible = false
+		weapon_sniper.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 	match current_weapon:
 		WeaponType.PISTOL:
@@ -192,6 +215,7 @@ func _switch_weapon(type: WeaponType) -> void:
 
 	if current_weapon_node:
 		current_weapon_node.visible = true
+		current_weapon_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		if current_weapon_node.mesh is BoxMesh:
 			var box: BoxMesh = current_weapon_node.mesh as BoxMesh
 			box.size = stats["mesh_size"]
@@ -325,6 +349,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if global_position.y < -10.0:
+		GameStats.report_death.rpc_id(1, 0)
 		die()
 		return
 
@@ -347,7 +372,7 @@ func _physics_process(delta: float) -> void:
 	var target_fov = stats["ads_fov"] if is_ads else 75.0
 	camera.fov = lerp(camera.fov, target_fov, delta * 15.0)
 
-	var target_weapon_pos = Vector3(0, -0.12, -0.35) if is_ads else Vector3(0.2, -0.2, -0.4)
+	var target_weapon_pos = stats["ads_pos"] if is_ads else stats["hip_pos"]
 	if current_weapon_node:
 		current_weapon_node.position = current_weapon_node.position.lerp(target_weapon_pos, delta * 15.0)
 
@@ -423,7 +448,7 @@ func shoot() -> void:
 			if weapon_ray.is_colliding():
 				var collider = weapon_ray.get_collider()
 				if collider and collider.has_method("take_damage"):
-					collider.take_damage.rpc_id(collider.get_multiplayer_authority(), stats["damage"])
+					collider.take_damage.rpc_id(collider.get_multiplayer_authority(), stats["damage"], multiplayer.get_unique_id())
 					hit_any = true
 		weapon_ray.target_position = Vector3(0, 0, -50) # сброс
 	else:
@@ -431,7 +456,7 @@ func shoot() -> void:
 		if weapon_ray.is_colliding():
 			var collider = weapon_ray.get_collider()
 			if collider and collider.has_method("take_damage"):
-				collider.take_damage.rpc_id(collider.get_multiplayer_authority(), stats["damage"])
+				collider.take_damage.rpc_id(collider.get_multiplayer_authority(), stats["damage"], multiplayer.get_unique_id())
 				hit_any = true
 
 	if hit_any:
@@ -453,7 +478,7 @@ func reload() -> void:
 	ammo_changed.emit(current_ammo, reserve_ammo)
 
 @rpc("any_peer", "call_local", "reliable")
-func take_damage(amount: int) -> void:
+func take_damage(amount: int, attacker_id: int) -> void:
 	if not is_multiplayer_authority():
 		return
 
@@ -462,6 +487,7 @@ func take_damage(amount: int) -> void:
 	health_changed.emit(health)
 
 	if health <= 0:
+		GameStats.report_death.rpc_id(1, attacker_id)
 		die()
 
 func die() -> void:

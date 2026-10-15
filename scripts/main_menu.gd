@@ -8,11 +8,16 @@ var default_port: int = 7777
 @onready var host_button: Button = %HostButton
 @onready var join_button: Button = %JoinButton
 @onready var status_label: Label = %StatusLabel
+@onready var nick_edit: LineEdit = %NickEdit
 
 func _ready() -> void:
 	# Инициализация значений по умолчанию
 	ip_input.text = default_ip
 	port_input.text = str(default_port)
+	if nick_edit:
+		nick_edit.max_length = 16
+		nick_edit.placeholder_text = "Ваш ник"
+		nick_edit.text = GameStats.local_nick
 
 	# Подключение сигналов кнопок
 	host_button.pressed.connect(_on_host_pressed)
@@ -26,6 +31,8 @@ func _ready() -> void:
 		net_manager.game_started.connect(_on_game_started)
 
 func _on_host_pressed() -> void:
+	if nick_edit:
+		GameStats.set_nick(nick_edit.text)
 	var port: int = port_input.text.to_int()
 	if port <= 0:
 		status_label.text = "Статус: Укажите корректный порт!"
@@ -42,6 +49,8 @@ func _on_host_pressed() -> void:
 			_set_ui_disabled(false)
 
 func _on_join_pressed() -> void:
+	if nick_edit:
+		GameStats.set_nick(nick_edit.text)
 	var ip: String = ip_input.text.strip_edges()
 	var port: int = port_input.text.to_int()
 

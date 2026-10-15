@@ -4,13 +4,28 @@
 
 [node name="MainMenu" type="Control" unique_id=210663154]
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_l6cm7")
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=1237441099]
-layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -184.0
+offset_top = -186.5
+offset_right = 184.0
+offset_bottom = 186.5
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=1225483137]
 layout_mode = 2
@@ -83,3 +98,8 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Статус: Ожидание..."
 horizontal_alignment = 1
+
+[node name="NickEdit" type="LineEdit" parent="CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=551850513]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Enter your nickname"

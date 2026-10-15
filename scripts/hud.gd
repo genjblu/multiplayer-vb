@@ -13,6 +13,9 @@ var hit_flash_timer: float = 0.0
 
 var viewmodel: ViewmodelRenderer
 
+var scoreboard: Scoreboard
+var kill_feed: KillFeed
+
 var pause_menu: Control
 var settings_menu: Control
 var audio_slider: HSlider
@@ -72,14 +75,18 @@ func _ready() -> void:
 
 	_build_pause_menu()
 	_build_hud_elements()
-	var weapon_root_node = player.get_node_or_null("Head/Camera3D")
-	if weapon_root_node:
-		viewmodel = ViewmodelRenderer.new()
-		add_child(viewmodel)
-		move_child(viewmodel, 0)  # рисовать под HUD
-		viewmodel.setup(weapon_root_node)
-	else:
-		push_warning("ViewmodelRenderer: узел оружия не найден, проверь путь")
+
+	scoreboard = Scoreboard.new()
+	add_child(scoreboard)
+	kill_feed = KillFeed.new()
+	add_child(kill_feed)
+	#if weapon_root_node:
+		#viewmodel = ViewmodelRenderer.new()
+		#add_child(viewmodel)
+		#move_child(viewmodel, 0)  # рисовать под HUD
+		#viewmodel.setup(weapon_root_node)
+	#else:
+		#push_warning("ViewmodelRenderer: узел оружия не найден, проверь путь")
 
 func _is_mobile() -> bool:
 	return OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"] or ProjectSettings.get_setting("input_devices/pointing/emulate_touch_from_mouse")
@@ -156,6 +163,17 @@ func _build_hud_elements() -> void:
 	btn_menu.pressed.connect(_toggle_pause)
 	btn_vbox.add_child(btn_menu)
 
+	# Кнопка Таблица (закрепить скорборд)
+	var btn_score = Button.new()
+	btn_score.text = "Таблица"
+	btn_score.toggle_mode = true
+	btn_score.custom_minimum_size = Vector2(200, 42)
+	btn_score.toggled.connect(func(pressed):
+		if scoreboard:
+			scoreboard.pinned = pressed
+	)
+	btn_vbox.add_child(btn_score)
+
 func _input(event: InputEvent) -> void:
 	if not player or not player.is_multiplayer_authority():
 		return
@@ -224,8 +242,13 @@ func _build_pause_menu() -> void:
 	var btn_quit = Button.new()
 	btn_quit.text = "Выход в меню"
 	btn_quit.pressed.connect(func():
+		GameStats.reset_stats()
 		get_tree().paused = false
-		get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+		var net_manager = get_node_or_null("/root/NetworkManager")
+		if net_manager:
+			net_manager.disconnect_peer()
+		else:
+			get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 	)
 	vbox.add_child(btn_quit)
 
@@ -397,6 +420,10 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(chk_fps)
 		
+	if OS.has_feature("mobile"):
+		chk_ssao.hide()
+		chk_ssr.hide()
+	
 	# Potato Graphics Preset Toggle
 	btn_potato = Button.new()
 	btn_potato.text = "🥔 Режим Ультра-Картошка: Выкл"
