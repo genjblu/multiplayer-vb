@@ -1,5 +1,6 @@
 [gd_scene format=4 uid="uid://be7qghdnlror3"]
 
+[ext_resource type="Script" uid="uid://brvaqlkupmb46" path="res://scripts/weapon_view.gd" id="1_278ir"]
 [ext_resource type="Material" uid="uid://dusxa2cdef8sl" path="res://materials/shotgun_materia;.tres" id="1_lbead"]
 [ext_resource type="Material" uid="uid://j2vrv88crggt" path="res://materials/hands_material.tres" id="2_0frcf"]
 
@@ -789,7 +790,254 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_i1gyx")
 
+[sub_resource type="Animation" id="Animation_0frcf"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Shotgun_Model:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Shotgun_Model:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 1.5707964, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Shotgun_Model/LeftHand:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0.13787915, 0.13786739, -0.011508714)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Shotgun_Model/LeftHand:rotation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-0.088716105, -2.2976375, 2.9244432)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Shotgun_Model/Forend_lowpoly:position")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_278ir"]
+resource_name = "draw"
+length = 0.5
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Shotgun_Model:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0, -0.34271464, -0.05107799), Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Shotgun_Model:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.5),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(1.522724e-08, 1.5707964, -0.35581946), Vector3(0, 1.5707964, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_uukpr"]
+resource_name = "fire"
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Shotgun_Model:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.6, 1),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, 0.11559868, 0.0064601675), Vector3(0, 0.11559868, 0.0064601675), Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Shotgun_Model:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.6, 1),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 1.5707964, 0), Vector3(-3.5280863e-08, 1.5707964, 0.91600573), Vector3(-3.5280863e-08, 1.5707964, 0.91600573), Vector3(0, 1.5707964, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Shotgun_Model/LeftHand:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.055596728, 0.13165207, -0.01340704), Vector3(0.13787915, 0.13786739, -0.011508714)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Shotgun_Model/LeftHand:rotation")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.2, 0.4, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.08871612, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Shotgun_Model/Forend_lowpoly:position")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0.2, 0.4, 0.6),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(-0.0857887, 0, 0), Vector3(0, 0, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_qn8fy"]
+resource_name = "idle"
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Shotgun_Model:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Shotgun_Model:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(0, 1.5707964, 0)]
+}
+
+[sub_resource type="Animation" id="Animation_xtykv"]
+resource_name = "reload"
+length = 1.2
+step = 0.05
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Shotgun_Model:rotation")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.14999999, 1.05, 1.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 1.5707964, 0), Vector3(0, 1.5707964, 0.7928684), Vector3(0, 1.5707964, 0.7928684), Vector3(0, 1.5707964, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Shotgun_Model/LeftHand:position")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.14999998, 0.19999999, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.90000004, 0.95, 1.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.055596728, 0.13165207, -0.01340704), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.055596728, 0.13165207, -0.01340704), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.055596728, 0.13165207, -0.01340704), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.055596728, 0.13165207, -0.01340704), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.055596728, 0.13165207, -0.01340704), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.055596728, 0.13165207, -0.01340704), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.055596728, 0.13165207, -0.01340704), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.055596728, 0.13165207, -0.01340704), Vector3(0.13787915, 0.13786739, -0.011508714), Vector3(0.13787915, 0.13786739, -0.011508714)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Shotgun_Model/LeftHand:rotation")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0, 0.14999998, 0.19999999, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.90000004, 0.95, 1.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.08871612, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.08871612, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.08871612, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.08871612, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.08871612, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.08871612, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.08871612, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.08871612, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432), Vector3(-0.088716105, -2.2976375, 2.9244432)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Shotgun_Model/Forend_lowpoly:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.14999998, 0.19999999, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.90000004, 0.95, 1.2),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(0, 0, 0), Vector3(0, 0, 0), Vector3(-0.0857887, 0, 0), Vector3(0, 0, 0), Vector3(-0.0857887, 0, 0), Vector3(0, 0, 0), Vector3(-0.0857887, 0, 0), Vector3(0, 0, 0), Vector3(-0.0857887, 0, 0), Vector3(0, 0, 0), Vector3(-0.0857887, 0, 0), Vector3(0, 0, 0), Vector3(-0.0857887, 0, 0), Vector3(0, 0, 0), Vector3(-0.0857887, 0, 0), Vector3(0, 0, 0), Vector3(-0.0857887, 0, 0), Vector3(0, 0, 0), Vector3(0, 0, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_vx5qo"]
+_data = {
+&"RESET": SubResource("Animation_0frcf"),
+&"draw": SubResource("Animation_278ir"),
+&"fire": SubResource("Animation_uukpr"),
+&"idle": SubResource("Animation_qn8fy"),
+&"reload": SubResource("Animation_xtykv")
+}
+
 [node name="Shotgun" type="Node3D" unique_id=802914983]
+script = ExtResource("1_278ir")
 
 [node name="Shotgun_Model" type="Node3D" parent="." unique_id=1837012817]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
@@ -818,146 +1066,149 @@ mesh = SubResource("ArrayMesh_b7do7")
 material_override = ExtResource("1_lbead")
 mesh = SubResource("ArrayMesh_jo60x")
 
-[node name="LeftHand" type="Node3D" parent="." unique_id=2017791861]
-transform = Transform3D(-0.039437383, -0.012017037, -0.036404442, 0.011802983, -0.053497136, 0.0048729856, -0.03647441, -0.0043182382, 0.04093862, -0.01150872, 0.13786739, -0.13787915)
+[node name="LeftHand" type="Node3D" parent="Shotgun_Model" unique_id=2017791861]
+transform = Transform3D(0.036474418, 0.004318236, -0.040938616, 0.011802978, -0.053497143, 0.004872988, -0.039437387, -0.012017035, -0.036404446, 0.13787915, 0.13786739, -0.011508714)
 
-[node name="hand" type="MeshInstance3D" parent="LeftHand" unique_id=261680663]
+[node name="hand" type="MeshInstance3D" parent="Shotgun_Model/LeftHand" unique_id=261680663]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.9167175)
 mesh = SubResource("ArrayMesh_q053b")
 
-[node name="arm_lower" type="MeshInstance3D" parent="LeftHand/hand" unique_id=616735686]
+[node name="arm_lower" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand" unique_id=616735686]
 transform = Transform3D(0.9468908, 0.0354428, -0.3195966, 0.017529123, 0.9867396, 0.1613627, 0.32107776, -0.15839504, 0.9337133, 0, -0.11885333, 0.0011925101)
 material_override = ExtResource("2_0frcf")
 mesh = SubResource("ArrayMesh_7pmyi")
 
-[node name="index_0" type="MeshInstance3D" parent="LeftHand/hand" unique_id=288718650]
+[node name="index_0" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand" unique_id=288718650]
 transform = Transform3D(1, 0, 0, 0, 0.81915206, 0.57357645, 0, -0.57357645, 0.81915206, 0.6355153, 0, -1.8432965)
 mesh = SubResource("ArrayMesh_lusyb")
 
-[node name="index_1" type="MeshInstance3D" parent="LeftHand/hand/index_0" unique_id=137750548]
+[node name="index_1" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/index_0" unique_id=137750548]
 transform = Transform3D(1, 0, 0, 0, 0.81915206, 0.57357645, 0, -0.57357645, 0.81915206, 0, 0, -0.5205416)
 mesh = SubResource("ArrayMesh_ha55u")
 
-[node name="index_2" type="MeshInstance3D" parent="LeftHand/hand/index_0/index_1" unique_id=729013327]
+[node name="index_2" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/index_0/index_1" unique_id=729013327]
 transform = Transform3D(1, 0, 0, 0, 0.54107404, 0.8409749, 0, -0.8409749, 0.54107404, 0, 0, -0.49683595)
 mesh = SubResource("ArrayMesh_td2hk")
 
-[node name="middle_0" type="MeshInstance3D" parent="LeftHand/hand" unique_id=1956842578]
+[node name="middle_0" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand" unique_id=1956842578]
 transform = Transform3D(1, 0, 0, 0, 0.4802235, 0.8771461, 0, -0.8771461, 0.4802235, 0.21942228, 0, -1.963667)
 mesh = SubResource("ArrayMesh_qks83")
 
-[node name="middle_1" type="MeshInstance3D" parent="LeftHand/hand/middle_0" unique_id=2026080174]
+[node name="middle_1" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/middle_0" unique_id=2026080174]
 transform = Transform3D(1, 0, 0, 0, 0.4802235, 0.8771461, 0, -0.8771461, 0.4802235, 0, 0, -0.59544945)
 mesh = SubResource("ArrayMesh_qotvi")
 
-[node name="middle_2" type="MeshInstance3D" parent="LeftHand/hand/middle_0/middle_1" unique_id=1361187536]
+[node name="middle_2" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/middle_0/middle_1" unique_id=1361187536]
 transform = Transform3D(1, 0, 0, 0, 0.4802235, 0.8771461, 0, -0.8771461, 0.4802235, 0, 0, -0.5765768)
 mesh = SubResource("ArrayMesh_t566i")
 
-[node name="pinky_0" type="MeshInstance3D" parent="LeftHand/hand" unique_id=1943246456]
+[node name="pinky_0" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand" unique_id=1943246456]
 transform = Transform3D(1, 0, 0, 0, -0.4674122, 0.8840395, 0, -0.8840395, -0.4674122, -0.6369156, 0, -1.8759395)
 mesh = SubResource("ArrayMesh_unyke")
 
-[node name="pinky_1" type="MeshInstance3D" parent="LeftHand/hand/pinky_0" unique_id=733558863]
+[node name="pinky_1" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/pinky_0" unique_id=733558863]
 transform = Transform3D(1, 0, 0, 0, 0.9396926, 0.34202012, 0, -0.34202012, 0.9396926, 0, 0, -0.5086312)
 mesh = SubResource("ArrayMesh_dv0r2")
 
-[node name="pinky_2" type="MeshInstance3D" parent="LeftHand/hand/pinky_0/pinky_1" unique_id=8301595]
+[node name="pinky_2" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/pinky_0/pinky_1" unique_id=8301595]
 transform = Transform3D(1, 0, 0, 0, 0.9396926, 0.34202012, 0, -0.34202012, 0.9396926, 0, 0, -0.48415732)
 mesh = SubResource("ArrayMesh_80x66")
 
-[node name="ring_0" type="MeshInstance3D" parent="LeftHand/hand" unique_id=337215481]
+[node name="ring_0" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand" unique_id=337215481]
 transform = Transform3D(1, 0, 0, 0, 0.0087578, 0.9999616, 0, -0.9999616, 0.0087578, -0.2216101, 0, -1.9495702)
 mesh = SubResource("ArrayMesh_lpqem")
 
-[node name="ring_1" type="MeshInstance3D" parent="LeftHand/hand/ring_0" unique_id=1024756007]
+[node name="ring_1" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/ring_0" unique_id=1024756007]
 transform = Transform3D(1, 0, 0, 0, 0.7443116, 0.66783255, 0, -0.66783255, 0.7443116, 0, 0, -0.5784105)
 mesh = SubResource("ArrayMesh_vnndc")
 
-[node name="ring_2" type="MeshInstance3D" parent="LeftHand/hand/ring_0/ring_1" unique_id=1778513162]
+[node name="ring_2" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/ring_0/ring_1" unique_id=1778513162]
 transform = Transform3D(1, 0, 0, 0, 0.7443116, 0.66783255, 0, -0.66783255, 0.7443116, 0, 0, -0.55843866)
 mesh = SubResource("ArrayMesh_0px68")
 
-[node name="thumb_0" type="MeshInstance3D" parent="LeftHand/hand" unique_id=860032960]
+[node name="thumb_0" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand" unique_id=860032960]
 transform = Transform3D(0.4696742, 1.078105, -0.23219696, -1.0793267, 0.39754015, -0.33739477, -0.2264497, 0.34127876, 1.1265296, 0.6589535, -0.17820254, -0.33735403)
 mesh = SubResource("ArrayMesh_mu3uh")
 
-[node name="thumb_1" type="MeshInstance3D" parent="LeftHand/hand/thumb_0" unique_id=1189621669]
+[node name="thumb_1" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/thumb_0" unique_id=1189621669]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.41884798, 0, -0.5414748)
 mesh = SubResource("ArrayMesh_11tp2")
 
-[node name="thumb_2" type="MeshInstance3D" parent="LeftHand/hand/thumb_0/thumb_1" unique_id=454756881]
+[node name="thumb_2" type="MeshInstance3D" parent="Shotgun_Model/LeftHand/hand/thumb_0/thumb_1" unique_id=454756881]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.28644383, 0, -0.39743483)
 mesh = SubResource("ArrayMesh_orfw5")
 
-[node name="RightHand" type="Node3D" parent="." unique_id=1797000923]
-transform = Transform3D(-0.019483518, 0.051413205, 0.0014408589, 0.04993522, 0.018539388, 0.013702802, -0.012323489, -0.0061623277, 0.053246193, 0.036663912, 0.1484229, 0.21396357)
+[node name="RightHand" type="Node3D" parent="Shotgun_Model" unique_id=1797000923]
+transform = Transform3D(0.012323493, 0.0061623245, -0.053246196, 0.04993523, 0.018539391, 0.013702806, -0.019483522, 0.05141321, 0.0014408543, -0.21396358, 0.1484229, 0.03666391)
 
-[node name="hand" type="MeshInstance3D" parent="RightHand" unique_id=670228719]
+[node name="hand" type="MeshInstance3D" parent="Shotgun_Model/RightHand" unique_id=670228719]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.9167175)
 mesh = SubResource("ArrayMesh_q053b")
 
-[node name="arm_lower" type="MeshInstance3D" parent="RightHand/hand" unique_id=245296164]
+[node name="arm_lower" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand" unique_id=245296164]
 transform = Transform3D(0.7935197, 0.11761211, -0.5970711, 0.23877472, 0.84229064, 0.48325267, 0.5597437, -0.5260361, 0.64029133, -0.07282817, -0.13647103, -0.35493708)
 material_override = ExtResource("2_0frcf")
 mesh = SubResource("ArrayMesh_7pmyi")
 
-[node name="index_0" type="MeshInstance3D" parent="RightHand/hand" unique_id=1400506227]
+[node name="index_0" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand" unique_id=1400506227]
 transform = Transform3D(0.99044716, -1.8626451e-09, -0.13789275, 0.016804902, 0.9925462, 0.12070516, 0.13686493, -0.12186934, 0.9830645, 0.6355153, 0, -1.8432965)
 mesh = SubResource("ArrayMesh_lusyb")
 
-[node name="index_1" type="MeshInstance3D" parent="RightHand/hand/index_0" unique_id=359234853]
+[node name="index_1" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/index_0" unique_id=359234853]
 transform = Transform3D(1, 0, 0, 0, 0.7715733, 0.6361404, 0, -0.6361404, 0.7715733, 0, 0, -0.5205416)
 mesh = SubResource("ArrayMesh_ha55u")
 
-[node name="index_2" type="MeshInstance3D" parent="RightHand/hand/index_0/index_1" unique_id=1769991636]
+[node name="index_2" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/index_0/index_1" unique_id=1769991636]
 transform = Transform3D(1, 0, 0, 0, -0.17550072, 0.9844793, 0, -0.9844793, -0.17550072, 0, 0, -0.49683595)
 mesh = SubResource("ArrayMesh_td2hk")
 
-[node name="middle_0" type="MeshInstance3D" parent="RightHand/hand" unique_id=943611982]
+[node name="middle_0" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand" unique_id=943611982]
 transform = Transform3D(0.9410351, -0.2711205, -0.20235284, 0.24705955, 0.14212242, 0.9585212, -0.23111582, -0.95199525, 0.20072508, 0.21942228, 0, -1.963667)
 mesh = SubResource("ArrayMesh_qks83")
 
-[node name="middle_1" type="MeshInstance3D" parent="RightHand/hand/middle_0" unique_id=542779707]
+[node name="middle_1" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/middle_0" unique_id=542779707]
 transform = Transform3D(1, 0, 0, 0, 0.53877074, 0.8424524, 0, -0.8424524, 0.53877074, 0, 0, -0.59544945)
 mesh = SubResource("ArrayMesh_qotvi")
 
-[node name="middle_2" type="MeshInstance3D" parent="RightHand/hand/middle_0/middle_1" unique_id=2136191417]
+[node name="middle_2" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/middle_0/middle_1" unique_id=2136191417]
 transform = Transform3D(1, 0, 0, 0, 0.53877074, 0.8424524, 0, -0.8424524, 0.53877074, 0, 0, -0.5765768)
 mesh = SubResource("ArrayMesh_t566i")
 
-[node name="pinky_0" type="MeshInstance3D" parent="RightHand/hand" unique_id=178319372]
+[node name="pinky_0" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand" unique_id=178319372]
 transform = Transform3D(0.86809313, -0.38885993, -0.3085484, 0.24914461, -0.19630462, 0.9483625, -0.42934966, -0.90014035, -0.073528334, -0.6369156, 0, -1.8759395)
 mesh = SubResource("ArrayMesh_unyke")
 
-[node name="pinky_1" type="MeshInstance3D" parent="RightHand/hand/pinky_0" unique_id=2081344798]
+[node name="pinky_1" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/pinky_0" unique_id=2081344798]
 transform = Transform3D(1, 0, 0, 0, 0.8290714, 0.55914265, 0, -0.55914265, 0.8290714, 0, 0, -0.5086312)
 mesh = SubResource("ArrayMesh_dv0r2")
 
-[node name="pinky_2" type="MeshInstance3D" parent="RightHand/hand/pinky_0/pinky_1" unique_id=1244709891]
+[node name="pinky_2" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/pinky_0/pinky_1" unique_id=1244709891]
 transform = Transform3D(1, 0, 0, 0, 0.8465667, 0.53228253, 0, -0.53228253, 0.8465667, 0, 0, -0.48415732)
 mesh = SubResource("ArrayMesh_80x66")
 
-[node name="ring_0" type="MeshInstance3D" parent="RightHand/hand" unique_id=1923069263]
+[node name="ring_0" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand" unique_id=1923069263]
 transform = Transform3D(0.8925594, -0.37773687, -0.24627748, 0.28682667, 0.05415848, 0.95645046, -0.3479485, -0.92432773, 0.15668464, -0.2216101, 0, -1.9495702)
 mesh = SubResource("ArrayMesh_lpqem")
 
-[node name="ring_1" type="MeshInstance3D" parent="RightHand/hand/ring_0" unique_id=1570637584]
+[node name="ring_1" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/ring_0" unique_id=1570637584]
 transform = Transform3D(1, 0, 0, 0, 0.63607824, 0.77162457, 0, -0.77162457, 0.63607824, 0, 0, -0.5784105)
 mesh = SubResource("ArrayMesh_vnndc")
 
-[node name="ring_2" type="MeshInstance3D" parent="RightHand/hand/ring_0/ring_1" unique_id=1978585913]
+[node name="ring_2" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/ring_0/ring_1" unique_id=1978585913]
 transform = Transform3D(1, 0, 0, 0, 0.63607824, 0.77162457, 0, -0.77162457, 0.63607824, 0, 0, -0.55843866)
 mesh = SubResource("ArrayMesh_0px68")
 
-[node name="thumb_0" type="MeshInstance3D" parent="RightHand/hand" unique_id=1328944638]
+[node name="thumb_0" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand" unique_id=1328944638]
 transform = Transform3D(0.8483024, 0.84360623, 0.07437006, -0.84687805, 0.8450251, 0.07449515, 3.7252903e-09, -0.10526363, 1.1940432, 0.6518725, -0.11372845, -0.36542696)
 mesh = SubResource("ArrayMesh_mu3uh")
 
-[node name="thumb_1" type="MeshInstance3D" parent="RightHand/hand/thumb_0" unique_id=976710576]
+[node name="thumb_1" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/thumb_0" unique_id=976710576]
 transform = Transform3D(0.9784572, 0.18998815, 0.0807842, -0.18934388, 0.9817863, -0.01563277, -0.08228286, 0, 0.99660903, 0.41884798, 0, -0.5414748)
 mesh = SubResource("ArrayMesh_11tp2")
 
-[node name="thumb_2" type="MeshInstance3D" parent="RightHand/hand/thumb_0/thumb_1" unique_id=1769823940]
+[node name="thumb_2" type="MeshInstance3D" parent="Shotgun_Model/RightHand/hand/thumb_0/thumb_1" unique_id=1769823940]
 transform = Transform3D(0.81715125, 0, 0.5764232, 0, 1, 0, -0.5764232, 0, 0.81715125, 0.28644383, 0, -0.39743483)
 mesh = SubResource("ArrayMesh_orfw5")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1037653425]
+libraries/ = SubResource("AnimationLibrary_vx5qo")

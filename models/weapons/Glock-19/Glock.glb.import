@@ -1,15 +1,15 @@
 [remap]
 
-importer="ArrayMesh"
+importer="scene"
 importer_version=1
-type="ArrayMesh"
-uid="uid://c6e0yivxl2p30"
-path="res://.godot/imported/Glock-19.glb-60ff4d107f9a82b2fdc559d83aac80bd.res"
+type="PackedScene"
+uid="uid://2wh80uuyr76e"
+path="res://.godot/imported/Glock.glb-7fe24aa84b3eb85014fa7c128a0326b6.scn"
 
 [deps]
 
-source_file="res://models/weapons/Glock-19/Glock-19.glb"
-dest_files=["res://.godot/imported/Glock-19.glb-60ff4d107f9a82b2fdc559d83aac80bd.res"]
+source_file="res://models/weapons/Glock-19/Glock.glb"
+dest_files=["res://.godot/imported/Glock.glb-7fe24aa84b3eb85014fa7c128a0326b6.scn"]
 
 [params]
 

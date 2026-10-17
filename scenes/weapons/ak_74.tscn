@@ -1650,6 +1650,32 @@ tracks/11/keys = {
 
 [sub_resource type="Animation" id="Animation_q0arv"]
 resource_name = "draw"
+length = 0.4
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("AK-74:position")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(-1.110223e-16, -0.29038405, -0.03977768), Vector3(0, 0, 0)]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("AK-74:rotation")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0, 0.4),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Vector3(0, -1.5707964, 0.46686336), Vector3(0, -1.5707964, 0)]
+}
 
 [sub_resource type="Animation" id="Animation_7g5m4"]
 resource_name = "fire"
@@ -1996,7 +2022,7 @@ transform = Transform3D(-0.07424392, 1.1210518e-08, 4.900274e-16, 0, -3.245304e-
 mesh = SubResource("ArrayMesh_kohs0")
 
 [node name="LeftHand" type="Node3D" parent="AK-74/Mag" unique_id=2017791861]
-transform = Transform3D(-0.19173457, 1.9686619e-08, -0.71556354, 1.6182534e-08, 0.7408045, 1.6045027e-08, 0.7155632, -1.1478356e-08, -0.19173467, 1.6671145, 0.55533445, 0.43115485)
+transform = Transform3D(-0.19173457, 1.9686619e-08, -0.71556354, 1.6182534e-08, 0.7408045, 1.6045027e-08, 0.7155632, -1.1478356e-08, -0.19173469, 1.6671145, 0.55533445, 0.43115485)
 
 [node name="hand" type="MeshInstance3D" parent="AK-74/Mag/LeftHand" unique_id=261680663]
 transform = Transform3D(-0.06635482, -0.98198235, 0.17693931, 0.53303057, 0.11502107, 0.8382411, -0.8434896, 0.14993547, 0.5157946, -0.03526061, 0.43893987, 0.2937106)

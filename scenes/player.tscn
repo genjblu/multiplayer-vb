@@ -29,6 +29,7 @@ properties/2/replication_mode = 1
 
 [node name="Player" type="CharacterBody3D" unique_id=433830383]
 script = ExtResource("1_3vyb7")
+slide_duration = 1.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1710694542]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

@@ -11,6 +11,20 @@ enum WeaponType { PISTOL, ASSAULT, SHOTGUN, SNIPER }
 @export var base_speed: float = 5.0
 @export var sprint_speed: float = 8.0
 @export var jump_velocity: float = 4.5
+
+@export_group("Приседание")
+@export var crouch_speed: float = 2.5
+@export var crouch_height: float = 1.2
+@export var standing_height: float = 2.0
+@export var crouch_head_y: float = 0.9
+@export var standing_head_y: float = 1.6
+@export var crouch_transition_speed: float = 10.0
+
+@export_group("Подкат (Slide)")
+## Длительность подката в секундах
+@export var slide_duration: float = 0.6
+## Множитель скорости подката относительно base_speed
+@export var slide_speed_multiplier: float = 2.2
 @export var mouse_sensitivity: float = 0.003
 @export var touch_sensitivity: float = 0.005
 ## Доля ширины экрана слева, где касания НЕ вращают камеру (зона джойстика)
@@ -93,6 +107,10 @@ var is_sprinting: bool = false
 var is_sliding: bool = false
 var slide_timer: float = 0.0
 var slide_vector: Vector2 = Vector2.ZERO
+var reload_pending: bool = false
+var touch_crouch: bool = false
+var collision_shape: CollisionShape3D = null
+var default_capsule_height: float = 2.0
 
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var touch_look_index: int = -1
@@ -164,6 +182,12 @@ func _ready() -> void:
 	_reset_all_ammo()
 	_switch_weapon(WeaponType.ASSAULT)
 	health = max_health
+	collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if collision_shape and collision_shape.shape is CapsuleShape3D:
+		default_capsule_height = (collision_shape.shape as CapsuleShape3D).height
+	else:
+		default_capsule_height = standing_height
+
 	if not is_multiplayer_authority():
 		camera.clear_current()
 		touch_ui.hide()
@@ -208,6 +232,7 @@ func _switch_weapon(type: WeaponType) -> void:
 		ammo_state[current_weapon] = {"mag": current_ammo, "reserve": reserve_ammo}
 	# Смена оружия отменяет незавершённую перезарядку
 	reload_id += 1
+	reload_pending = false
 	is_reloading = false
 	current_weapon = type
 	var stats = weapon_stats[current_weapon]
@@ -368,6 +393,7 @@ func touch_action(action: String, pressed: bool) -> void:
 			if pressed:
 				touch_jump_req = true
 		"crouch":
+			touch_crouch = pressed
 			if pressed:
 				touch_crouch_req = true
 		"sprint":
@@ -427,28 +453,50 @@ func _physics_process(delta: float) -> void:
 
 	var jump_pressed: bool = Input.is_action_just_pressed("ui_accept") or touch_jump_req
 	touch_jump_req = false
-	if jump_pressed and is_on_floor() and not is_sliding:
+	if jump_pressed and is_on_floor():
+		if is_sliding:
+			is_sliding = false
+			slide_timer = 0.0
 		velocity.y = jump_velocity
 
+	var crouch_hold: bool = Input.is_action_pressed("crouch") or touch_crouch
+	var crouch_just_pressed: bool = Input.is_action_just_pressed("crouch") or touch_crouch_req
+	touch_crouch_req = false
+
+	# Спринт возможен только если мы не приседаем
 	is_sprinting = (Input.is_action_pressed("sprint") or touch_sprint) \
-		and is_on_floor() and not is_ads and not is_sliding
+		and is_on_floor() and not is_ads and not is_sliding and not is_crouching
 
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	input_dir = (input_dir + touch_move).limit_length(1.0)
 	var direction: Vector3 = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
 
-	var crouch_pressed: bool = Input.is_action_just_pressed("crouch") or touch_crouch_req
-	touch_crouch_req = false
-	if crouch_pressed and is_on_floor() and not is_sliding and input_dir.length() > 0:
+	# Подкат начинается только если игрок нажал приседание ВО ВРЕМЯ спринта на полу
+	if crouch_just_pressed and is_on_floor() and not is_sliding and is_sprinting and input_dir.length() > 0:
 		is_sliding = true
-		slide_timer = 0.5
+		slide_timer = slide_duration
 		slide_vector = input_dir.normalized()
 
-	var current_speed = sprint_speed if is_sprinting else base_speed
+	# Проверка препятствия над головой для вставания
+	var ceiling_blocked: bool = _has_ceiling_above()
+
+	if is_sliding:
+		is_crouching = true
+	elif crouch_hold or ceiling_blocked:
+		is_crouching = is_on_floor() or is_crouching
+	else:
+		is_crouching = false
+
+	var current_speed = base_speed
+	if is_sprinting:
+		current_speed = sprint_speed
+	elif is_crouching:
+		current_speed = crouch_speed
 
 	if is_sliding:
 		slide_timer -= delta
-		var slide_speed = base_speed * 2.2 * (slide_timer / 0.5)
+		var progress: float = clampf(slide_timer / maxf(slide_duration, 0.01), 0.0, 1.0)
+		var slide_speed: float = base_speed * slide_speed_multiplier * progress
 		var forward = (transform.basis * Vector3(slide_vector.x, 0, slide_vector.y)).normalized()
 		velocity.x = forward.x * slide_speed
 		velocity.z = forward.z * slide_speed
@@ -462,6 +510,7 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, current_speed)
 
 	move_and_slide()
+	_update_crouch_height(delta)
 	_update_spread(delta)
 
 	recoil_pitch = lerp(recoil_pitch, 0.0, delta * 10.0)
@@ -471,6 +520,8 @@ func _physics_process(delta: float) -> void:
 	sync_rotation = Vector3(head.rotation.x, rotation.y, float(current_weapon))
 
 func shoot() -> void:
+	if is_instance_valid(current_view) and current_view.has_method("can_fire") and not current_view.can_fire():
+		return
 	var now: float = Time.get_ticks_msec() / 1000.0
 	if now < next_shot_time:
 		return
@@ -538,8 +589,16 @@ func shoot() -> void:
 
 func reload() -> void:
 	if is_reloading or reserve_ammo <= 0 or current_ammo == max_ammo:
+		reload_pending = false
 		return
 
+	# Пока играет другая анимация оружия (выстрел, доставание), перезарядка ждёт
+	if is_instance_valid(current_view) and current_view.has_method("can_start_reload"):
+		if not current_view.can_start_reload():
+			reload_pending = true
+			return
+
+	reload_pending = false
 	is_reloading = true
 	reload_id += 1
 	var my_reload_id: int = reload_id
@@ -547,7 +606,14 @@ func reload() -> void:
 	var ammo_needed = max_ammo - current_ammo
 	var ammo_to_load = min(ammo_needed, reserve_ammo)
 
-	await get_tree().create_timer(weapon_stats[current_weapon].get("reload_time", 1.2)).timeout
+	# Длительность берём из анимации, если она есть
+	var duration: float = float(weapon_stats[current_weapon].get("reload_time", 1.2))
+	if is_instance_valid(current_view) and current_view.has_method("get_reload_duration"):
+		var anim_len: float = current_view.get_reload_duration()
+		if anim_len > 0.0:
+			duration = anim_len
+
+	await get_tree().create_timer(duration).timeout
 
 	# Перезарядку отменила смерть или смена оружия
 	if my_reload_id != reload_id:
@@ -576,6 +642,7 @@ func take_damage(amount: int, attacker_id: int) -> void:
 func die() -> void:
 	# Отменяем незавершённую перезарядку, иначе патроны добавятся после возрождения
 	reload_id += 1
+	reload_pending = false
 	is_reloading = false
 	health = max_health
 	_reset_all_ammo()
@@ -647,6 +714,8 @@ func _add_fire_bloom() -> void:
 	fire_bloom = minf(fire_bloom + wd.fire_spread_deg, wd.fire_spread_max_deg)
 
 func _update_spread(delta: float) -> void:
+	if reload_pending:
+		reload()
 	var wd: WeaponData = get_weapon_data()
 	var add: float = 0.0
 	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
@@ -674,3 +743,22 @@ func _handle_ray_impact() -> void:
 	if hit_collider and hit_collider.has_method("take_damage"):
 		return
 	BulletDecals.spawn_hit(weapon_ray.get_collision_point(), weapon_ray.get_collision_normal())
+
+func _has_ceiling_above() -> bool:
+	var space_state := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.new()
+	query.from = global_position + Vector3(0, crouch_height * 0.5, 0)
+	query.to = global_position + Vector3(0, standing_height + 0.1, 0)
+	query.exclude = [get_rid()]
+	var result := space_state.intersect_ray(query)
+	return not result.is_empty()
+
+func _update_crouch_height(delta: float) -> void:
+	var target_head_y: float = crouch_head_y if is_crouching else standing_head_y
+	head.position.y = lerpf(head.position.y, target_head_y, delta * crouch_transition_speed)
+
+	if collision_shape and collision_shape.shape is CapsuleShape3D:
+		var capsule := collision_shape.shape as CapsuleShape3D
+		var target_height: float = crouch_height if is_crouching else default_capsule_height
+		capsule.height = lerpf(capsule.height, target_height, delta * crouch_transition_speed)
+		collision_shape.position.y = capsule.height * 0.5
