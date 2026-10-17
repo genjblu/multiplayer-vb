@@ -36,6 +36,7 @@ const DEFAULT_WEAPON_PATHS: Array[String] = ["res://weapons/pistol.tres", "res:/
 @export var weapon_data: Array[WeaponData] = []
 var weapon_holder: Node3D = null
 var current_view: Node3D = null
+var show_ammo_on_weapon: bool = false
 
 var current_weapon: WeaponType = WeaponType.ASSAULT
 var weapon_stats = {
@@ -110,8 +111,11 @@ var slide_timer: float = 0.0
 var slide_vector: Vector2 = Vector2.ZERO
 var reload_pending: bool = false
 var touch_crouch: bool = false
+var crouch_toggle_mode: bool = false
+var _crouch_toggled: bool = false
 var collision_shape: CollisionShape3D = null
 var default_capsule_height: float = 2.0
+var mobile_hud_buttons: Dictionary = {} # action_name -> Control
 
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var touch_look_index: int = -1
@@ -178,6 +182,8 @@ func _enter_tree() -> void:
 	$MultiplayerSynchronizer.set_multiplayer_authority(peer_id)
 
 func _ready() -> void:
+	if not ammo_changed.is_connected(_sync_weapon_ammo_3d):
+		ammo_changed.connect(_sync_weapon_ammo_3d)
 	_load_weapon_data()
 	_setup_weapon_holder()
 	_reset_all_ammo()
@@ -278,6 +284,7 @@ func _switch_weapon(type: WeaponType) -> void:
 		weapon_holder.add_child(current_view)
 		current_view.position = stats.get("hip_pos", Vector3(0.2, -0.2, -0.4))
 		current_weapon_node = current_view
+		_sync_weapon_ammo_3d(current_ammo, reserve_ammo)
 	elif current_weapon_node:
 		# Старый способ: узел-заглушка (запасной вариант)
 		current_weapon_node.visible = true
@@ -289,6 +296,13 @@ func _switch_weapon(type: WeaponType) -> void:
 
 	ammo_changed.emit(current_ammo, reserve_ammo)
 	weapon_changed.emit(stats["name"])
+
+func _sync_weapon_ammo_3d(current: int, reserve: int) -> void:
+	if is_instance_valid(current_view):
+		if current_view.has_method("set_ammo_display"):
+			current_view.call("set_ammo_display", current, reserve)
+		if current_view.has_method("set_ammo_3d_visible"):
+			current_view.call("set_ammo_3d_visible", show_ammo_on_weapon and is_multiplayer_authority())
 
 func cycle_weapon() -> void:
 	if is_reloading:
@@ -368,6 +382,10 @@ func _node_rect(n: Node) -> Rect2:
 	return Rect2()
 
 func _button_action_at(pos: Vector2) -> String:
+	for act_name in mobile_hud_buttons.keys():
+		var ctrl: Control = mobile_hud_buttons[act_name]
+		if is_instance_valid(ctrl) and ctrl.visible and ctrl.get_global_rect().has_point(pos):
+			return act_name
 	var overlay: Node = touch_ui.get_node_or_null("TouchOverlay")
 	if overlay == null:
 		return ""
@@ -395,13 +413,23 @@ func touch_action(action: String, pressed: bool) -> void:
 			if pressed:
 				touch_jump_req = true
 		"crouch":
-			touch_crouch = pressed
-			if pressed:
-				touch_crouch_req = true
+			if crouch_toggle_mode:
+				if pressed:
+					_crouch_toggled = not _crouch_toggled
+					touch_crouch = _crouch_toggled
+					touch_crouch_req = true
+			else:
+				touch_crouch = pressed
+				if pressed:
+					touch_crouch_req = true
 		"sprint":
 			touch_sprint = pressed
 		"ads":
-			touch_ads = pressed
+			if pressed:
+				touch_ads = not touch_ads
+		"cycle_weapon":
+			if pressed:
+				cycle_weapon()
 		"weapon_1":
 			if pressed: _switch_weapon(WeaponType.PISTOL)
 		"weapon_2":
@@ -461,13 +489,26 @@ func _physics_process(delta: float) -> void:
 			slide_timer = 0.0
 		velocity.y = jump_velocity
 
-	var crouch_hold: bool = Input.is_action_pressed("crouch") or touch_crouch
 	var crouch_just_pressed: bool = Input.is_action_just_pressed("crouch") or touch_crouch_req
 	touch_crouch_req = false
 
+	if not is_mobile and crouch_toggle_mode and Input.is_action_just_pressed("crouch"):
+		_crouch_toggled = not _crouch_toggled
+
+	var crouch_hold: bool = false
+	if crouch_toggle_mode:
+		crouch_hold = _crouch_toggled
+	else:
+		crouch_hold = Input.is_action_pressed("crouch") or touch_crouch
+
+	# На телефоне авто-спринт при наклоне джойстика вперёд до упора
+	var auto_mobile_sprint: bool = is_mobile and touch_move.y < -0.82
 	# Спринт возможен только если мы не приседаем
-	is_sprinting = (Input.is_action_pressed("sprint") or touch_sprint) \
+	is_sprinting = (Input.is_action_pressed("sprint") or touch_sprint or auto_mobile_sprint) \
 		and is_on_floor() and not is_ads and not is_sliding and not is_crouching
+
+	if is_sprinting and crouch_toggle_mode:
+		_crouch_toggled = false
 
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	input_dir = (input_dir + touch_move).limit_length(1.0)
@@ -764,3 +805,7 @@ func _update_crouch_height(delta: float) -> void:
 		var target_height: float = crouch_height if is_crouching else default_capsule_height
 		capsule.height = lerpf(capsule.height, target_height, delta * crouch_transition_speed)
 		collision_shape.position.y = capsule.height * 0.5
+
+func set_show_ammo_on_weapon(enabled: bool) -> void:
+	show_ammo_on_weapon = enabled
+	_sync_weapon_ammo_3d(current_ammo, reserve_ammo)

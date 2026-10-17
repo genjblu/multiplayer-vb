@@ -24,6 +24,17 @@ var is_paused: bool = false
 var debug_label: Label
 var weapon_button: Button
 
+const MOBILE_HUD_CFG_PATH: String = "user://mobile_hud.cfg"
+var mobile_controls_layer: Control = null
+var mobile_btn_nodes: Dictionary = {} # id -> Control
+var mobile_btn_defaults: Dictionary = {} # id -> { "offset": Vector2, "scale": float }
+var hud_editor_panel: Control = null
+var is_editing_hud: bool = false
+var selected_hud_btn_id: String = ""
+var hud_scale_slider: HSlider = null
+var _dragging_btn_id: String = ""
+var _drag_offset: Vector2 = Vector2.ZERO
+
 # Переменные для сбора статистики FPS
 var _fps_samples: Array[float] = []
 var _fps_timer: float = 0.0
@@ -74,14 +85,12 @@ func _ready() -> void:
 	_on_health_changed(player.health)
 	_on_ammo_changed(player.current_ammo, player.reserve_ammo)
 
-	# Показываем мобильный интерфейс
+	# Старые кнопки прыжка и огня скрываем всегда (вместо них новые SVG-кнопки), джойстик оставляем на мобильных
+	if has_node("TouchOverlay/JumpButton"): $TouchOverlay/JumpButton.hide()
+	if has_node("TouchOverlay/FireButton"): $TouchOverlay/FireButton.hide()
 	if _is_mobile():
-		if has_node("TouchOverlay/JumpButton"): $TouchOverlay/JumpButton.show()
-		if has_node("TouchOverlay/FireButton"): $TouchOverlay/FireButton.show()
 		if has_node("TouchOverlay/JoystickBase"): $TouchOverlay/JoystickBase.show()
 	else:
-		if has_node("TouchOverlay/JumpButton"): $TouchOverlay/JumpButton.hide()
-		if has_node("TouchOverlay/FireButton"): $TouchOverlay/FireButton.hide()
 		if has_node("TouchOverlay/JoystickBase"): $TouchOverlay/JoystickBase.hide()
 
 	_build_pause_menu()
@@ -135,61 +144,52 @@ func _build_hud_elements() -> void:
 	hud_container.add_child(debug_label)
 	debug_label.visible = false
 
-	# Мобильные кнопки опущены ниже, чтобы не мешать Debug-панели (offset_top = 135)
-	var btn_vbox = VBoxContainer.new()
-	btn_vbox.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	btn_vbox.offset_left = -220
-	btn_vbox.offset_top = 135
-	btn_vbox.offset_right = -20
-	btn_vbox.offset_bottom = 350
-	btn_vbox.visible = is_mobile
-	hud_container.add_child(btn_vbox)
+	# Верхняя панель служебных кнопок для телефона (Меню и Таблица)
+	var top_bar = HBoxContainer.new()
+	top_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	top_bar.offset_left = 20
+	top_bar.offset_top = 16
+	top_bar.offset_right = 280
+	top_bar.offset_bottom = 58
+	top_bar.add_theme_constant_override("separation", 10)
+	top_bar.visible = is_mobile
+	self.add_child(top_bar)
 
-	weapon_button = Button.new()
-	weapon_button.text = "Оружие: Автомат"
-	weapon_button.custom_minimum_size = Vector2(200, 42)
-	weapon_button.pressed.connect(func():
-		if player and player.has_method("cycle_weapon"):
-			player.cycle_weapon()
-	)
-	btn_vbox.add_child(weapon_button)
-
-	var btn_reload = Button.new()
-	btn_reload.text = "Перезарядка"
-	btn_reload.custom_minimum_size = Vector2(200, 42)
-	btn_reload.pressed.connect(func():
-		if player and player.has_method("reload"):
-			player.reload()
-	)
-	btn_vbox.add_child(btn_reload)
-
-	var btn_ads = Button.new()
-	btn_ads.text = "Прицел"
-	btn_ads.toggle_mode = true
-	btn_ads.custom_minimum_size = Vector2(200, 42)
-	btn_ads.toggled.connect(func(toggled):
-		if player:
-			player.touch_ads = toggled
-	)
-	btn_vbox.add_child(btn_ads)
-
-	# Кнопка Меню (Пауза) для Android (не видна на ПК)
 	var btn_menu = Button.new()
-	btn_menu.text = "Меню / Пауза"
-	btn_menu.custom_minimum_size = Vector2(200, 42)
+	btn_menu.text = "Меню"
+	btn_menu.custom_minimum_size = Vector2(110, 40)
 	btn_menu.pressed.connect(_toggle_pause)
-	btn_vbox.add_child(btn_menu)
+	top_bar.add_child(btn_menu)
 
-	# Кнопка Таблица (закрепить скорборд)
 	var btn_score = Button.new()
 	btn_score.text = "Таблица"
 	btn_score.toggle_mode = true
-	btn_score.custom_minimum_size = Vector2(200, 42)
+	btn_score.custom_minimum_size = Vector2(110, 40)
 	btn_score.toggled.connect(func(pressed):
 		if scoreboard:
 			scoreboard.pinned = pressed
 	)
-	btn_vbox.add_child(btn_score)
+	top_bar.add_child(btn_score)
+
+	# Контейнер боевых SVG-кнопок для Android/iOS
+	mobile_controls_layer = Control.new()
+	mobile_controls_layer.name = "MobileControlsLayer"
+	mobile_controls_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	mobile_controls_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mobile_controls_layer.visible = is_mobile
+	self.add_child(mobile_controls_layer)
+
+	# Создаём 6 кнопок-иконок в правом нижнем углу (относительно правого нижнего угла экрана)
+	# Формат: id, путь к иконке, смещение от правого нижнего угла, базовый размер
+	_create_mobile_icon_button("fire", "res://gui/shoot.svg", Vector2(-210, -200), Vector2(110, 110))
+	_create_mobile_icon_button("ads", "res://gui/aim.svg", Vector2(-115, -310), Vector2(78, 78))
+	_create_mobile_icon_button("jump", "res://gui/jump.svg", Vector2(-235, -315), Vector2(78, 78))
+	_create_mobile_icon_button("crouch", "res://gui/crouch.svg", Vector2(-335, -135), Vector2(78, 78))
+	_create_mobile_icon_button("reload", "res://gui/reload.svg", Vector2(-330, -245), Vector2(72, 72))
+	_create_mobile_icon_button("cycle_weapon", "res://gui/change_weapon.svg", Vector2(-180, -405), Vector2(72, 72))
+
+	_load_mobile_hud_layout()
+	_build_hud_layout_editor()
 
 func _input(event: InputEvent) -> void:
 	if not player or not player.is_multiplayer_authority():
@@ -349,38 +349,63 @@ func _build_settings_menu() -> void:
 	)
 	vbox_input.add_child(ads_slider)
 
-	vbox_input.add_child(HSeparator.new())
-	var lbl_rebind = Label.new()
-	lbl_rebind.text = "Переназначение клавиш (нажми кнопку, затем нужную клавишу):"
-	vbox_input.add_child(lbl_rebind)
+	var chk_crouch_mode = CheckBox.new()
+	chk_crouch_mode.text = "Приседание по нажатию (Toggle вместо удержания)"
+	chk_crouch_mode.button_pressed = player.crouch_toggle_mode if player and "crouch_toggle_mode" in player else false
+	chk_crouch_mode.toggled.connect(func(pressed):
+		if player and "crouch_toggle_mode" in player:
+			player.crouch_toggle_mode = pressed
+			player._crouch_toggled = false
+			player.touch_crouch = false
+	)
+	vbox_input.add_child(chk_crouch_mode)
 
-	var rebind_actions = [
-		{"action": "move_forward", "label": "Вперёд"},
-		{"action": "move_back", "label": "Назад"},
-		{"action": "move_left", "label": "Влево"},
-		{"action": "move_right", "label": "Вправо"},
-		{"action": "ui_accept", "label": "Прыжок"},
-		{"action": "crouch", "label": "Приседание"},
-		{"action": "sprint", "label": "Спринт"},
-		{"action": "reload", "label": "Перезарядка"},
-		{"action": "fire", "label": "Огонь"},
-		{"action": "ads", "label": "Прицел"}
-	]
+	if _is_mobile():
+		vbox_input.add_child(HSeparator.new())
+		var lbl_mob = Label.new()
+		lbl_mob.text = "Сенсорное управление:"
+		vbox_input.add_child(lbl_mob)
 
-	for item in rebind_actions:
-		var act_name = item["action"]
-		var row = HBoxContainer.new()
-		var action_label = Label.new()
-		action_label.text = item["label"]
-		action_label.custom_minimum_size = Vector2(180, 0)
-		row.add_child(action_label)
+		var btn_edit_hud = Button.new()
+		btn_edit_hud.text = "Настроить расположение и размер кнопок"
+		btn_edit_hud.custom_minimum_size = Vector2(0, 42)
+		btn_edit_hud.pressed.connect(func():
+			_open_hud_editor()
+		)
+		vbox_input.add_child(btn_edit_hud)
+	else:
+		vbox_input.add_child(HSeparator.new())
+		var lbl_rebind = Label.new()
+		lbl_rebind.text = "Переназначение клавиш (нажми кнопку, затем нужную клавишу):"
+		vbox_input.add_child(lbl_rebind)
 
-		var btn_key = Button.new()
-		btn_key.custom_minimum_size = Vector2(160, 32)
-		btn_key.text = _get_action_key_name(act_name)
-		btn_key.pressed.connect(_start_key_rebind.bind(act_name, btn_key))
-		row.add_child(btn_key)
-		vbox_input.add_child(row)
+		var rebind_actions = [
+			{"action": "move_forward", "label": "Вперёд"},
+			{"action": "move_back", "label": "Назад"},
+			{"action": "move_left", "label": "Влево"},
+			{"action": "move_right", "label": "Вправо"},
+			{"action": "ui_accept", "label": "Прыжок"},
+			{"action": "crouch", "label": "Приседание"},
+			{"action": "sprint", "label": "Спринт"},
+			{"action": "reload", "label": "Перезарядка"},
+			{"action": "fire", "label": "Огонь"},
+			{"action": "ads", "label": "Прицел"}
+		]
+
+		for item in rebind_actions:
+			var act_name = item["action"]
+			var row = HBoxContainer.new()
+			var action_label = Label.new()
+			action_label.text = item["label"]
+			action_label.custom_minimum_size = Vector2(180, 0)
+			row.add_child(action_label)
+
+			var btn_key = Button.new()
+			btn_key.custom_minimum_size = Vector2(160, 32)
+			btn_key.text = _get_action_key_name(act_name)
+			btn_key.pressed.connect(_start_key_rebind.bind(act_name, btn_key))
+			row.add_child(btn_key)
+			vbox_input.add_child(row)
 
 	# --- ВКЛАДКА 2: ГРАФИКА ---
 	var scroll_video = ScrollContainer.new()
@@ -594,6 +619,21 @@ func _build_settings_menu() -> void:
 	)
 	vbox_ext.add_child(chk_debug)
 
+	var chk_ammo_3d = CheckBox.new()
+	chk_ammo_3d.text = "Патроны на оружии (3D)"
+	chk_ammo_3d.button_pressed = player.show_ammo_on_weapon if player and "show_ammo_on_weapon" in player else false
+	chk_ammo_3d.toggled.connect(func(pressed):
+		if player and "show_ammo_on_weapon" in player:
+			player.show_ammo_on_weapon = pressed
+			if ammo_label:
+				ammo_label.visible = not pressed
+			if player.current_view and player.current_view.has_method("set_ammo_3d_visible"):
+				player.current_view.set_ammo_3d_visible(pressed)
+				if pressed:
+					player.current_view.set_ammo_display(player.current_ammo, player.reserve_ammo)
+	)
+	vbox_ext.add_child(chk_ammo_3d)
+
 	add_child(settings_menu)
 
 func _sync_fps_option() -> void:
@@ -760,6 +800,7 @@ func _process(delta: float) -> void:
 		target_spread = 12.0
 
 	current_spread = lerp(current_spread, target_spread, delta * 12.0)
+	_update_mobile_buttons_visual()
 	if crosshair_view:
 		crosshair_view.hit_amount = clampf(hit_flash_timer / 0.15, 0.0, 1.0)
 	if crosshair:
@@ -919,3 +960,250 @@ func _unhandled_key_input(event: InputEvent) -> void:
 		_rebinding_action = ""
 		_rebinding_button = null
 		get_viewport().set_input_as_handled()
+
+func _create_mobile_icon_button(id: String, icon_path: String, bottom_right_offset: Vector2, base_size: Vector2) -> void:
+	var holder := Panel.new()
+	holder.name = "Btn_" + id
+	holder.custom_minimum_size = base_size
+	holder.size = base_size
+	holder.pivot_offset = base_size * 0.5
+	holder.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	holder.offset_left = bottom_right_offset.x
+	holder.offset_top = bottom_right_offset.y
+	holder.offset_right = bottom_right_offset.x + base_size.x
+	holder.offset_bottom = bottom_right_offset.y + base_size.y
+	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.1, 0.12, 0.15, 0.55)
+	sb.border_color = Color(1.0, 1.0, 1.0, 0.25)
+	sb.set_border_width_all(2)
+	sb.set_corner_radius_all(int(base_size.x * 0.5))
+	holder.add_theme_stylebox_override("panel", sb)
+
+	var tex_rect := TextureRect.new()
+	tex_rect.name = "Icon"
+	tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tex_rect.offset_left = base_size.x * 0.18
+	tex_rect.offset_top = base_size.y * 0.18
+	tex_rect.offset_right = -base_size.x * 0.18
+	tex_rect.offset_bottom = -base_size.y * 0.18
+	tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if ResourceLoader.exists(icon_path):
+		tex_rect.texture = load(icon_path)
+	holder.add_child(tex_rect)
+
+	mobile_controls_layer.add_child(holder)
+	mobile_btn_nodes[id] = holder
+	mobile_btn_defaults[id] = {
+		"offset": bottom_right_offset,
+		"size": base_size,
+		"scale": 1.0
+	}
+	if player and "mobile_hud_buttons" in player:
+		player.mobile_hud_buttons[id] = holder
+
+func _update_mobile_buttons_visual() -> void:
+	if not player or mobile_btn_nodes.is_empty():
+		return
+	for id in mobile_btn_nodes.keys():
+		var node: Control = mobile_btn_nodes[id]
+		var active: bool = false
+		match id:
+			"fire": active = player.touch_fire
+			"ads": active = player.is_ads
+			"crouch": active = player.is_crouching
+		if is_editing_hud and selected_hud_btn_id == id:
+			node.modulate = Color(1.0, 0.65, 0.2, 1.0)
+		elif active:
+			node.modulate = Color(1.0, 0.54, 0.16, 1.0)
+		else:
+			node.modulate = Color(1.0, 1.0, 1.0, 0.9)
+
+func _build_hud_layout_editor() -> void:
+	hud_editor_panel = Control.new()
+	hud_editor_panel.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	hud_editor_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	hud_editor_panel.visible = false
+	hud_editor_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(hud_editor_panel)
+
+	var top_box := PanelContainer.new()
+	top_box.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
+	top_box.offset_left = 40
+	top_box.offset_top = 15
+	top_box.offset_right = -40
+	top_box.offset_bottom = 115
+	hud_editor_panel.add_child(top_box)
+
+	var vbox := VBoxContainer.new()
+	top_box.add_child(vbox)
+
+	var info := Label.new()
+	info.text = "Перетаскивай кнопки пальцем. Выбери кнопку для изменения размера:"
+	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(info)
+
+	var hbox := HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	hbox.add_theme_constant_override("separation", 16)
+	vbox.add_child(hbox)
+
+	var lbl_sz := Label.new()
+	lbl_sz.text = "Размер:"
+	hbox.add_child(lbl_sz)
+
+	hud_scale_slider = HSlider.new()
+	hud_scale_slider.custom_minimum_size = Vector2(200, 32)
+	hud_scale_slider.min_value = 0.5
+	hud_scale_slider.max_value = 2.0
+	hud_scale_slider.step = 0.05
+	hud_scale_slider.value = 1.0
+	hud_scale_slider.value_changed.connect(func(val):
+		if selected_hud_btn_id != "" and mobile_btn_nodes.has(selected_hud_btn_id):
+			_set_mobile_btn_scale(selected_hud_btn_id, val)
+	)
+	hbox.add_child(hud_scale_slider)
+
+	var btn_reset := Button.new()
+	btn_reset.text = "Сброс"
+	btn_reset.pressed.connect(_reset_mobile_hud_layout)
+	hbox.add_child(btn_reset)
+
+	var btn_save := Button.new()
+	btn_save.text = "Сохранить и выйти"
+	btn_save.pressed.connect(func():
+		_save_mobile_hud_layout()
+		_close_hud_editor()
+	)
+	hbox.add_child(btn_save)
+
+	hud_editor_panel.gui_input.connect(_on_hud_editor_input)
+
+func _open_hud_editor() -> void:
+	is_editing_hud = true
+	if pause_menu: pause_menu.hide()
+	if settings_menu: settings_menu.hide()
+	if mobile_controls_layer: mobile_controls_layer.visible = true
+	hud_editor_panel.show()
+
+func _close_hud_editor() -> void:
+	is_editing_hud = false
+	_dragging_btn_id = ""
+	hud_editor_panel.hide()
+	if pause_menu: pause_menu.show()
+	if settings_menu: settings_menu.show()
+
+func _on_hud_editor_input(event: InputEvent) -> void:
+	if not is_editing_hud:
+		return
+	var pos: Vector2 = Vector2.ZERO
+	var pressed: bool = false
+	var is_drag: bool = false
+
+	if event is InputEventScreenTouch:
+		pos = event.position
+		pressed = event.pressed
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		pos = event.position
+		pressed = event.pressed
+	elif event is InputEventScreenDrag or (event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
+		pos = event.position
+		is_drag = true
+	else:
+		return
+
+	if not is_drag:
+		if pressed:
+			for id in mobile_btn_nodes.keys():
+				var ctrl: Control = mobile_btn_nodes[id]
+				if ctrl.get_global_rect().has_point(pos):
+					selected_hud_btn_id = id
+					_dragging_btn_id = id
+					_drag_offset = ctrl.global_position - pos
+					if hud_scale_slider:
+						var base_sz: Vector2 = mobile_btn_defaults[id]["size"]
+						hud_scale_slider.set_value_no_signal(ctrl.size.x / base_sz.x)
+					break
+		else:
+			_dragging_btn_id = ""
+	elif _dragging_btn_id != "" and mobile_btn_nodes.has(_dragging_btn_id):
+		var ctrl: Control = mobile_btn_nodes[_dragging_btn_id]
+		var btn_size: Vector2 = ctrl.custom_minimum_size
+		var vp_size: Vector2 = get_viewport().get_visible_rect().size
+		var new_global: Vector2 = pos + _drag_offset
+		new_global.x = clampf(new_global.x, 0.0, maxf(vp_size.x - btn_size.x, 0.0))
+		new_global.y = clampf(new_global.y, 0.0, maxf(vp_size.y - btn_size.y, 0.0))
+		var br_offset: Vector2 = new_global - vp_size
+		ctrl.offset_left = br_offset.x
+		ctrl.offset_top = br_offset.y
+		ctrl.offset_right = br_offset.x + btn_size.x
+		ctrl.offset_bottom = br_offset.y + btn_size.y
+
+func _set_mobile_btn_scale(id: String, sc: float) -> void:
+	var ctrl: Control = mobile_btn_nodes[id]
+	var base_size: Vector2 = mobile_btn_defaults[id]["size"]
+	var old_size: Vector2 = ctrl.custom_minimum_size
+	var new_size: Vector2 = base_size * sc
+	var center_offset: Vector2 = Vector2(ctrl.offset_left + old_size.x * 0.5, ctrl.offset_top + old_size.y * 0.5)
+	ctrl.custom_minimum_size = new_size
+	var new_left: float = center_offset.x - new_size.x * 0.5
+	var new_top: float = center_offset.y - new_size.y * 0.5
+	ctrl.offset_left = new_left
+	ctrl.offset_top = new_top
+	ctrl.offset_right = new_left + new_size.x
+	ctrl.offset_bottom = new_top + new_size.y
+
+	var sb := ctrl.get_theme_stylebox("panel") as StyleBoxFlat
+	if sb:
+		sb.set_corner_radius_all(int(new_size.x * 0.5))
+	var icon := ctrl.get_node_or_null("Icon") as Control
+	if icon:
+		icon.offset_left = new_size.x * 0.18
+		icon.offset_top = new_size.y * 0.18
+		icon.offset_right = -new_size.x * 0.18
+		icon.offset_bottom = -new_size.y * 0.18
+
+func _save_mobile_hud_layout() -> void:
+	var cfg := ConfigFile.new()
+	for id in mobile_btn_nodes.keys():
+		var ctrl: Control = mobile_btn_nodes[id]
+		var base_sz: Vector2 = mobile_btn_defaults[id]["size"]
+		cfg.set_value(id, "offset_x", ctrl.offset_left)
+		cfg.set_value(id, "offset_y", ctrl.offset_top)
+		cfg.set_value(id, "scale", ctrl.custom_minimum_size.x / base_sz.x)
+	cfg.save(MOBILE_HUD_CFG_PATH)
+
+func _load_mobile_hud_layout() -> void:
+	var cfg := ConfigFile.new()
+	if cfg.load(MOBILE_HUD_CFG_PATH) != OK:
+		return
+	for id in mobile_btn_nodes.keys():
+		if not cfg.has_section(id):
+			continue
+		var ctrl: Control = mobile_btn_nodes[id]
+		var sc: float = float(cfg.get_value(id, "scale", 1.0))
+		_set_mobile_btn_scale(id, sc)
+		var btn_size: Vector2 = ctrl.custom_minimum_size
+		var ox: float = float(cfg.get_value(id, "offset_x", ctrl.offset_left))
+		var oy: float = float(cfg.get_value(id, "offset_y", ctrl.offset_top))
+		ctrl.offset_left = ox
+		ctrl.offset_top = oy
+		ctrl.offset_right = ox + btn_size.x
+		ctrl.offset_bottom = oy + btn_size.y
+
+func _reset_mobile_hud_layout() -> void:
+	for id in mobile_btn_nodes.keys():
+		var def: Dictionary = mobile_btn_defaults[id]
+		var ctrl: Control = mobile_btn_nodes[id]
+		_set_mobile_btn_scale(id, 1.0)
+		var off: Vector2 = def["offset"]
+		var sz: Vector2 = def["size"]
+		ctrl.offset_left = off.x
+		ctrl.offset_top = off.y
+		ctrl.offset_right = off.x + sz.x
+		ctrl.offset_bottom = off.y + sz.y
+	if hud_scale_slider:
+		hud_scale_slider.set_value_no_signal(1.0)

@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://dikx6ehmi2wgb" path="res://scripts/player.gd" id="1_3vyb7"]
 [ext_resource type="Script" uid="uid://dd7q1tbilrxlv" path="res://scripts/hud.gd" id="2_g2els"]
-[ext_resource type="Texture2D" uid="uid://dn67b4hu7pqv1" path="res://icon.svg" id="3_qhqgy"]
 [ext_resource type="Script" uid="uid://dtag37lvwr24a" path="res://scripts/virtual_joystick.gd" id="4_dqkch"]
 [ext_resource type="Script" uid="uid://cyapmoridem1" path="res://scenes/fps_label.gd" id="5_qlg0r"]
 
@@ -94,18 +93,6 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="JumpButton" type="TouchScreenButton" parent="TouchUI/TouchOverlay" unique_id=1727915889]
-unique_name_in_owner = true
-position = Vector2(1000, 450)
-scale = Vector2(0.8, 0.8)
-texture_normal = ExtResource("3_qhqgy")
-
-[node name="FireButton" type="TouchScreenButton" parent="TouchUI/TouchOverlay" unique_id=1272850130]
-unique_name_in_owner = true
-position = Vector2(850, 400)
-scale = Vector2(1.2, 1.2)
-texture_normal = ExtResource("3_qhqgy")
-
 [node name="JoystickBase" type="Panel" parent="TouchUI/TouchOverlay" unique_id=440307853]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 150)
@@ -120,7 +107,6 @@ knob_path = NodePath("JoystickKnob")
 [node name="JoystickKnob" type="Sprite2D" parent="TouchUI/TouchOverlay/JoystickBase" unique_id=790685861]
 unique_name_in_owner = true
 position = Vector2(75, 75)
-texture = ExtResource("3_qhqgy")
 
 [node name="HUDContainer" type="Control" parent="TouchUI/TouchOverlay" unique_id=817084831]
 layout_mode = 1

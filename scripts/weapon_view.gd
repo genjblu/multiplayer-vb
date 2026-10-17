@@ -11,12 +11,23 @@ extends Node3D
 @export var blend_time: float = 0.05
 ## Запретить стрельбу, пока играет анимация доставания (draw)
 @export var block_fire_during_draw: bool = true
+@export var ammo_label_3d: Label3D
 
 var _queued: StringName = &""
 
 func _ready() -> void:
 	if animation_player == null:
 		animation_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
+	if ammo_label_3d == null:
+		ammo_label_3d = find_child("Label3D", true, false) as Label3D
+	if ammo_label_3d:
+		# Убираем размытие шрифта вблизи камеры
+		if ammo_label_3d.pixel_size > 0.002:
+			ammo_label_3d.pixel_size = 0.0006
+			ammo_label_3d.font_size = 96
+			ammo_label_3d.outline_size = 24
+		ammo_label_3d.shaded = false
+		ammo_label_3d.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	if not cast_shadows:
 		_disable_shadows(self)
 	if animation_player:
@@ -31,6 +42,14 @@ func play_fire() -> void:
 
 func play_reload() -> void:
 	_request(&"reload")
+
+func set_ammo_display(current: int, reserve: int) -> void:
+	if ammo_label_3d:
+		ammo_label_3d.text = "%d/%d" % [current, reserve]
+
+func set_ammo_3d_visible(vis: bool) -> void:
+	if ammo_label_3d:
+		ammo_label_3d.visible = vis
 
 func _request(anim_name: StringName) -> void:
 	if animation_player == null or not animation_player.has_animation(anim_name):
