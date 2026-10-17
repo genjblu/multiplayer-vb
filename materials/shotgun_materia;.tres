@@ -1,0 +1,17 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://dusxa2cdef8sl"]
+
+[ext_resource type="Texture2D" uid="uid://b7njtst7byodp" path="res://models/weapons/Shotgun/textures/Shotgun_UE4_BaseColor.png" id="1_wytkd"]
+[ext_resource type="Texture2D" uid="uid://bri36ehpokx3t" path="res://models/weapons/Shotgun/textures/Shotgun_UE4_OcclusionRoughnessMetallic.png" id="2_046uq"]
+[ext_resource type="Texture2D" uid="uid://daql46hyn2e6r" path="res://models/weapons/Shotgun/textures/Shotgun_UE4_Normal.png" id="3_bon1y"]
+
+[resource]
+albedo_texture = ExtResource("1_wytkd")
+metallic = 1.0
+metallic_texture = ExtResource("2_046uq")
+metallic_texture_channel = 2
+roughness_texture = ExtResource("2_046uq")
+roughness_texture_channel = 1
+normal_enabled = true
+normal_texture = ExtResource("3_bon1y")
+ao_enabled = true
+ao_texture = ExtResource("2_046uq")

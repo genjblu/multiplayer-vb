@@ -10,6 +10,7 @@ extends CanvasLayer
 var player: CharacterBody3D
 var current_spread: float = 6.0
 var hit_flash_timer: float = 0.0
+var crosshair_view: CrosshairView
 
 var viewmodel: ViewmodelRenderer
 
@@ -80,6 +81,11 @@ func _ready() -> void:
 	add_child(scoreboard)
 	kill_feed = KillFeed.new()
 	add_child(kill_feed)
+	if crosshair:
+		crosshair.visible = false
+	crosshair_view = CrosshairView.new()
+	crosshair_view.player = player
+	add_child(crosshair_view)
 	#if weapon_root_node:
 		#viewmodel = ViewmodelRenderer.new()
 		#add_child(viewmodel)
@@ -243,6 +249,8 @@ func _build_pause_menu() -> void:
 	btn_quit.text = "Выход в меню"
 	btn_quit.pressed.connect(func():
 		GameStats.reset_stats()
+		LanDiscovery.stop_broadcast()
+		BulletDecals.clear_all()
 		get_tree().paused = false
 		var net_manager = get_node_or_null("/root/NetworkManager")
 		if net_manager:
@@ -594,6 +602,8 @@ func _process(delta: float) -> void:
 		target_spread = 12.0
 
 	current_spread = lerp(current_spread, target_spread, delta * 12.0)
+	if crosshair_view:
+		crosshair_view.hit_amount = clampf(hit_flash_timer / 0.15, 0.0, 1.0)
 	if crosshair:
 		crosshair.custom_minimum_size = Vector2(current_spread, current_spread)
 		if hit_flash_timer > 0.0:

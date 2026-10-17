@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://c1wj7s8mypo3j"]
+
+[ext_resource type="Script" uid="uid://yh3fgf0xxc2t" path="res://scripts/weapon_data.gd" id="1_data"]
+
+[resource]
+script = ExtResource("1_data")
+display_name = "Пистолет"
+damage = 22
+max_ammo = 15
+reserve_ammo = 60
+recoil = 0.005
+fire_rate = 0.14
+reload_time = 2.5
+ads_fov = 55.0
+placeholder_size = Vector3(0.08, 0.08, 0.4)
+base_spread_deg = 0.4
+fire_spread_deg = 1.0
+fire_recovery_deg_per_sec = 8.0
+ads_multiplier = 0.4
+crosshair_length = 8.0

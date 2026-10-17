@@ -1,3 +1,35 @@
 # Godot 4+ specific ignores
 .godot/
 /android/
+
+# Godot 4
+*.translation
+export_credentials.cfg
+
+# Сборки и подписи (никогда не коммитить)
+*.apk
+*.aab
+*.idsig
+*.keystore
+*.jks
+/export/
+/build/
+
+# Редакторы, Blender и временные файлы
+*.blend1
+*.blend2
+*~
+*.tmp
+*.bak
+.vscode/
+.idea/
+.fleet/
+
+# Система
+.DS_Store
+Thumbs.db
+.directory
+.Trash-*
+
+.Trash-*
+

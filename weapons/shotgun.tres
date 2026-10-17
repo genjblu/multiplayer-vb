@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://b1r1ufagptk1g"]
+
+[ext_resource type="Script" uid="uid://yh3fgf0xxc2t" path="res://scripts/weapon_data.gd" id="1_data"]
+[ext_resource type="PackedScene" uid="uid://be7qghdnlror3" path="res://scenes/weapons/shotgun.tscn" id="2_yi04f"]
+
+[resource]
+script = ExtResource("1_data")
+display_name = "Дробовик"
+damage = 15
+pellets = 6
+max_ammo = 8
+reserve_ammo = 32
+recoil = 0.06
+fire_rate = 1.0
+ads_fov = 60.0
+hip_pos = Vector3(0.19, -0.29, -0.33000007)
+ads_pos = Vector3(0, -0.22000004, -0.31000003)
+view_scene = ExtResource("2_yi04f")
+placeholder_size = Vector3(0.12, 0.12, 0.8)
+base_spread_deg = 2.0
+move_spread_deg = 1.0
+sprint_spread_deg = 2.0
+air_spread_deg = 3.0
+slide_spread_deg = 1.5
+fire_spread_deg = 2.0
+ads_multiplier = 0.7
+crouch_multiplier = 0.8
+crosshair_style = 1
+crosshair_hide_in_ads = true

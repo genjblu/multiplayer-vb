@@ -16,6 +16,12 @@ enum WeaponType { PISTOL, ASSAULT, SHOTGUN, SNIPER }
 ## Доля ширины экрана слева, где касания НЕ вращают камеру (зона джойстика)
 @export var look_zone_start: float = 0.4
 
+const DEFAULT_WEAPON_PATHS: Array[String] = ["res://weapons/pistol.tres", "res://weapons/assault.tres", "res://weapons/shotgun.tres", "res://weapons/sniper.tres"]
+# Порядок такой же, как в enum WeaponType: пистолет, автомат, дробовик, снайперка
+@export var weapon_data: Array[WeaponData] = []
+var weapon_holder: Node3D = null
+var current_view: Node3D = null
+
 var current_weapon: WeaponType = WeaponType.ASSAULT
 var weapon_stats = {
 	WeaponType.PISTOL: {
@@ -23,7 +29,7 @@ var weapon_stats = {
 		"damage": 22,
 		"max_ammo": 15,
 		"reserve": 60,
-		"recoil": 0.02,
+		"recoil": 0.004	,
 		"ads_fov": 55.0,
 		"mesh_size": Vector3(0.08, 0.08, 0.4),
 		"hip_pos": Vector3(0.18, -0.22, -0.35),
@@ -34,7 +40,7 @@ var weapon_stats = {
 		"damage": 25,
 		"max_ammo": 30,
 		"reserve": 90,
-		"recoil": 0.035,
+		"recoil": 0.007,
 		"ads_fov": 45.0,
 		"mesh_size": Vector3(0.1, 0.1, 0.7),
 		"hip_pos": Vector3(0.2, -0.2, -0.4),
@@ -46,7 +52,7 @@ var weapon_stats = {
 		"pellets": 6,
 		"max_ammo": 8,
 		"reserve": 32,
-		"recoil": 0.09,
+		"recoil": 0.02,
 		"ads_fov": 60.0,
 		"mesh_size": Vector3(0.12, 0.12, 0.8),
 		"hip_pos": Vector3(0.22, -0.24, -0.45),
@@ -57,7 +63,7 @@ var weapon_stats = {
 		"damage": 95,
 		"max_ammo": 5,
 		"reserve": 20,
-		"recoil": 0.16,
+		"recoil": 0.03,
 		"ads_fov": 20.0,
 		"mesh_size": Vector3(0.08, 0.08, 1.1),
 		"hip_pos": Vector3(0.22, -0.22, -0.5),
@@ -65,7 +71,17 @@ var weapon_stats = {
 	}
 }
 
+var next_shot_time: float = 0.0
+@export var spawn_protection_time: float = 2.0
+var invulnerable_until: float = 0.0
+var reload_id: int = 0
+var ammo_state: Dictionary = {}
+var _weapon_initialized: bool = false
 var max_ammo: int = 30
+var current_spread_deg: float = 0.5
+var fire_bloom: float = 0.0
+var is_crouching: bool = false
+var _fallback_weapon_data: WeaponData = WeaponData.new()
 var current_ammo: int = 30
 var reserve_ammo: int = 90
 var sync_position: Vector3
@@ -143,6 +159,9 @@ func _enter_tree() -> void:
 	$MultiplayerSynchronizer.set_multiplayer_authority(peer_id)
 
 func _ready() -> void:
+	_load_weapon_data()
+	_setup_weapon_holder()
+	_reset_all_ammo()
 	_switch_weapon(WeaponType.ASSAULT)
 	health = max_health
 	if not is_multiplayer_authority():
@@ -181,25 +200,38 @@ func _ready() -> void:
 	else:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
-var current_weapon_node: MeshInstance3D = null
+var current_weapon_node: Node3D = null
 
 func _switch_weapon(type: WeaponType) -> void:
+	# Запоминаем патроны прежнего оружия
+	if _weapon_initialized:
+		ammo_state[current_weapon] = {"mag": current_ammo, "reserve": reserve_ammo}
+	# Смена оружия отменяет незавершённую перезарядку
+	reload_id += 1
+	is_reloading = false
 	current_weapon = type
 	var stats = weapon_stats[current_weapon]
 	max_ammo = stats["max_ammo"]
-	current_ammo = max_ammo
-	reserve_ammo = stats["reserve"]
+	var saved: Dictionary = ammo_state.get(current_weapon, {"mag": max_ammo, "reserve": stats["reserve"]})
+	current_ammo = saved["mag"]
+	reserve_ammo = saved["reserve"]
+	_weapon_initialized = true
 
-	if weapon_pistol: 
+	# Убираем сцену предыдущего оружия, если она была
+	if is_instance_valid(current_view):
+		current_view.queue_free()
+	current_view = null
+
+	if weapon_pistol:
 		weapon_pistol.visible = false
 		weapon_pistol.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	if weapon_assault: 
+	if weapon_assault:
 		weapon_assault.visible = false
 		weapon_assault.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	if weapon_shotgun: 
+	if weapon_shotgun:
 		weapon_shotgun.visible = false
 		weapon_shotgun.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	if weapon_sniper: 
+	if weapon_sniper:
 		weapon_sniper.visible = false
 		weapon_sniper.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
@@ -213,11 +245,20 @@ func _switch_weapon(type: WeaponType) -> void:
 		WeaponType.SNIPER:
 			current_weapon_node = weapon_sniper
 
-	if current_weapon_node:
+	var view_scene: PackedScene = stats.get("view_scene", null)
+	if view_scene != null and weapon_holder != null:
+		# Новый способ: сцена оружия с анимациями
+		current_view = view_scene.instantiate() as Node3D
+		weapon_holder.add_child(current_view)
+		current_view.position = stats.get("hip_pos", Vector3(0.2, -0.2, -0.4))
+		current_weapon_node = current_view
+	elif current_weapon_node:
+		# Старый способ: узел-заглушка (запасной вариант)
 		current_weapon_node.visible = true
 		current_weapon_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
-		if current_weapon_node.mesh is BoxMesh:
-			var box: BoxMesh = current_weapon_node.mesh as BoxMesh
+		var old_mesh := current_weapon_node as MeshInstance3D
+		if old_mesh and old_mesh.mesh is BoxMesh:
+			var box: BoxMesh = old_mesh.mesh as BoxMesh
 			box.size = stats["mesh_size"]
 
 	ammo_changed.emit(current_ammo, reserve_ammo)
@@ -346,6 +387,11 @@ func _physics_process(delta: float) -> void:
 	if not is_multiplayer_authority():
 		global_position = global_position.lerp(sync_position, delta * 20.0)
 		rotation.y = lerp_angle(rotation.y, sync_rotation.y, delta * 20.0)
+		# sync_rotation: x = наклон головы, y = поворот тела, z = номер оружия
+		head.rotation.x = lerp_angle(head.rotation.x, sync_rotation.x, delta * 20.0)
+		var remote_weapon: int = int(round(sync_rotation.z))
+		if remote_weapon != int(current_weapon) and weapon_stats.has(remote_weapon):
+			_switch_weapon(remote_weapon as WeaponType)
 		return
 
 	if global_position.y < -10.0:
@@ -364,7 +410,7 @@ func _physics_process(delta: float) -> void:
 		fire_timer -= delta
 		if fire_timer <= 0.0:
 			shoot()
-			fire_timer = assault_fire_rate
+			fire_timer = weapon_stats[current_weapon].get("fire_rate", assault_fire_rate)
 	else:
 		fire_timer = 0.0
 
@@ -372,7 +418,7 @@ func _physics_process(delta: float) -> void:
 	var target_fov = stats["ads_fov"] if is_ads else 75.0
 	camera.fov = lerp(camera.fov, target_fov, delta * 15.0)
 
-	var target_weapon_pos = stats["ads_pos"] if is_ads else stats["hip_pos"]
+	var target_weapon_pos: Vector3 = stats.get("ads_pos", Vector3(0, -0.12, -0.35)) if is_ads else stats.get("hip_pos", Vector3(0.2, -0.2, -0.4))
 	if current_weapon_node:
 		current_weapon_node.position = current_weapon_node.position.lerp(target_weapon_pos, delta * 15.0)
 
@@ -416,19 +462,26 @@ func _physics_process(delta: float) -> void:
 		velocity.z = move_toward(velocity.z, 0, current_speed)
 
 	move_and_slide()
+	_update_spread(delta)
 
 	recoil_pitch = lerp(recoil_pitch, 0.0, delta * 10.0)
 	head.rotation.x = clamp(head.rotation.x + recoil_pitch, deg_to_rad(-89), deg_to_rad(89))
 
 	sync_position = global_position
-	sync_rotation = rotation
+	sync_rotation = Vector3(head.rotation.x, rotation.y, float(current_weapon))
 
 func shoot() -> void:
+	var now: float = Time.get_ticks_msec() / 1000.0
+	if now < next_shot_time:
+		return
 	if current_ammo <= 0:
 		reload()
 		return
+	next_shot_time = now + float(weapon_stats[current_weapon].get("fire_rate", 0.12))
 
 	current_ammo -= 1
+	_view_call("play_fire")
+	_add_fire_bloom()
 	ammo_changed.emit(current_ammo, reserve_ammo)
 
 	var stats = weapon_stats[current_weapon]
@@ -440,24 +493,45 @@ func shoot() -> void:
 
 	var hit_any = false
 	if current_weapon == WeaponType.SHOTGUN:
-		var pellets = stats.get("pellets", 6)
+		var pellets: int = stats.get("pellets", 8)
+		var spread_rad: float = deg_to_rad(_get_shot_spread_deg())
+		var range_m: float = float(stats.get("max_range", 30.0))
+		var falloff_start: float = float(stats.get("falloff_start", 6.0))
+		var min_factor: float = float(stats.get("min_damage_factor", 0.2))
+		var damage_per_target: Dictionary = {}
 		for i in range(pellets):
-			# Небольшой разброс для дробовика
-			weapon_ray.target_position = Vector3(randf_range(-1.5, 1.5), randf_range(-1.5, 1.5), -50)
+			# Случайное отклонение внутри конуса (корень даёт равномерное распределение по кругу)
+			var angle: float = randf() * TAU
+			var radius: float = sqrt(randf()) * tan(spread_rad)
+			var dir := Vector3(cos(angle) * radius, sin(angle) * radius, -1.0).normalized()
+			weapon_ray.target_position = dir * range_m
 			weapon_ray.force_raycast_update()
+			_handle_ray_impact()
 			if weapon_ray.is_colliding():
 				var collider = weapon_ray.get_collider()
 				if collider and collider.has_method("take_damage"):
-					collider.take_damage.rpc_id(collider.get_multiplayer_authority(), stats["damage"], multiplayer.get_unique_id())
-					hit_any = true
-		weapon_ray.target_position = Vector3(0, 0, -50) # сброс
+					var dist: float = weapon_ray.global_position.distance_to(weapon_ray.get_collision_point())
+					var factor: float = 1.0
+					if dist > falloff_start:
+						var t: float = clampf((dist - falloff_start) / maxf(range_m - falloff_start, 0.01), 0.0, 1.0)
+						factor = lerpf(1.0, min_factor, t)
+					damage_per_target[collider] = damage_per_target.get(collider, 0.0) + float(stats["damage"]) * factor
+		for target in damage_per_target.keys():
+			var total: int = maxi(int(round(damage_per_target[target])), 1)
+			target.take_damage.rpc_id(target.get_multiplayer_authority(), total, multiplayer.get_unique_id())
+			hit_any = true
+		weapon_ray.target_position = Vector3(0, 0, -50)
 	else:
+		var shot_dir: Vector3 = _random_cone_direction(_get_shot_spread_deg())
+		weapon_ray.target_position = shot_dir * 50.0
 		weapon_ray.force_raycast_update()
+		_handle_ray_impact()
 		if weapon_ray.is_colliding():
 			var collider = weapon_ray.get_collider()
 			if collider and collider.has_method("take_damage"):
 				collider.take_damage.rpc_id(collider.get_multiplayer_authority(), stats["damage"], multiplayer.get_unique_id())
 				hit_any = true
+		weapon_ray.target_position = Vector3(0, 0, -50)
 
 	if hit_any:
 		hit_target.emit()
@@ -467,10 +541,17 @@ func reload() -> void:
 		return
 
 	is_reloading = true
+	reload_id += 1
+	var my_reload_id: int = reload_id
+	_view_call("play_reload")
 	var ammo_needed = max_ammo - current_ammo
 	var ammo_to_load = min(ammo_needed, reserve_ammo)
 
-	await get_tree().create_timer(1.2).timeout
+	await get_tree().create_timer(weapon_stats[current_weapon].get("reload_time", 1.2)).timeout
+
+	# Перезарядку отменила смерть или смена оружия
+	if my_reload_id != reload_id:
+		return
 
 	reserve_ammo -= ammo_to_load
 	current_ammo += ammo_to_load
@@ -482,6 +563,8 @@ func take_damage(amount: int, attacker_id: int) -> void:
 	if not is_multiplayer_authority():
 		return
 
+	if Time.get_ticks_msec() / 1000.0 < invulnerable_until:
+		return
 	health -= amount
 	health = clamp(health, 0, max_health)
 	health_changed.emit(health)
@@ -491,9 +574,14 @@ func take_damage(amount: int, attacker_id: int) -> void:
 		die()
 
 func die() -> void:
-	health = max_health
-	current_ammo = weapon_stats[current_weapon]["max_ammo"]
+	# Отменяем незавершённую перезарядку, иначе патроны добавятся после возрождения
+	reload_id += 1
 	is_reloading = false
+	health = max_health
+	_reset_all_ammo()
+	velocity = Vector3.ZERO
+	is_sliding = false
+	invulnerable_until = Time.get_ticks_msec() / 1000.0 + spawn_protection_time
 	health_changed.emit(health)
 	ammo_changed.emit(current_ammo, reserve_ammo)
 	global_position = Vector3(randf_range(-5, 5), 2.0, randf_range(-5, 5))
@@ -502,3 +590,87 @@ func _rotate_camera(relative: Vector2) -> void:
 	rotate_y(-relative.x)
 	head.rotate_x(-relative.y)
 	head.rotation.x = clamp(head.rotation.x, deg_to_rad(-89), deg_to_rad(89))
+
+func _load_weapon_data() -> void:
+	if weapon_data.is_empty():
+		for path in DEFAULT_WEAPON_PATHS:
+			if ResourceLoader.exists(path):
+				var res := load(path) as WeaponData
+				if res:
+					weapon_data.append(res)
+	for i in weapon_data.size():
+		var d: WeaponData = weapon_data[i]
+		if d != null:
+			weapon_stats[i] = d.to_stats()
+
+func _setup_weapon_holder() -> void:
+	weapon_holder = camera.get_node_or_null("WeaponHolder") as Node3D
+	if weapon_holder == null:
+		weapon_holder = Node3D.new()
+		weapon_holder.name = "WeaponHolder"
+		camera.add_child(weapon_holder)
+
+func _view_call(method: String) -> void:
+	if is_instance_valid(current_view) and current_view.has_method(method):
+		current_view.call(method)
+
+func _reset_all_ammo() -> void:
+	for type in weapon_stats.keys():
+		ammo_state[type] = {"mag": weapon_stats[type]["max_ammo"], "reserve": weapon_stats[type]["reserve"]}
+	var s: Dictionary = ammo_state[current_weapon]
+	max_ammo = weapon_stats[current_weapon]["max_ammo"]
+	current_ammo = s["mag"]
+	reserve_ammo = s["reserve"]
+
+func get_weapon_data() -> WeaponData:
+	var i: int = int(current_weapon)
+	if i >= 0 and i < weapon_data.size() and weapon_data[i] != null:
+		return weapon_data[i]
+	return _fallback_weapon_data
+
+# Полный угол разброса, который видит игрок и по которому летят пули
+func _get_shot_spread_deg() -> float:
+	var stats = weapon_stats[current_weapon]
+	return current_spread_deg + float(stats.get("spread_degrees", 0.0))
+
+func get_crosshair_spread_deg() -> float:
+	return _get_shot_spread_deg()
+
+# Случайное направление внутри конуса (в локальных координатах луча, вперёд = -Z)
+func _random_cone_direction(spread_deg: float) -> Vector3:
+	var angle: float = randf() * TAU
+	var radius: float = sqrt(randf()) * tan(deg_to_rad(spread_deg))
+	return Vector3(cos(angle) * radius, sin(angle) * radius, -1.0).normalized()
+
+func _add_fire_bloom() -> void:
+	var wd: WeaponData = get_weapon_data()
+	fire_bloom = minf(fire_bloom + wd.fire_spread_deg, wd.fire_spread_max_deg)
+
+func _update_spread(delta: float) -> void:
+	var wd: WeaponData = get_weapon_data()
+	var add: float = 0.0
+	var horizontal_speed: float = Vector2(velocity.x, velocity.z).length()
+	if not is_on_floor():
+		add = wd.air_spread_deg
+	elif is_sliding:
+		add = wd.slide_spread_deg
+	elif is_sprinting:
+		add = wd.sprint_spread_deg
+	elif horizontal_speed > 0.5:
+		add = wd.move_spread_deg
+	fire_bloom = maxf(fire_bloom - wd.fire_recovery_deg_per_sec * delta, 0.0)
+	var target: float = wd.base_spread_deg + add + fire_bloom
+	if is_ads:
+		target *= wd.ads_multiplier
+	if is_crouching:
+		target *= wd.crouch_multiplier
+	current_spread_deg = lerpf(current_spread_deg, target, clampf(delta * wd.spread_smoothing, 0.0, 1.0))
+
+# Создаёт декаль, если луч попал в поверхность, а не в игрока
+func _handle_ray_impact() -> void:
+	if not weapon_ray.is_colliding():
+		return
+	var hit_collider = weapon_ray.get_collider()
+	if hit_collider and hit_collider.has_method("take_damage"):
+		return
+	BulletDecals.spawn_hit(weapon_ray.get_collision_point(), weapon_ray.get_collision_normal())

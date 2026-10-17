@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://n7htcju4hd7i"]
+
+[ext_resource type="Script" uid="uid://yh3fgf0xxc2t" path="res://scripts/weapon_data.gd" id="1_data"]
+[ext_resource type="PackedScene" uid="uid://bvcirq2pefa6q" path="res://scenes/weapons/ak_74.tscn" id="2_7mjyd"]
+
+[resource]
+script = ExtResource("1_data")
+display_name = "Автомат"
+recoil = 0.015
+fire_rate = 0.1
+reload_time = 2.2
+hip_pos = Vector3(0.21000001, -0.23000002, -0.4)
+ads_pos = Vector3(0, -0.16000001, -0.35)
+view_scene = ExtResource("2_7mjyd")
+crosshair_hide_in_ads = true

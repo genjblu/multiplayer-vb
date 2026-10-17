@@ -18,8 +18,10 @@ config/icon="res://icon.svg"
 [autoload]
 
 NetworkManager="*res://scripts/network_manager.gd"
-_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 GameStats="*res://scripts/game_stats.gd"
+LanDiscovery="*res://scripts/lan_discovery.gd"
+_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
+BulletDecals="*res://scripts/bullet_decals.gd"
 
 [display]
 
