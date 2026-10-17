@@ -26,6 +26,7 @@ enum WeaponType { PISTOL, ASSAULT, SHOTGUN, SNIPER }
 ## Множитель скорости подката относительно base_speed
 @export var slide_speed_multiplier: float = 2.2
 @export var mouse_sensitivity: float = 0.003
+@export var ads_mouse_multiplier: float = 0.6
 @export var touch_sensitivity: float = 0.005
 ## Доля ширины экрана слева, где касания НЕ вращают камеру (зона джойстика)
 @export var look_zone_start: float = 0.4
@@ -317,7 +318,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("weapon_4"): _switch_weapon(WeaponType.SNIPER)
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		_rotate_camera(event.relative * mouse_sensitivity)
+		var current_sens: float = mouse_sensitivity * (ads_mouse_multiplier if is_ads else 1.0)
+		_rotate_camera(event.relative * current_sens)
 		
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:

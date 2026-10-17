@@ -21,8 +21,15 @@ var pause_menu: Control
 var settings_menu: Control
 var audio_slider: HSlider
 var is_paused: bool = false
-var ping_label: Label
+var debug_label: Label
 var weapon_button: Button
+
+# Переменные для сбора статистики FPS
+var _fps_samples: Array[float] = []
+var _fps_timer: float = 0.0
+var _min_fps: int = 999
+var _max_fps: int = 0
+var _avg_fps: int = 0
 
 # --- Элементы настроек (поля класса, чтобы лямбды не работали с копиями) ---
 var chk_fullscreen: CheckBox
@@ -36,6 +43,9 @@ var chk_ssr: CheckBox
 var chk_fps: CheckBox
 var btn_potato: Button
 var option_fps: OptionButton
+var option_aspect: OptionButton
+var option_res: OptionButton
+var current_res_list: Array[Vector2i] = []
 
 # --- Режим картошки ---
 var is_potato_mode: bool = false
@@ -111,26 +121,27 @@ func _build_hud_elements() -> void:
 	var hud_container = $TouchOverlay/HUDContainer if has_node("TouchOverlay/HUDContainer") else self
 	var is_mobile = _is_mobile()
 
-	# Ping label (Top Right) - visible on all platforms
-	ping_label = Label.new()
-	ping_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	ping_label.offset_left = -200
-	ping_label.offset_top = 20
-	ping_label.offset_right = -20
-	ping_label.offset_bottom = 50
-	ping_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	ping_label.text = "Пинг: 0 мс"
-	ping_label.add_theme_color_override("font_color", Color(0, 1, 0, 1))
-	ping_label.add_theme_font_size_override("font_size", 20)
-	hud_container.add_child(ping_label)
+	# Debug-панель (Top Right): FPS, Avg, Min/Max, Ping, Loss
+	debug_label = Label.new()
+	debug_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	debug_label.offset_left = -260
+	debug_label.offset_top = 10
+	debug_label.offset_right = -15
+	debug_label.offset_bottom = 120
+	debug_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	debug_label.text = "DEBUG INFO"
+	debug_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 0.9))
+	debug_label.add_theme_font_size_override("font_size", 14)
+	hud_container.add_child(debug_label)
+	debug_label.visible = false
 
-	# Action buttons container (Right side, below ping) - MOBILE ONLY
+	# Мобильные кнопки опущены ниже, чтобы не мешать Debug-панели (offset_top = 135)
 	var btn_vbox = VBoxContainer.new()
 	btn_vbox.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	btn_vbox.offset_left = -220
-	btn_vbox.offset_top = 65
+	btn_vbox.offset_top = 135
 	btn_vbox.offset_right = -20
-	btn_vbox.offset_bottom = 220
+	btn_vbox.offset_bottom = 350
 	btn_vbox.visible = is_mobile
 	hud_container.add_child(btn_vbox)
 
@@ -191,6 +202,10 @@ func _toggle_pause() -> void:
 	if pause_menu:
 		pause_menu.visible = is_paused
 		pause_menu.mouse_filter = Control.MOUSE_FILTER_STOP if is_paused else Control.MOUSE_FILTER_IGNORE
+	if crosshair_view:
+		crosshair_view.visible = not is_paused
+	if crosshair:
+		crosshair.visible = false
 	if is_paused:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		get_tree().paused = true
@@ -281,54 +296,144 @@ func _build_settings_menu() -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	settings_menu.add_child(center)
 
-	var scroll = ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(450, 450)
-	center.add_child(scroll)
-
-	var vbox = VBoxContainer.new()
-	vbox.custom_minimum_size = Vector2(420, 500)
-	scroll.add_child(vbox)
+	var main_vbox = VBoxContainer.new()
+	main_vbox.custom_minimum_size = Vector2(520, 520)
+	center.add_child(main_vbox)
 
 	var title = Label.new()
 	title.text = "НАСТРОЙКИ"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 24)
-	vbox.add_child(title)
+	main_vbox.add_child(title)
 
-	vbox.add_child(HSeparator.new())
+	var tabs = TabContainer.new()
+	tabs.custom_minimum_size = Vector2(500, 420)
+	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	main_vbox.add_child(tabs)
 
-	# Audio section
-	var lbl_audio = Label.new()
-	lbl_audio.text = "Аудио (Громкость)"
-	vbox.add_child(lbl_audio)
+	# --- ВКЛАДКА 1: УПРАВЛЕНИЕ ---
+	var scroll_input = ScrollContainer.new()
+	scroll_input.name = "Управление"
+	tabs.add_child(scroll_input)
 
-	audio_slider = HSlider.new()
-	audio_slider.min_value = 0.0
-	audio_slider.max_value = 1.0
-	audio_slider.step = 0.05
-	audio_slider.value = 1.0
-	audio_slider.value_changed.connect(func(val):
-		AudioServer.set_bus_volume_db(0, linear_to_db(val))
+	var vbox_input = VBoxContainer.new()
+	vbox_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_input.add_child(vbox_input)
+
+	var lbl_sens = Label.new()
+	lbl_sens.text = "Чувствительность мыши"
+	vbox_input.add_child(lbl_sens)
+
+	var sens_slider = HSlider.new()
+	sens_slider.min_value = 0.0005
+	sens_slider.max_value = 0.01
+	sens_slider.step = 0.0002
+	sens_slider.value = player.mouse_sensitivity if player else 0.003
+	sens_slider.value_changed.connect(func(val):
+		if player: player.mouse_sensitivity = val
 	)
-	vbox.add_child(audio_slider)
+	vbox_input.add_child(sens_slider)
 
-	vbox.add_child(HSeparator.new())
+	var lbl_ads_sens = Label.new()
+	lbl_ads_sens.text = "Множитель чувствительности в прицеле (ADS)"
+	vbox_input.add_child(lbl_ads_sens)
 
-	# Video & Advanced Graphics section
-	var lbl_video = Label.new()
-	lbl_video.text = "Видео и Продвинутая Графика"
-	vbox.add_child(lbl_video)
+	var ads_slider = HSlider.new()
+	ads_slider.min_value = 0.1
+	ads_slider.max_value = 1.5
+	ads_slider.step = 0.05
+	ads_slider.value = player.ads_mouse_multiplier if player and "ads_mouse_multiplier" in player else 0.6
+	ads_slider.value_changed.connect(func(val):
+		if player and "ads_mouse_multiplier" in player:
+			player.ads_mouse_multiplier = val
+	)
+	vbox_input.add_child(ads_slider)
+
+	vbox_input.add_child(HSeparator.new())
+	var lbl_rebind = Label.new()
+	lbl_rebind.text = "Переназначение клавиш (нажми кнопку, затем нужную клавишу):"
+	vbox_input.add_child(lbl_rebind)
+
+	var rebind_actions = [
+		{"action": "move_forward", "label": "Вперёд"},
+		{"action": "move_back", "label": "Назад"},
+		{"action": "move_left", "label": "Влево"},
+		{"action": "move_right", "label": "Вправо"},
+		{"action": "ui_accept", "label": "Прыжок"},
+		{"action": "crouch", "label": "Приседание"},
+		{"action": "sprint", "label": "Спринт"},
+		{"action": "reload", "label": "Перезарядка"},
+		{"action": "fire", "label": "Огонь"},
+		{"action": "ads", "label": "Прицел"}
+	]
+
+	for item in rebind_actions:
+		var act_name = item["action"]
+		var row = HBoxContainer.new()
+		var action_label = Label.new()
+		action_label.text = item["label"]
+		action_label.custom_minimum_size = Vector2(180, 0)
+		row.add_child(action_label)
+
+		var btn_key = Button.new()
+		btn_key.custom_minimum_size = Vector2(160, 32)
+		btn_key.text = _get_action_key_name(act_name)
+		btn_key.pressed.connect(_start_key_rebind.bind(act_name, btn_key))
+		row.add_child(btn_key)
+		vbox_input.add_child(row)
+
+	# --- ВКЛАДКА 2: ГРАФИКА ---
+	var scroll_video = ScrollContainer.new()
+	scroll_video.name = "Графика"
+	tabs.add_child(scroll_video)
+
+	var vbox = VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_video.add_child(vbox)
 
 	chk_fullscreen = CheckBox.new()
 	chk_fullscreen.text = "Полноэкранный режим"
-	chk_fullscreen.button_pressed = (DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN)
+	chk_fullscreen.button_pressed = (DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN or DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
 	chk_fullscreen.toggled.connect(func(pressed):
 		if pressed:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
 		else:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		if option_res and option_res.selected >= 0 and option_res.selected < current_res_list.size():
+			_apply_game_resolution(current_res_list[option_res.selected])
 	)
 	vbox.add_child(chk_fullscreen)
+
+	# Выбор соотношения сторон
+	var lbl_aspect = Label.new()
+	lbl_aspect.text = "Соотношение сторон:"
+	vbox.add_child(lbl_aspect)
+
+	option_aspect = OptionButton.new()
+	option_aspect.add_item("Автоматически (По экрану)", 0)
+	option_aspect.add_item("16:9 (Широкоэкранный)", 1)
+	option_aspect.add_item("16:10", 2)
+	option_aspect.add_item("4:3 (Вплоть до 640x480)", 3)
+	option_aspect.add_item("21:9 (Ультраширокий)", 4)
+	vbox.add_child(option_aspect)
+
+	# Выбор разрешения экрана
+	var lbl_res = Label.new()
+	lbl_res.text = "Разрешение экрана:"
+	vbox.add_child(lbl_res)
+
+	option_res = OptionButton.new()
+	vbox.add_child(option_res)
+
+	option_aspect.item_selected.connect(func(idx):
+		_populate_resolutions(idx)
+	)
+	option_res.item_selected.connect(func(idx):
+		if idx >= 0 and idx < current_res_list.size():
+			_apply_game_resolution(current_res_list[idx])
+	)
+
+	_populate_resolutions(0)
 
 	chk_vsync = CheckBox.new()
 	chk_vsync.text = "Вертикальная синхронизация (VSync)"
@@ -341,7 +446,6 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(chk_vsync)
 
-	# MSAA (Anti-aliasing)
 	var lbl_msaa = Label.new()
 	lbl_msaa.text = "Сглаживание (MSAA)"
 	vbox.add_child(lbl_msaa)
@@ -357,7 +461,6 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(option_msaa)
 
-	# Glow / Bloom
 	chk_glow = CheckBox.new()
 	chk_glow.text = "Свечение (Bloom / Glow)"
 	var env_init = _get_env()
@@ -369,7 +472,6 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(chk_glow)
 
-	# Resolution Scale
 	var lbl_scale = Label.new()
 	lbl_scale.text = "Масштаб разрешения (Resolution Scale)"
 	vbox.add_child(lbl_scale)
@@ -384,7 +486,6 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(slider_scale)
 
-	# FXAA
 	chk_fxaa = CheckBox.new()
 	chk_fxaa.text = "FXAA сглаживание"
 	chk_fxaa.button_pressed = (get_viewport().screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA)
@@ -396,7 +497,6 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(chk_fxaa)
 
-	# SSAO
 	chk_ssao = CheckBox.new()
 	chk_ssao.text = "Затенение окружения (SSAO)"
 	chk_ssao.button_pressed = env_init.ssao_enabled if env_init else false
@@ -407,7 +507,6 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(chk_ssao)
 
-	# SSR
 	chk_ssr = CheckBox.new()
 	chk_ssr.text = "Отражения в пространстве экрана (SSR)"
 	chk_ssr.button_pressed = env_init.ssr_enabled if env_init else false
@@ -417,28 +516,19 @@ func _build_settings_menu() -> void:
 			env.ssr_enabled = pressed
 	)
 	vbox.add_child(chk_ssr)
-	
-	chk_fps = CheckBox.new()
-	chk_fps.text = "Показать счётчик FPS"
-	chk_fps.toggled.connect(func(pressed):
-		if pressed:
-			fps_label.visible = true
-		else:
-			fps_label.visible = false
-	)
-	vbox.add_child(chk_fps)
-		
+
 	if OS.has_feature("mobile"):
 		chk_ssao.hide()
 		chk_ssr.hide()
-	
-	# Potato Graphics Preset Toggle
+
 	btn_potato = Button.new()
 	btn_potato.text = "🥔 Режим Ультра-Картошка: Выкл"
 	btn_potato.pressed.connect(_toggle_potato_mode)
 	vbox.add_child(btn_potato)
 
-	vbox.add_child(HSeparator.new())
+	var lbl_limit_fps = Label.new()
+	lbl_limit_fps.text = "Лимит кадров (FPS Limit):"
+	vbox.add_child(lbl_limit_fps)
 
 	option_fps = OptionButton.new()
 	option_fps.add_item("Без ограничений (0)", 0)
@@ -452,15 +542,57 @@ func _build_settings_menu() -> void:
 	)
 	vbox.add_child(option_fps)
 
-	vbox.add_child(HSeparator.new())
+	# --- ВКЛАДКА 3: АУДИО ---
+	var scroll_audio = ScrollContainer.new()
+	scroll_audio.name = "Аудио"
+	tabs.add_child(scroll_audio)
+
+	var vbox_audio = VBoxContainer.new()
+	vbox_audio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_audio.add_child(vbox_audio)
+
+	var lbl_audio = Label.new()
+	lbl_audio.text = "Общая громкость:"
+	vbox_audio.add_child(lbl_audio)
+
+	audio_slider = HSlider.new()
+	audio_slider.min_value = 0.0
+	audio_slider.max_value = 1.0
+	audio_slider.step = 0.05
+	audio_slider.value = 1.0
+	audio_slider.value_changed.connect(func(val):
+		AudioServer.set_bus_volume_db(0, linear_to_db(val))
+	)
+	vbox_audio.add_child(audio_slider)
+
+	main_vbox.add_child(HSeparator.new())
 
 	var btn_back = Button.new()
 	btn_back.text = "Назад"
+	btn_back.custom_minimum_size = Vector2(0, 36)
 	btn_back.pressed.connect(func():
 		settings_menu.hide()
 		settings_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	)
-	vbox.add_child(btn_back)
+	main_vbox.add_child(btn_back)
+	
+	# --- ВКЛАДКА 4: РАСШИРЕНИЯ ---
+	var scroll_ext = ScrollContainer.new()
+	scroll_ext.name = "Расширения"
+	tabs.add_child(scroll_ext)
+
+	var vbox_ext = VBoxContainer.new()
+	vbox_ext.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_ext.add_child(vbox_ext)
+
+	var chk_debug = CheckBox.new()
+	chk_debug.text = "Панель отладки (Debug Info: FPS, Ping, Loss)"
+	chk_debug.button_pressed = debug_label.visible if debug_label else false
+	chk_debug.toggled.connect(func(pressed):
+		if debug_label:
+			debug_label.visible = pressed
+	)
+	vbox_ext.add_child(chk_debug)
 
 	add_child(settings_menu)
 
@@ -578,20 +710,46 @@ func _process(delta: float) -> void:
 	if not player:
 		return
 
-	# Update ping
-	if ping_label:
+	# Обновление FPS и сети в Debug панели
+	_fps_timer += delta
+	var current_fps_val = Engine.get_frames_per_second()
+	_fps_samples.append(float(current_fps_val))
+
+	if _fps_timer >= 0.5:
+		_fps_timer = 0.0
+		if not _fps_samples.is_empty():
+			var sum_fps: float = 0.0
+			_min_fps = 9999
+			_max_fps = 0
+			for val in _fps_samples:
+				sum_fps += val
+				if val < _min_fps: _min_fps = int(val)
+				if val > _max_fps: _max_fps = int(val)
+			_avg_fps = int(sum_fps / _fps_samples.size())
+			_fps_samples.clear()
+
+	if debug_label:
 		var ping_ms = 0
+		var packet_loss_pct = 0.0
 		var peer = multiplayer.multiplayer_peer
 		if peer is ENetMultiplayerPeer:
 			if multiplayer.is_server():
 				ping_ms = 0
+				packet_loss_pct = 0.0
 			else:
 				var enet_peer = peer as ENetMultiplayerPeer
 				if enet_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED:
 					var p = enet_peer.get_peer(1)
 					if p:
 						ping_ms = int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
-		ping_label.text = "Пинг: %d мс" % ping_ms
+						# В ENet статистика PEER_PACKET_LOSS нормализуется шкалой от 0 до 65536
+						var raw_loss = p.get_statistic(ENetPacketPeer.PEER_PACKET_LOSS)
+						packet_loss_pct = clampf((float(raw_loss) / 65536.0) * 100.0, 0.0, 100.0)
+
+		var min_display = _min_fps if _min_fps != 9999 else current_fps_val
+		debug_label.text = "FPS: %d (Avg: %d | Min: %d | Max: %d)\nPing: %d ms | Loss: %.1f%%" % [
+			current_fps_val, _avg_fps, min_display, _max_fps, ping_ms, packet_loss_pct
+		]
 
 	var target_spread = 6.0
 	if player.get("is_ads"):
@@ -632,3 +790,132 @@ func _on_server_disconnected_ui() -> void:
 		disconnect_label.show()
 		await get_tree().create_timer(3.0).timeout
 		disconnect_label.hide()
+
+func _populate_resolutions(aspect_mode: int) -> void:
+	if not option_res:
+		return
+	option_res.clear()
+	current_res_list.clear()
+
+	var presets = {
+		1: [ # 16:9
+			Vector2i(2560, 1440), Vector2i(1920, 1080), Vector2i(1600, 900),
+			Vector2i(1366, 768), Vector2i(1280, 720), Vector2i(960, 540), Vector2i(640, 360)
+		],
+		2: [ # 16:10
+			Vector2i(1920, 1200), Vector2i(1680, 1050), Vector2i(1440, 900),
+			Vector2i(1280, 800), Vector2i(960, 600), Vector2i(640, 400)
+		],
+		3: [ # 4:3
+			Vector2i(1600, 1200), Vector2i(1400, 1050), Vector2i(1280, 960),
+			Vector2i(1024, 768), Vector2i(800, 600), Vector2i(640, 480)
+		],
+		4: [ # 21:9
+			Vector2i(3440, 1440), Vector2i(2560, 1080), Vector2i(1720, 720)
+		]
+	}
+
+	var screen_size: Vector2i = DisplayServer.screen_get_size()
+	var screen_ratio: float = float(screen_size.x) / maxf(float(screen_size.y), 1.0)
+
+	if aspect_mode == 0:
+		# Автоматический подбор по физическому экрану игрока
+		var matched_key: int = 0
+		if absf(screen_ratio - (16.0 / 9.0)) < 0.08:
+			matched_key = 1
+		elif absf(screen_ratio - (16.0 / 10.0)) < 0.08:
+			matched_key = 2
+		elif absf(screen_ratio - (4.0 / 3.0)) < 0.08:
+			matched_key = 3
+		elif absf(screen_ratio - (21.0 / 9.0)) < 0.15:
+			matched_key = 4
+
+		if matched_key != 0:
+			for r in presets[matched_key]:
+				if r.x <= screen_size.x and r.y <= screen_size.y:
+					current_res_list.append(r)
+			if not current_res_list.has(screen_size):
+				current_res_list.insert(0, screen_size)
+		else:
+			# Нестандартный экран: строим список от родного разрешения вниз до ~480p
+			for scale_step in [1.0, 0.85, 0.75, 0.66, 0.5, 0.35]:
+				var w: int = int(round(screen_size.x * scale_step))
+				var h: int = int(round(screen_size.y * scale_step))
+				if w >= 640 and h >= 360:
+					var cand := Vector2i(w, h)
+					if not current_res_list.has(cand):
+						current_res_list.append(cand)
+			if not current_res_list.has(Vector2i(640, 480)):
+				current_res_list.append(Vector2i(640, 480))
+	else:
+		for r in presets.get(aspect_mode, []):
+			current_res_list.append(r)
+
+	var win_size: Vector2i = DisplayServer.window_get_size()
+	var selected_idx: int = 0
+	for i in range(current_res_list.size()):
+		var r: Vector2i = current_res_list[i]
+		option_res.add_item("%d x %d" % [r.x, r.y], i)
+		if abs(win_size.x - r.x) < 40 and abs(win_size.y - r.y) < 40:
+			selected_idx = i
+
+	option_res.selected = selected_idx
+
+func _apply_game_resolution(target_res: Vector2i) -> void:
+	var root_win: Window = get_tree().root
+	var is_full: bool = (DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN or DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+
+	# Переводим режим масштабирования в viewport, чтобы менялось разрешение ВСЕЙ игры (и 3D, и UI),
+	# но при родном разрешении экрана картинка оставалась пиксель-в-пиксель чёткой
+	root_win.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
+	root_win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
+	root_win.content_scale_size = target_res
+
+	if not is_full:
+		DisplayServer.window_set_size(target_res)
+		var screen_center: Vector2i = DisplayServer.screen_get_position() + DisplayServer.screen_get_size() / 2
+		DisplayServer.window_set_position(screen_center - target_res / 2)
+
+	if slider_scale:
+		slider_scale.set_value_no_signal(get_viewport().scaling_3d_scale)
+
+var _rebinding_action: String = ""
+var _rebinding_button: Button = null
+
+func _get_action_key_name(action: String) -> String:
+	if not InputMap.has_action(action):
+		return "Не назначено"
+	var events = InputMap.action_get_events(action)
+	for ev in events:
+		if ev is InputEventKey:
+			return OS.get_keycode_string(ev.physical_keycode if ev.physical_keycode != KEY_NONE else ev.keycode)
+		elif ev is InputEventMouseButton:
+			match ev.button_index:
+				MOUSE_BUTTON_LEFT: return "ЛКМ"
+				MOUSE_BUTTON_RIGHT: return "ПКМ"
+				MOUSE_BUTTON_MIDDLE: return "СКМ"
+				_: return "Мышь %d" % ev.button_index
+	return "Не назначено"
+
+func _start_key_rebind(action: String, button: Button) -> void:
+	_rebinding_action = action
+	_rebinding_button = button
+	button.text = "[Нажмите клавишу...]"
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if _rebinding_action == "" or _rebinding_button == null:
+		return
+	if event is InputEventKey and event.pressed:
+		InputMap.action_erase_events(_rebinding_action)
+		InputMap.action_add_event(_rebinding_action, event)
+		_rebinding_button.text = _get_action_key_name(_rebinding_action)
+		_rebinding_action = ""
+		_rebinding_button = null
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.pressed:
+		InputMap.action_erase_events(_rebinding_action)
+		InputMap.action_add_event(_rebinding_action, event)
+		_rebinding_button.text = _get_action_key_name(_rebinding_action)
+		_rebinding_action = ""
+		_rebinding_button = null
+		get_viewport().set_input_as_handled()

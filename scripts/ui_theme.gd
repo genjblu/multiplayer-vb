@@ -80,4 +80,42 @@ static func build() -> Theme:
 	t.set_stylebox("separator", "HSeparator", line)
 	t.set_constant("separation", "HSeparator", 12)
 
+	# Стилизация CheckBox (одинаковые отступы исключают прыжки текста)
+	var cb_normal := _box(Color.TRANSPARENT)
+	cb_normal.content_margin_left = 8
+	cb_normal.content_margin_right = 8
+	cb_normal.content_margin_top = 6
+	cb_normal.content_margin_bottom = 6
+
+	var cb_hover := _box(Color("252a32"))
+	cb_hover.content_margin_left = 8
+	cb_hover.content_margin_right = 8
+	cb_hover.content_margin_top = 6
+	cb_hover.content_margin_bottom = 6
+
+	var cb_pressed := _box(Color("1f232a"))
+	cb_pressed.content_margin_left = 8
+	cb_pressed.content_margin_right = 8
+	cb_pressed.content_margin_top = 6
+	cb_pressed.content_margin_bottom = 6
+
+	var cb_focus := _box(Color.TRANSPARENT, ACCENT_COLOR, 1)
+	cb_focus.draw_center = false
+	cb_focus.content_margin_left = 8
+	cb_focus.content_margin_right = 8
+	cb_focus.content_margin_top = 6
+	cb_focus.content_margin_bottom = 6
+
+	t.set_stylebox("normal", "CheckBox", cb_normal)
+	t.set_stylebox("hover", "CheckBox", cb_hover)
+	t.set_stylebox("pressed", "CheckBox", cb_pressed)
+	t.set_stylebox("hover_pressed", "CheckBox", cb_hover)
+	t.set_stylebox("focus", "CheckBox", cb_focus)
+
+	t.set_color("font_color", "CheckBox", TEXT_COLOR)
+	t.set_color("font_hover_color", "CheckBox", TEXT_COLOR)
+	t.set_color("font_pressed_color", "CheckBox", TEXT_COLOR)
+	t.set_color("font_hover_pressed_color", "CheckBox", TEXT_COLOR)
+	t.set_constant("h_separation", "CheckBox", 12)
+
 	return t

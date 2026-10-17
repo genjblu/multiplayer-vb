@@ -23,6 +23,8 @@ properties/2/replication_mode = 1
 
 [sub_resource type="BoxMesh" id="BoxMesh_dqkch"]
 
+[sub_resource type="BoxMesh" id="BoxMesh_jcvw6"]
+
 [sub_resource type="BoxMesh" id="BoxMesh_tuyoq"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_fjrip"]
@@ -66,6 +68,8 @@ mesh = SubResource("BoxMesh_dqkch")
 
 [node name="WeaponAssault" type="MeshInstance3D" parent="Head/Camera3D" unique_id=1025459564]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0.2, -0.2, -0.2)
+visible = false
+mesh = SubResource("BoxMesh_jcvw6")
 
 [node name="WeaponShotgun" type="MeshInstance3D" parent="Head/Camera3D" unique_id=1909592711]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.2, -0.4)
