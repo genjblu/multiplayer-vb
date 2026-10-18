@@ -21,6 +21,7 @@ static var res_index: int = 0
 static var scaling_mode: int = 0 # 0 = Bilinear, 1 = FSR 1.0
 static var fsr_sharpness: float = 0.8
 static var render_scale: float = 1.0
+static var ui_scale: float = 0.0
 static var base_fov: float = 75.0
 static var shadow_quality: int = 2 # 0=Выкл, 1=Низк, 2=Сред, 3=Выс
 static var msaa: int = 0
@@ -49,6 +50,8 @@ static var show_ammo_3d: bool = false
 
 static func ensure_loaded() -> void:
 	if not is_loaded:
+		var is_mob: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
+		ui_scale = 1.35 if is_mob else 1.0
 		load_from_disk()
 
 static func save_to_disk() -> void:
@@ -68,6 +71,7 @@ static func save_to_disk() -> void:
 	cfg.set_value("video", "scaling_mode", scaling_mode)
 	cfg.set_value("video", "fsr_sharpness", fsr_sharpness)
 	cfg.set_value("video", "render_scale", render_scale)
+	cfg.set_value("video", "ui_scale", ui_scale)
 	cfg.set_value("video", "base_fov", base_fov)
 	cfg.set_value("video", "shadow_quality", shadow_quality)
 	cfg.set_value("video", "msaa", msaa)
@@ -119,6 +123,7 @@ static func load_from_disk() -> void:
 	scaling_mode = int(cfg.get_value("video", "scaling_mode", scaling_mode))
 	fsr_sharpness = float(cfg.get_value("video", "fsr_sharpness", fsr_sharpness))
 	render_scale = float(cfg.get_value("video", "render_scale", render_scale))
+	ui_scale = float(cfg.get_value("video", "ui_scale", ui_scale))
 	base_fov = float(cfg.get_value("video", "base_fov", base_fov))
 	shadow_quality = int(cfg.get_value("video", "shadow_quality", shadow_quality))
 	msaa = int(cfg.get_value("video", "msaa", msaa))
@@ -184,6 +189,12 @@ static func apply_to_engine(vp: Viewport, env: Environment = null) -> void:
 		3: RenderingServer.directional_soft_shadow_filter_set_quality(RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
 
 	if vp:
+		var root_win: Window = vp.get_tree().root
+		if root_win:
+			root_win.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+			root_win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+			root_win.content_scale_size = Vector2i(1280, 720)
+			root_win.content_scale_factor = clampf(ui_scale, 0.75, 2.0)
 		vp.msaa_3d = msaa as Viewport.MSAA
 		vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA if fxaa else Viewport.SCREEN_SPACE_AA_DISABLED
 		vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if scaling_mode == 1 else Viewport.SCALING_3D_MODE_BILINEAR

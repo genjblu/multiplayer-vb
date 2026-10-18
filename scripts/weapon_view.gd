@@ -12,6 +12,12 @@ extends Node3D
 ## Запретить стрельбу, пока играет анимация доставания (draw)
 @export var block_fire_during_draw: bool = true
 @export var ammo_label_3d: Label3D
+@export_group("3D Патроны (Ammo 3D)")
+@export var ammo_3d_scale: float = 0.0005:
+	set(val):
+		ammo_3d_scale = val
+		if ammo_label_3d and is_instance_valid(ammo_label_3d):
+			ammo_label_3d.pixel_size = ammo_3d_scale
 
 var _queued: StringName = &""
 
@@ -26,7 +32,7 @@ func _ready() -> void:
 		ammo_label_3d.text = "30/90"
 		ammo_label_3d.font_size = 96
 		ammo_label_3d.outline_size = 24
-		ammo_label_3d.pixel_size = 0.0005
+		ammo_label_3d.pixel_size = ammo_3d_scale
 		ammo_label_3d.position = Vector3(-0.06, 0.05, -0.18)
 		ammo_label_3d.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 		ammo_label_3d.no_depth_test = true
@@ -74,6 +80,7 @@ func set_ammo_3d_visible(vis: bool) -> void:
 		ammo_label_3d.visible = vis
 
 func setup_ammo_3d_params(offset: Vector3, rot_deg: Vector3, font_sz: int, px_scale: float) -> void:
+	ammo_3d_scale = px_scale
 	if ammo_label_3d:
 		ammo_label_3d.position = offset
 		ammo_label_3d.rotation_degrees = rot_deg

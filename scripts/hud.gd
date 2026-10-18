@@ -93,6 +93,7 @@ func _ready() -> void:
 	else:
 		if has_node("TouchOverlay/JoystickBase"): $TouchOverlay/JoystickBase.hide()
 
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	_build_pause_menu()
 	_build_hud_elements()
 	
@@ -152,14 +153,41 @@ func _build_hud_elements() -> void:
 	hud_container.add_child(debug_label)
 	debug_label.visible = false
 
-	# Верхняя панель служебных кнопок для телефона (Меню и Таблица)
+	# Растягиваем TouchOverlay на весь экран и выравниваем джойстик в левом нижнем углу
+	if touch_overlay:
+		touch_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		var joy := touch_overlay.get_node_or_null("JoystickBase") as Control
+		if joy:
+			joy.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+			joy.offset_left = 65
+			joy.offset_top = -235
+			joy.offset_right = 235
+			joy.offset_bottom = -65
+			if joy is ColorRect:
+				(joy as ColorRect).color = Color(0, 0, 0, 0)
+				if not joy.has_node("RoundBg"):
+					var rbg := Panel.new()
+					rbg.name = "RoundBg"
+					rbg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+					rbg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+					var sb_j := StyleBoxFlat.new()
+					sb_j.bg_color = Color(0.1, 0.12, 0.15, 0.45)
+					sb_j.border_color = Color(1.0, 1.0, 1.0, 0.25)
+					sb_j.set_border_width_all(2)
+					sb_j.set_corner_radius_all(100)
+					rbg.add_theme_stylebox_override("panel", sb_j)
+					joy.add_child(rbg)
+					joy.move_child(rbg, 0)
+
+	# Верхняя панель служебных кнопок для телефона (строго по центру сверху)
 	var top_bar = HBoxContainer.new()
-	top_bar.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	top_bar.offset_left = 20
-	top_bar.offset_top = 16
-	top_bar.offset_right = 280
-	top_bar.offset_bottom = 58
-	top_bar.add_theme_constant_override("separation", 10)
+	top_bar.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	top_bar.alignment = BoxContainer.ALIGNMENT_CENTER
+	top_bar.offset_left = -120
+	top_bar.offset_top = 12
+	top_bar.offset_right = 120
+	top_bar.offset_bottom = 52
+	top_bar.add_theme_constant_override("separation", 12)
 	top_bar.visible = is_mobile
 	self.add_child(top_bar)
 
@@ -200,6 +228,38 @@ func _build_hud_elements() -> void:
 	_build_hud_layout_editor()
 
 func _input(event: InputEvent) -> void:
+	# Перехват клавиши при переназначении (гарантированно работает во время паузы)
+	if _rebinding_action != "" and is_instance_valid(_rebinding_button):
+		if event is InputEventKey and event.pressed and not event.is_echo():
+			get_viewport().set_input_as_handled()
+			if event.keycode == KEY_ESCAPE:
+				_rebinding_button.text = _get_action_key_name(_rebinding_action)
+			else:
+				var keycode_to_bind: Key = event.physical_keycode if event.physical_keycode != KEY_NONE else event.keycode
+				InputMap.action_erase_events(_rebinding_action)
+				var new_ev := InputEventKey.new()
+				new_ev.physical_keycode = keycode_to_bind
+				new_ev.keycode = keycode_to_bind
+				InputMap.action_add_event(_rebinding_action, new_ev)
+				_rebinding_button.text = OS.get_keycode_string(keycode_to_bind)
+				GameSettings.save_to_disk()
+
+			_rebinding_action = ""
+			_rebinding_button = null
+			return
+		elif event is InputEventMouseButton and event.pressed:
+			get_viewport().set_input_as_handled()
+			InputMap.action_erase_events(_rebinding_action)
+			var new_ev := InputEventMouseButton.new()
+			new_ev.button_index = event.button_index
+			InputMap.action_add_event(_rebinding_action, new_ev)
+			_rebinding_button.text = _get_action_key_name(_rebinding_action)
+			GameSettings.save_to_disk()
+
+			_rebinding_action = ""
+			_rebinding_button = null
+			return
+
 	if not player or not player.is_multiplayer_authority():
 		return
 	if event.is_action_pressed("ui_cancel"):
@@ -216,20 +276,17 @@ func _toggle_pause() -> void:
 		crosshair.visible = false
 	if is_paused:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		get_tree().paused = true
 	else:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-		get_tree().paused = false
 		if settings_menu:
 			settings_menu.hide()
 			settings_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _build_pause_menu() -> void:
 	pause_menu = Control.new()
-	pause_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	pause_menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	pause_menu.visible = false
-	pause_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pause_menu.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	var bg = ColorRect.new()
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -239,11 +296,12 @@ func _build_pause_menu() -> void:
 
 	var center = CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	center.mouse_filter = Control.MOUSE_FILTER_PASS
 	pause_menu.add_child(center)
 
 	var vbox = VBoxContainer.new()
 	vbox.custom_minimum_size = Vector2(300, 200)
+	vbox.mouse_filter = Control.MOUSE_FILTER_PASS
 	center.add_child(vbox)
 
 	var title = Label.new()
@@ -292,7 +350,6 @@ func _build_pause_menu() -> void:
 func _build_settings_menu() -> void:
 	GameSettings.ensure_loaded()
 	settings_menu = PanelContainer.new()
-	settings_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	settings_menu.theme = UITheme.build()
 	settings_menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	settings_menu.custom_minimum_size = Vector2(680, 520)
@@ -301,7 +358,7 @@ func _build_settings_menu() -> void:
 	settings_menu.offset_right = 340
 	settings_menu.offset_bottom = 260
 	settings_menu.visible = false
-	settings_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	settings_menu.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(settings_menu)
 
 	var main_vbox := VBoxContainer.new()
@@ -494,6 +551,21 @@ func _build_settings_menu() -> void:
 			_apply_game_resolution(current_res_list[idx])
 	)
 	_populate_resolutions(GameSettings.aspect_index)
+
+	var lbl_ui_sc := Label.new()
+	lbl_ui_sc.text = "Масштаб интерфейса (UI Scale): %d%%" % int(round(GameSettings.ui_scale * 100.0))
+	vbox.add_child(lbl_ui_sc)
+	var ui_sc_slider := HSlider.new()
+	ui_sc_slider.min_value = 0.75
+	ui_sc_slider.max_value = 2.0
+	ui_sc_slider.step = 0.05
+	ui_sc_slider.value = GameSettings.ui_scale
+	ui_sc_slider.value_changed.connect(func(val):
+		GameSettings.ui_scale = val
+		lbl_ui_sc.text = "Масштаб интерфейса (UI Scale): %d%%" % int(round(val * 100.0))
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
+	)
+	vbox.add_child(ui_sc_slider)
 
 	var lbl_fov := Label.new()
 	lbl_fov.text = "Угол обзора (FOV): %d°" % int(round(GameSettings.base_fov))
@@ -1047,15 +1119,15 @@ func _populate_resolutions(aspect_mode: int) -> void:
 
 func _apply_game_resolution(target_res: Vector2i) -> void:
 	var root_win: Window = get_tree().root
+	var is_mobile_os: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
 	var is_full: bool = (DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN or DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
 
-	# Переводим режим масштабирования в viewport, чтобы менялось разрешение ВСЕЙ игры (и 3D, и UI),
-	# но при родном разрешении экрана картинка оставалась пиксель-в-пиксель чёткой
-	root_win.content_scale_mode = Window.CONTENT_SCALE_MODE_VIEWPORT
-	root_win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP
-	root_win.content_scale_size = target_res
+	root_win.content_scale_mode = Window.CONTENT_SCALE_MODE_CANVAS_ITEMS
+	root_win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_EXPAND
+	root_win.content_scale_size = Vector2i(1280, 720)
+	root_win.content_scale_factor = clampf(GameSettings.ui_scale, 0.75, 2.0)
 
-	if not is_full:
+	if not is_mobile_os and not is_full:
 		DisplayServer.window_set_size(target_res)
 		var screen_center: Vector2i = DisplayServer.screen_get_position() + DisplayServer.screen_get_size() / 2
 		DisplayServer.window_set_position(screen_center - target_res / 2)
@@ -1082,28 +1154,14 @@ func _get_action_key_name(action: String) -> String:
 	return "Не назначено"
 
 func _start_key_rebind(action: String, button: Button) -> void:
+	if _rebinding_button != null and is_instance_valid(_rebinding_button) and _rebinding_action != "":
+		_rebinding_button.text = _get_action_key_name(_rebinding_action)
+
 	_rebinding_action = action
 	_rebinding_button = button
 	button.text = "[Нажмите клавишу...]"
-
-func _unhandled_key_input(event: InputEvent) -> void:
-	if _rebinding_action == "" or _rebinding_button == null:
-		return
-	if event is InputEventKey and event.pressed:
-		InputMap.action_erase_events(_rebinding_action)
-		InputMap.action_add_event(_rebinding_action, event)
-		_rebinding_button.text = _get_action_key_name(_rebinding_action)
-		_rebinding_action = ""
-		_rebinding_button = null
-		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.pressed:
-		InputMap.action_erase_events(_rebinding_action)
-		InputMap.action_add_event(_rebinding_action, event)
-		_rebinding_button.text = _get_action_key_name(_rebinding_action)
-		_rebinding_action = ""
-		_rebinding_button = null
-		get_viewport().set_input_as_handled()
-
+	button.release_focus()
+	
 func _create_mobile_icon_button(id: String, icon_path: String, bottom_right_offset: Vector2, base_size: Vector2) -> void:
 	var holder := Panel.new()
 	holder.name = "Btn_" + id

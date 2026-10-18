@@ -345,7 +345,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if is_mobile and event is InputEventMouse:
 		return
 
-	if event.is_action_pressed("fire") and not is_reloading:
+	if event.is_action_pressed("fire") and not is_reloading and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or is_mobile):
 		shoot()
 
 	if event.is_action_pressed("reload") and not is_reloading and current_ammo < max_ammo and reserve_ammo > 0:
@@ -485,8 +485,9 @@ func _physics_process(delta: float) -> void:
 		is_ads = touch_ads
 		is_firing = touch_fire
 	else:
-		is_ads = Input.is_action_pressed("ads") or touch_ads
-		is_firing = Input.is_action_pressed("fire") or touch_fire
+		var can_mouse_act: bool = (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED)
+		is_ads = (Input.is_action_pressed("ads") and can_mouse_act) or touch_ads
+		is_firing = (Input.is_action_pressed("fire") and can_mouse_act) or touch_fire
 	if current_weapon == WeaponType.ASSAULT and is_firing and not is_reloading:
 		fire_timer -= delta
 		if fire_timer <= 0.0:
@@ -537,8 +538,8 @@ func _physics_process(delta: float) -> void:
 
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
 	input_dir = (input_dir + touch_move).limit_length(1.0)
+	var move_strength: float = input_dir.length()
 	var direction: Vector3 = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
-
 	# Подкат начинается только если игрок нажал приседание ВО ВРЕМЯ спринта на полу
 	if crouch_just_pressed and is_on_floor() and not is_sliding and is_sprinting and input_dir.length() > 0:
 		is_sliding = true
@@ -571,8 +572,8 @@ func _physics_process(delta: float) -> void:
 		if slide_timer <= 0.0 or not is_on_floor():
 			is_sliding = false
 	elif direction:
-		velocity.x = direction.x * current_speed
-		velocity.z = direction.z * current_speed
+		velocity.x = direction.x * current_speed * move_strength
+		velocity.z = direction.z * current_speed * move_strength
 	else:
 		velocity.x = move_toward(velocity.x, 0, current_speed)
 		velocity.z = move_toward(velocity.z, 0, current_speed)

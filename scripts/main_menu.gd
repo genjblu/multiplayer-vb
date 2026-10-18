@@ -242,6 +242,21 @@ func _open_main_menu_settings() -> void:
 	)
 	vbox_video.add_child(chk_fs)
 
+	var lbl_ui_sc := Label.new()
+	lbl_ui_sc.text = "Масштаб интерфейса (UI Scale): %d%%" % int(round(GameSettings.ui_scale * 100.0))
+	vbox_video.add_child(lbl_ui_sc)
+	var ui_sc_slider := HSlider.new()
+	ui_sc_slider.min_value = 0.75
+	ui_sc_slider.max_value = 2.0
+	ui_sc_slider.step = 0.05
+	ui_sc_slider.value = GameSettings.ui_scale
+	ui_sc_slider.value_changed.connect(func(val):
+		GameSettings.ui_scale = val
+		lbl_ui_sc.text = "Масштаб интерфейса (UI Scale): %d%%" % int(round(val * 100.0))
+		GameSettings.apply_to_engine(get_viewport())
+	)
+	vbox_video.add_child(ui_sc_slider)
+
 	var lbl_fov := Label.new()
 	lbl_fov.text = "Угол обзора (FOV): %d°" % int(round(GameSettings.base_fov))
 	vbox_video.add_child(lbl_fov)

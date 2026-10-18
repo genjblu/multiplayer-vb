@@ -969,19 +969,43 @@ tracks/3/keys = {
 tracks/4/type = "value"
 tracks/4/imported = false
 tracks/4/enabled = true
-tracks/4/path = NodePath("Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59_fbx/RootNode/Cube_024:rotation")
+tracks/4/path = NodePath("Glock/LeftHand:rotation")
 tracks/4/interp = 1
 tracks/4/loop_wrap = true
 tracks/4/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector3(-1.8977299, 0, 0)]
+"values": [Vector3(2.585054e-10, -0.11192797, 2.7063959)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Glock/LeftHand:position")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-0.4453945, -1.7633569, 1.4636295)]
+}
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59_fbx/RootNode/Cube_022:rotation")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Vector3(-1.5707964, 0, 0)]
 }
 
 [sub_resource type="Animation" id="Animation_80vg8"]
 resource_name = "draw"
-length = 0.19999999999999998
+length = 0.2
 step = 0.1
 tracks/0/type = "value"
 tracks/0/imported = false
@@ -1086,10 +1110,10 @@ tracks/0/path = NodePath("Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59
 tracks/0/interp = 1
 tracks/0/loop_wrap = true
 tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
 "update": 0,
-"values": [Vector3(-18.588257, -17.323437, 98.63007)]
+"values": [Vector3(-18.588257, -17.323437, 98.63007), Vector3(-18.588259, -314.89133, 192.21442), Vector3(-18.588263, -954.95105, 306.1763), Vector3(-18.588257, -17.323437, 98.63007)]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -1098,10 +1122,58 @@ tracks/1/path = NodePath("Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59
 tracks/1/interp = 1
 tracks/1/loop_wrap = true
 tracks/1/keys = {
-"times": PackedFloat32Array(0),
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3),
+"transitions": PackedFloat32Array(1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(-1.8977299, 0, 0), Vector3(-1.8977299, 0, 0), Vector3(-2.5941665, 0, 0), Vector3(-1.8977299, 0, 0)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59_fbx/RootNode/Cube_022:position")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0.6, 0.7, 0.8),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Vector3(-16.281128, 125.54405, 141.1185), Vector3(-16.281128, 125.54406, 214.15398), Vector3(-16.281128, 125.54405, 141.1185)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("Glock/LeftHand:position")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 1),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(-0.47410086, -1.5086738, 1.3654367), Vector3(-0.15441708, -4.7359457, 2.5028663), Vector3(-0.15441711, -10.445451, 4.5463448), Vector3(-0.47410086, -1.5086738, 1.3654367), Vector3(-0.47410086, -1.5086738, 1.3654367), Vector3(-0.68220425, 1.7729782, -2.0323145), Vector3(-0.68220425, 1.7729782, -1.30196), Vector3(-0.68220425, 1.7729782, -2.0323145), Vector3(-0.47410086, -1.5086738, 1.3654367)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("Glock/LeftHand:rotation")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0, 0.1, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 1),
+"transitions": PackedFloat32Array(1, 1, 1, 1, 1, 1, 1, 1, 1),
+"update": 0,
+"values": [Vector3(-1.7391667e-08, -0.111928, 2.7063956), Vector3(-9.245886e-09, -0.11192803, 2.7063956), Vector3(-0.81840694, -0.16417961, 2.8267603), Vector3(-1.7391667e-08, -0.111928, 2.7063956), Vector3(-1.7391667e-08, -0.111928, 2.7063956), Vector3(0.08986692, -1.9706073, 0.3979226), Vector3(0.08986693, -1.9706073, 0.39792255), Vector3(0.08986692, -1.9706073, 0.3979226), Vector3(-1.7391667e-08, -0.111928, 2.7063956)]
+}
+tracks/5/type = "value"
+tracks/5/imported = false
+tracks/5/enabled = true
+tracks/5/path = NodePath("Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59_fbx/RootNode/Cube_022:rotation")
+tracks/5/interp = 1
+tracks/5/loop_wrap = true
+tracks/5/keys = {
+"times": PackedFloat32Array(0.7),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [Vector3(-1.8977299, 0, 0)]
+"values": [Vector3(-1.5707964, 0, 0)]
 }
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_85ogh"]
@@ -1128,7 +1200,7 @@ transform = Transform3D(0.01, 0, 0, 0, -3.5762793e-09, -0.010000001, 0, 0.010000
 [node name="RootNode" type="Node3D" parent="Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59_fbx" unique_id=1889159808]
 
 [node name="Cube_022" type="Node3D" parent="Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59_fbx/RootNode" unique_id=671954377]
-transform = Transform3D(30.579073, 0, 0, 0, -9.445956e-06, 26.412804, 0, -26.412804, -9.445956e-06, -16.281128, 125.54405, 141.1185)
+transform = Transform3D(30.579075, 0, 0, 0, -1.1545404e-06, 26.412806, 0, -26.412806, -1.1545404e-06, -16.281128, 125.54405, 141.1185)
 
 [node name="Cube_022_Material_029_0" type="MeshInstance3D" parent="Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59_fbx/RootNode/Cube_022" unique_id=236174591]
 mesh = SubResource("ArrayMesh_721ir")
@@ -1149,7 +1221,7 @@ transform = Transform3D(100, 0, 0, 0, -3.5762787e-05, 99.99999, 0, -99.99999, -3
 mesh = SubResource("ArrayMesh_rkq82")
 
 [node name="Cube_024" type="Node3D" parent="Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59_fbx/RootNode" unique_id=1949958882]
-transform = Transform3D(23.029596, 0, 0, 0, -12.636297, 40.275635, 0, -37.263973, -13.657558, -18.588257, -17.323437, 98.63007)
+transform = Transform3D(23.029608, 0, 0, 0, -12.636301, 40.27564, 0, -37.263985, -13.65756, -18.588257, -17.323437, 98.63007)
 
 [node name="Cube_024_Material_045_0" type="MeshInstance3D" parent="Glock/Sketchfab_model/496b3a6e046645b99c7c34202d035b59_fbx/RootNode/Cube_024" unique_id=1201604954]
 mesh = SubResource("ArrayMesh_w3wp3")
@@ -1167,14 +1239,14 @@ mesh = SubResource("ArrayMesh_5erl6")
 mesh = SubResource("ArrayMesh_2v0fr")
 
 [node name="LeftHand" type="Node3D" parent="Glock" unique_id=2017791861]
-transform = Transform3D(-0.82602036, -0.38403833, -0.10238655, 0.3864565, -0.83122164, 0, -0.09284281, -0.04316503, 0.9109309, -0.4453945, -1.7633569, 1.4636295)
+transform = Transform3D(-0.8260215, -0.38403907, -0.102386676, 0.38645706, -0.83122325, -2.369636e-10, -0.092842944, -0.04316512, 0.9109318, -0.4453945, -1.7633569, 1.4636295)
 
 [node name="hand" type="MeshInstance3D" parent="Glock/LeftHand" unique_id=261680663]
 transform = Transform3D(0.99302256, 0, 0.11792446, 0, 1, 0, -0.11792446, 0, 0.99302256, 0.17449148, -7.627264e-09, 0.9689328)
 mesh = SubResource("ArrayMesh_q053b")
 
 [node name="arm_lower" type="MeshInstance3D" parent="Glock/LeftHand/hand" unique_id=616735686]
-transform = Transform3D(0.79520595, 0.313378, 0.51907754, -0.28924224, 0.94845647, -0.12949556, -0.5329037, -0.047163624, 0.84486073, 0, -0.11885368, 0.0011925697)
+transform = Transform3D(0.99999994, 5.5879354e-09, 2.9802322e-08, -6.519258e-09, 1, 7.450581e-09, 0, 3.7252903e-09, 1.0000002, 0.06292857, -0.10587401, -0.051225483)
 mesh = SubResource("ArrayMesh_7pmyi")
 
 [node name="index_0" type="MeshInstance3D" parent="Glock/LeftHand/hand" unique_id=288718650]
