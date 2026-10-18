@@ -95,6 +95,14 @@ func _ready() -> void:
 
 	_build_pause_menu()
 	_build_hud_elements()
+	
+	# Применяем тему ко всем дочерним элементам интерфейса (CanvasLayer не имеет собственной темы)
+	var custom_theme = UITheme.build()
+	if pause_menu: pause_menu.theme = custom_theme
+	if settings_menu: settings_menu.theme = custom_theme
+	
+	GameSettings.ensure_loaded()
+	_apply_saved_settings_on_start()
 
 	scoreboard = Scoreboard.new()
 	add_child(scoreboard)
@@ -255,8 +263,11 @@ func _build_pause_menu() -> void:
 	btn_settings.text = "Настройки"
 	btn_settings.pressed.connect(func():
 		if settings_menu:
+			if pause_menu:
+				pause_menu.hide()
 			settings_menu.show()
 			settings_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+			move_child(settings_menu, get_child_count() - 1)
 	)
 	vbox.add_child(btn_settings)
 
@@ -279,81 +290,88 @@ func _build_pause_menu() -> void:
 	_build_settings_menu()
 
 func _build_settings_menu() -> void:
-	settings_menu = Control.new()
+	GameSettings.ensure_loaded()
+	settings_menu = PanelContainer.new()
 	settings_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
-	settings_menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	settings_menu.theme = UITheme.build()
+	settings_menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	settings_menu.custom_minimum_size = Vector2(680, 520)
+	settings_menu.offset_left = -340
+	settings_menu.offset_top = -260
+	settings_menu.offset_right = 340
+	settings_menu.offset_bottom = 260
 	settings_menu.visible = false
 	settings_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(settings_menu)
 
-	var bg = ColorRect.new()
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0.05, 0.05, 0.08, 0.9)
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	settings_menu.add_child(bg)
+	var main_vbox := VBoxContainer.new()
+	main_vbox.add_theme_constant_override("separation", 12)
+	settings_menu.add_child(main_vbox)
 
-	var center = CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	settings_menu.add_child(center)
-
-	var main_vbox = VBoxContainer.new()
-	main_vbox.custom_minimum_size = Vector2(520, 520)
-	center.add_child(main_vbox)
-
-	var title = Label.new()
-	title.text = "НАСТРОЙКИ"
+	var title := Label.new()
+	title.text = "Настройки"
+	title.theme_type_variation = "HeadingLabel"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 24)
 	main_vbox.add_child(title)
 
-	var tabs = TabContainer.new()
-	tabs.custom_minimum_size = Vector2(500, 420)
+	var tabs := TabContainer.new()
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	main_vbox.add_child(tabs)
 
-	# --- ВКЛАДКА 1: УПРАВЛЕНИЕ ---
-	var scroll_input = ScrollContainer.new()
+	# === ВКЛАДКА 1: УПРАВЛЕНИЕ ===
+	var scroll_input := ScrollContainer.new()
 	scroll_input.name = "Управление"
 	tabs.add_child(scroll_input)
-
-	var vbox_input = VBoxContainer.new()
+	var vbox_input := VBoxContainer.new()
 	vbox_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox_input.add_theme_constant_override("separation", 10)
 	scroll_input.add_child(vbox_input)
 
-	var lbl_sens = Label.new()
-	lbl_sens.text = "Чувствительность мыши"
+	var lbl_sens := Label.new()
+	lbl_sens.text = "Чувствительность мыши: %.4f" % GameSettings.mouse_sensitivity
 	vbox_input.add_child(lbl_sens)
-
-	var sens_slider = HSlider.new()
+	var sens_slider := HSlider.new()
 	sens_slider.min_value = 0.0005
-	sens_slider.max_value = 0.01
-	sens_slider.step = 0.0002
-	sens_slider.value = player.mouse_sensitivity if player else 0.003
+	sens_slider.max_value = 0.015
+	sens_slider.step = 0.0005
+	sens_slider.value = GameSettings.mouse_sensitivity
 	sens_slider.value_changed.connect(func(val):
-		if player: player.mouse_sensitivity = val
+		GameSettings.mouse_sensitivity = val
+		lbl_sens.text = "Чувствительность мыши: %.4f" % val
+		GameSettings.apply_to_player(player)
 	)
 	vbox_input.add_child(sens_slider)
 
-	var lbl_ads_sens = Label.new()
-	lbl_ads_sens.text = "Множитель чувствительности в прицеле (ADS)"
+	var lbl_ads_sens := Label.new()
+	lbl_ads_sens.text = "Множитель чувствительности в прицеле (ADS): %d%%" % int(round(GameSettings.ads_mouse_multiplier * 100.0))
 	vbox_input.add_child(lbl_ads_sens)
-
-	var ads_slider = HSlider.new()
+	var ads_slider := HSlider.new()
 	ads_slider.min_value = 0.1
-	ads_slider.max_value = 1.5
+	ads_slider.max_value = 1.0
 	ads_slider.step = 0.05
-	ads_slider.value = player.ads_mouse_multiplier if player and "ads_mouse_multiplier" in player else 0.6
+	ads_slider.value = GameSettings.ads_mouse_multiplier
 	ads_slider.value_changed.connect(func(val):
-		if player and "ads_mouse_multiplier" in player:
-			player.ads_mouse_multiplier = val
+		GameSettings.ads_mouse_multiplier = val
+		lbl_ads_sens.text = "Множитель чувствительности в прицеле (ADS): %d%%" % int(round(val * 100.0))
+		GameSettings.apply_to_player(player)
 	)
 	vbox_input.add_child(ads_slider)
 
-	var chk_crouch_mode = CheckBox.new()
+	var chk_inv := CheckBox.new()
+	chk_inv.text = "Инверсия оси Y (вертикальный обзор)"
+	chk_inv.button_pressed = GameSettings.invert_y
+	chk_inv.toggled.connect(func(pressed):
+		GameSettings.invert_y = pressed
+		GameSettings.apply_to_player(player)
+	)
+	vbox_input.add_child(chk_inv)
+
+	var chk_crouch_mode := CheckBox.new()
 	chk_crouch_mode.text = "Приседание по нажатию (Toggle вместо удержания)"
-	chk_crouch_mode.button_pressed = player.crouch_toggle_mode if player and "crouch_toggle_mode" in player else false
+	chk_crouch_mode.button_pressed = GameSettings.crouch_toggle_mode
 	chk_crouch_mode.toggled.connect(func(pressed):
-		if player and "crouch_toggle_mode" in player:
+		GameSettings.crouch_toggle_mode = pressed
+		if player:
 			player.crouch_toggle_mode = pressed
 			player._crouch_toggled = false
 			player.touch_crouch = false
@@ -362,23 +380,46 @@ func _build_settings_menu() -> void:
 
 	if _is_mobile():
 		vbox_input.add_child(HSeparator.new())
-		var lbl_mob = Label.new()
-		lbl_mob.text = "Сенсорное управление:"
-		vbox_input.add_child(lbl_mob)
-
-		var btn_edit_hud = Button.new()
-		btn_edit_hud.text = "Настроить расположение и размер кнопок"
-		btn_edit_hud.custom_minimum_size = Vector2(0, 42)
-		btn_edit_hud.pressed.connect(func():
-			_open_hud_editor()
+		var lbl_tsens := Label.new()
+		lbl_tsens.text = "Чувствительность тача: %.4f" % GameSettings.touch_sensitivity
+		vbox_input.add_child(lbl_tsens)
+		var tsens_slider := HSlider.new()
+		tsens_slider.min_value = 0.001
+		tsens_slider.max_value = 0.02
+		tsens_slider.step = 0.0005
+		tsens_slider.value = GameSettings.touch_sensitivity
+		tsens_slider.value_changed.connect(func(val):
+			GameSettings.touch_sensitivity = val
+			lbl_tsens.text = "Чувствительность тача: %.4f" % val
+			GameSettings.apply_to_player(player)
 		)
+		vbox_input.add_child(tsens_slider)
+
+		var lbl_op := Label.new()
+		lbl_op.text = "Прозрачность кнопок экрана: %d%%" % int(round(GameSettings.mobile_btn_opacity * 100.0))
+		vbox_input.add_child(lbl_op)
+		var op_slider := HSlider.new()
+		op_slider.min_value = 0.2
+		op_slider.max_value = 1.0
+		op_slider.step = 0.05
+		op_slider.value = GameSettings.mobile_btn_opacity
+		op_slider.value_changed.connect(func(val):
+			GameSettings.mobile_btn_opacity = val
+			lbl_op.text = "Прозрачность кнопок экрана: %d%%" % int(round(val * 100.0))
+		)
+		vbox_input.add_child(op_slider)
+
+		var btn_edit_hud := Button.new()
+		btn_edit_hud.text = "Настроить расположение и размер кнопок"
+		btn_edit_hud.theme_type_variation = "AccentButton"
+		btn_edit_hud.custom_minimum_size = Vector2(0, 42)
+		btn_edit_hud.pressed.connect(func(): _open_hud_editor())
 		vbox_input.add_child(btn_edit_hud)
 	else:
 		vbox_input.add_child(HSeparator.new())
-		var lbl_rebind = Label.new()
-		lbl_rebind.text = "Переназначение клавиш (нажми кнопку, затем нужную клавишу):"
+		var lbl_rebind := Label.new()
+		lbl_rebind.text = "Переназначение клавиш:"
 		vbox_input.add_child(lbl_rebind)
-
 		var rebind_actions = [
 			{"action": "move_forward", "label": "Вперёд"},
 			{"action": "move_back", "label": "Назад"},
@@ -391,250 +432,352 @@ func _build_settings_menu() -> void:
 			{"action": "fire", "label": "Огонь"},
 			{"action": "ads", "label": "Прицел"}
 		]
-
 		for item in rebind_actions:
-			var act_name = item["action"]
-			var row = HBoxContainer.new()
-			var action_label = Label.new()
+			var act_name: String = item["action"]
+			var row := HBoxContainer.new()
+			var action_label := Label.new()
 			action_label.text = item["label"]
-			action_label.custom_minimum_size = Vector2(180, 0)
+			action_label.custom_minimum_size = Vector2(200, 0)
 			row.add_child(action_label)
-
-			var btn_key = Button.new()
-			btn_key.custom_minimum_size = Vector2(160, 32)
+			var btn_key := Button.new()
+			btn_key.custom_minimum_size = Vector2(180, 36)
 			btn_key.text = _get_action_key_name(act_name)
 			btn_key.pressed.connect(_start_key_rebind.bind(act_name, btn_key))
 			row.add_child(btn_key)
 			vbox_input.add_child(row)
 
-	# --- ВКЛАДКА 2: ГРАФИКА ---
-	var scroll_video = ScrollContainer.new()
+	# === ВКЛАДКА 2: ГРАФИКА ===
+	var scroll_video := ScrollContainer.new()
 	scroll_video.name = "Графика"
 	tabs.add_child(scroll_video)
-
-	var vbox = VBoxContainer.new()
+	var vbox := VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 10)
 	scroll_video.add_child(vbox)
 
 	chk_fullscreen = CheckBox.new()
 	chk_fullscreen.text = "Полноэкранный режим"
-	chk_fullscreen.button_pressed = (DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN or DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+	chk_fullscreen.button_pressed = GameSettings.fullscreen
 	chk_fullscreen.toggled.connect(func(pressed):
-		if pressed:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
-		else:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+		GameSettings.fullscreen = pressed
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
 		if option_res and option_res.selected >= 0 and option_res.selected < current_res_list.size():
 			_apply_game_resolution(current_res_list[option_res.selected])
 	)
 	vbox.add_child(chk_fullscreen)
 
-	# Выбор соотношения сторон
-	var lbl_aspect = Label.new()
+	var lbl_aspect := Label.new()
 	lbl_aspect.text = "Соотношение сторон:"
 	vbox.add_child(lbl_aspect)
-
 	option_aspect = OptionButton.new()
 	option_aspect.add_item("Автоматически (По экрану)", 0)
 	option_aspect.add_item("16:9 (Широкоэкранный)", 1)
 	option_aspect.add_item("16:10", 2)
 	option_aspect.add_item("4:3 (Вплоть до 640x480)", 3)
 	option_aspect.add_item("21:9 (Ультраширокий)", 4)
+	option_aspect.selected = GameSettings.aspect_index
 	vbox.add_child(option_aspect)
 
-	# Выбор разрешения экрана
-	var lbl_res = Label.new()
+	var lbl_res := Label.new()
 	lbl_res.text = "Разрешение экрана:"
 	vbox.add_child(lbl_res)
-
 	option_res = OptionButton.new()
 	vbox.add_child(option_res)
 
 	option_aspect.item_selected.connect(func(idx):
+		GameSettings.aspect_index = idx
 		_populate_resolutions(idx)
 	)
 	option_res.item_selected.connect(func(idx):
+		GameSettings.res_index = idx
 		if idx >= 0 and idx < current_res_list.size():
 			_apply_game_resolution(current_res_list[idx])
 	)
+	_populate_resolutions(GameSettings.aspect_index)
 
-	_populate_resolutions(0)
-
-	chk_vsync = CheckBox.new()
-	chk_vsync.text = "Вертикальная синхронизация (VSync)"
-	chk_vsync.button_pressed = (DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED)
-	chk_vsync.toggled.connect(func(pressed):
-		if pressed:
-			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
-		else:
-			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	var lbl_fov := Label.new()
+	lbl_fov.text = "Угол обзора (FOV): %d°" % int(round(GameSettings.base_fov))
+	vbox.add_child(lbl_fov)
+	var fov_slider := HSlider.new()
+	fov_slider.min_value = 65.0
+	fov_slider.max_value = 110.0
+	fov_slider.step = 1.0
+	fov_slider.value = GameSettings.base_fov
+	fov_slider.value_changed.connect(func(val):
+		GameSettings.base_fov = val
+		lbl_fov.text = "Угол обзора (FOV): %d°" % int(round(val))
+		GameSettings.apply_to_player(player)
 	)
-	vbox.add_child(chk_vsync)
+	vbox.add_child(fov_slider)
 
-	var lbl_msaa = Label.new()
-	lbl_msaa.text = "Сглаживание (MSAA)"
-	vbox.add_child(lbl_msaa)
-
-	option_msaa = OptionButton.new()
-	option_msaa.add_item("Отключено", Viewport.MSAA_DISABLED)
-	option_msaa.add_item("2x MSAA", Viewport.MSAA_2X)
-	option_msaa.add_item("4x MSAA", Viewport.MSAA_4X)
-	option_msaa.add_item("8x MSAA", Viewport.MSAA_8X)
-	option_msaa.selected = option_msaa.get_item_index(get_viewport().msaa_3d)
-	option_msaa.item_selected.connect(func(index):
-		get_viewport().msaa_3d = option_msaa.get_item_id(index)
+	var lbl_up := Label.new()
+	lbl_up.text = "Режим 3D масштабирования (Upscaler):"
+	vbox.add_child(lbl_up)
+	var opt_upscale := OptionButton.new()
+	opt_upscale.add_item("Bilinear (Стандартный)", 0)
+	opt_upscale.add_item("AMD FSR 1.0 (Чёткий апскейл)", 1)
+	opt_upscale.selected = GameSettings.scaling_mode
+	opt_upscale.item_selected.connect(func(idx):
+		GameSettings.scaling_mode = idx
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
 	)
-	vbox.add_child(option_msaa)
+	vbox.add_child(opt_upscale)
 
-	chk_glow = CheckBox.new()
-	chk_glow.text = "Свечение (Bloom / Glow)"
-	var env_init = _get_env()
-	chk_glow.button_pressed = env_init.glow_enabled if env_init else true
-	chk_glow.toggled.connect(func(pressed):
-		var env = _get_env()
-		if env:
-			env.glow_enabled = pressed
+	var lbl_fsr := Label.new()
+	lbl_fsr.text = "Резкость FSR: %d%%" % int(round(GameSettings.fsr_sharpness * 50.0))
+	vbox.add_child(lbl_fsr)
+	var slider_fsr := HSlider.new()
+	slider_fsr.min_value = 0.0
+	slider_fsr.max_value = 2.0
+	slider_fsr.step = 0.1
+	slider_fsr.value = GameSettings.fsr_sharpness
+	slider_fsr.value_changed.connect(func(val):
+		GameSettings.fsr_sharpness = val
+		lbl_fsr.text = "Резкость FSR: %d%%" % int(round(val * 50.0))
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
 	)
-	vbox.add_child(chk_glow)
+	vbox.add_child(slider_fsr)
 
-	var lbl_scale = Label.new()
-	lbl_scale.text = "Масштаб разрешения (Resolution Scale)"
+	var lbl_scale := Label.new()
+	lbl_scale.text = "Масштаб 3D рендера: %d%%" % int(round(GameSettings.render_scale * 100.0))
 	vbox.add_child(lbl_scale)
-
 	slider_scale = HSlider.new()
-	slider_scale.min_value = 0.35
+	slider_scale.min_value = 0.5
 	slider_scale.max_value = 1.0
 	slider_scale.step = 0.05
-	slider_scale.value = get_viewport().scaling_3d_scale
+	slider_scale.value = GameSettings.render_scale
 	slider_scale.value_changed.connect(func(val):
-		get_viewport().scaling_3d_scale = val
+		GameSettings.render_scale = val
+		lbl_scale.text = "Масштаб 3D рендера: %d%%" % int(round(val * 100.0))
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
 	)
 	vbox.add_child(slider_scale)
 
+	var lbl_sh := Label.new()
+	lbl_sh.text = "Качество теней:"
+	vbox.add_child(lbl_sh)
+	var opt_sh := OptionButton.new()
+	opt_sh.add_item("Отключены (Макс. FPS)", 0)
+	opt_sh.add_item("Низкие", 1)
+	opt_sh.add_item("Средние", 2)
+	opt_sh.add_item("Высокие", 3)
+	opt_sh.selected = GameSettings.shadow_quality
+	opt_sh.item_selected.connect(func(idx):
+		GameSettings.shadow_quality = idx
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
+	)
+	vbox.add_child(opt_sh)
+
+	var lbl_msaa := Label.new()
+	lbl_msaa.text = "Сглаживание 3D (MSAA):"
+	vbox.add_child(lbl_msaa)
+	option_msaa = OptionButton.new()
+	option_msaa.add_item("Выкл", Viewport.MSAA_DISABLED)
+	option_msaa.add_item("2x", Viewport.MSAA_2X)
+	option_msaa.add_item("4x", Viewport.MSAA_4X)
+	option_msaa.add_item("8x", Viewport.MSAA_8X)
+	option_msaa.selected = GameSettings.msaa
+	option_msaa.item_selected.connect(func(idx):
+		GameSettings.msaa = idx
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
+	)
+	vbox.add_child(option_msaa)
+
 	chk_fxaa = CheckBox.new()
-	chk_fxaa.text = "FXAA сглаживание"
-	chk_fxaa.button_pressed = (get_viewport().screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA)
+	chk_fxaa.text = "Экранное сглаживание (FXAA)"
+	chk_fxaa.button_pressed = GameSettings.fxaa
 	chk_fxaa.toggled.connect(func(pressed):
-		if pressed:
-			get_viewport().screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
-		else:
-			get_viewport().screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+		GameSettings.fxaa = pressed
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
 	)
 	vbox.add_child(chk_fxaa)
 
+	chk_glow = CheckBox.new()
+	chk_glow.text = "Свечение (Bloom / Glow)"
+	chk_glow.button_pressed = GameSettings.glow
+	chk_glow.toggled.connect(func(pressed):
+		GameSettings.glow = pressed
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
+	)
+	vbox.add_child(chk_glow)
+
 	chk_ssao = CheckBox.new()
-	chk_ssao.text = "Затенение окружения (SSAO)"
-	chk_ssao.button_pressed = env_init.ssao_enabled if env_init else false
+	chk_ssao.text = "Затенение углов (SSAO)"
+	chk_ssao.button_pressed = GameSettings.ssao
 	chk_ssao.toggled.connect(func(pressed):
-		var env = _get_env()
-		if env:
-			env.ssao_enabled = pressed
+		GameSettings.ssao = pressed
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
 	)
 	vbox.add_child(chk_ssao)
 
 	chk_ssr = CheckBox.new()
-	chk_ssr.text = "Отражения в пространстве экрана (SSR)"
-	chk_ssr.button_pressed = env_init.ssr_enabled if env_init else false
+	chk_ssr.text = "Экранные отражения (SSR)"
+	chk_ssr.button_pressed = GameSettings.ssr
 	chk_ssr.toggled.connect(func(pressed):
-		var env = _get_env()
-		if env:
-			env.ssr_enabled = pressed
+		GameSettings.ssr = pressed
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
 	)
 	vbox.add_child(chk_ssr)
 
-	if OS.has_feature("mobile"):
-		chk_ssao.hide()
-		chk_ssr.hide()
+	chk_vsync = CheckBox.new()
+	chk_vsync.text = "Вертикальная синхронизация (VSync)"
+	chk_vsync.button_pressed = GameSettings.vsync
+	chk_vsync.toggled.connect(func(pressed):
+		GameSettings.vsync = pressed
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
+	)
+	vbox.add_child(chk_vsync)
 
-	btn_potato = Button.new()
-	btn_potato.text = "🥔 Режим Ультра-Картошка: Выкл"
-	btn_potato.pressed.connect(_toggle_potato_mode)
-	vbox.add_child(btn_potato)
-
-	var lbl_limit_fps = Label.new()
-	lbl_limit_fps.text = "Лимит кадров (FPS Limit):"
-	vbox.add_child(lbl_limit_fps)
-
+	var lbl_fps := Label.new()
+	lbl_fps.text = "Лимит FPS:"
+	vbox.add_child(lbl_fps)
 	option_fps = OptionButton.new()
-	option_fps.add_item("Без ограничений (0)", 0)
+	option_fps.add_item("Без лимита", 0)
 	option_fps.add_item("30 FPS", 30)
 	option_fps.add_item("60 FPS", 60)
 	option_fps.add_item("120 FPS", 120)
 	option_fps.add_item("144 FPS", 144)
-	_sync_fps_option()
-	option_fps.item_selected.connect(func(index):
-		Engine.max_fps = option_fps.get_item_id(index)
+	option_fps.add_item("240 FPS", 240)
+	option_fps.selected = GameSettings.fps_limit_idx
+	option_fps.item_selected.connect(func(idx):
+		GameSettings.fps_limit_idx = idx
+		GameSettings.apply_to_engine(get_viewport(), _get_env())
 	)
 	vbox.add_child(option_fps)
 
-	# --- ВКЛАДКА 3: АУДИО ---
-	var scroll_audio = ScrollContainer.new()
+	btn_potato = Button.new()
+	btn_potato.text = "Режим Ультра-Картошки: ВЫКЛ"
+	btn_potato.custom_minimum_size = Vector2(0, 40)
+	btn_potato.pressed.connect(func():
+		_toggle_potato_mode()
+		GameSettings.potato_mode = is_potato_mode
+	)
+	vbox.add_child(btn_potato)
+
+	# === ВКЛАДКА 3: ПРИЦЕЛ ===
+	var scroll_ch := ScrollContainer.new()
+	scroll_ch.name = "Прицел"
+	tabs.add_child(scroll_ch)
+	var vbox_ch := VBoxContainer.new()
+	vbox_ch.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox_ch.add_theme_constant_override("separation", 10)
+	scroll_ch.add_child(vbox_ch)
+
+	var lbl_ch_col := Label.new()
+	lbl_ch_col.text = "Цвет прицела:"
+	vbox_ch.add_child(lbl_ch_col)
+	var opt_ch_col := OptionButton.new()
+	opt_ch_col.add_item("Белый", 0)
+	opt_ch_col.add_item("Зелёный", 1)
+	opt_ch_col.add_item("Бирюзовый", 2)
+	opt_ch_col.add_item("Оранжевый", 3)
+	opt_ch_col.add_item("Жёлтый", 4)
+	opt_ch_col.selected = GameSettings.crosshair_color_idx
+	opt_ch_col.item_selected.connect(func(idx):
+		GameSettings.crosshair_color_idx = idx
+		_apply_crosshair_settings()
+	)
+	vbox_ch.add_child(opt_ch_col)
+
+	var lbl_ch_sz := Label.new()
+	lbl_ch_sz.text = "Масштаб прицела: %d%%" % int(round(GameSettings.crosshair_scale * 100.0))
+	vbox_ch.add_child(lbl_ch_sz)
+	var sl_ch_sz := HSlider.new()
+	sl_ch_sz.min_value = 0.5
+	sl_ch_sz.max_value = 2.0
+	sl_ch_sz.step = 0.1
+	sl_ch_sz.value = GameSettings.crosshair_scale
+	sl_ch_sz.value_changed.connect(func(val):
+		GameSettings.crosshair_scale = val
+		lbl_ch_sz.text = "Масштаб прицела: %d%%" % int(round(val * 100.0))
+		_apply_crosshair_settings()
+	)
+	vbox_ch.add_child(sl_ch_sz)
+
+	var chk_ch_dyn := CheckBox.new()
+	chk_ch_dyn.text = "Динамическое расширение прицела при стрельбе и движении"
+	chk_ch_dyn.button_pressed = GameSettings.crosshair_dynamic
+	chk_ch_dyn.toggled.connect(func(pressed):
+		GameSettings.crosshair_dynamic = pressed
+	)
+	vbox_ch.add_child(chk_ch_dyn)
+
+	# === ВКЛАДКА 4: АУДИО ===
+	var scroll_audio := ScrollContainer.new()
 	scroll_audio.name = "Аудио"
 	tabs.add_child(scroll_audio)
-
-	var vbox_audio = VBoxContainer.new()
+	var vbox_audio := VBoxContainer.new()
 	vbox_audio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox_audio.add_theme_constant_override("separation", 10)
 	scroll_audio.add_child(vbox_audio)
 
-	var lbl_audio = Label.new()
-	lbl_audio.text = "Общая громкость:"
-	vbox_audio.add_child(lbl_audio)
-
+	var lbl_vol := Label.new()
+	lbl_vol.text = "Общая громкость (Master): %d%%" % int(round(GameSettings.master_volume * 100.0))
+	vbox_audio.add_child(lbl_vol)
 	audio_slider = HSlider.new()
 	audio_slider.min_value = 0.0
 	audio_slider.max_value = 1.0
-	audio_slider.step = 0.05
-	audio_slider.value = 1.0
+	audio_slider.step = 0.02
+	audio_slider.value = GameSettings.master_volume
 	audio_slider.value_changed.connect(func(val):
-		AudioServer.set_bus_volume_db(0, linear_to_db(val))
+		GameSettings.master_volume = val
+		lbl_vol.text = "Общая громкость (Master): %d%%" % int(round(val * 100.0))
+		AudioServer.set_bus_volume_db(0, linear_to_db(maxf(val, 0.0001)))
 	)
 	vbox_audio.add_child(audio_slider)
 
-	main_vbox.add_child(HSeparator.new())
-
-	var btn_back = Button.new()
-	btn_back.text = "Назад"
-	btn_back.custom_minimum_size = Vector2(0, 36)
-	btn_back.pressed.connect(func():
-		settings_menu.hide()
-		settings_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var chk_hit_snd := CheckBox.new()
+	chk_hit_snd.text = "Звуковой сигнал при попадании по врагу (Hitmarker)"
+	chk_hit_snd.button_pressed = GameSettings.hitmarker_sound
+	chk_hit_snd.toggled.connect(func(pressed):
+		GameSettings.hitmarker_sound = pressed
 	)
-	main_vbox.add_child(btn_back)
-	
-	# --- ВКЛАДКА 4: РАСШИРЕНИЯ ---
-	var scroll_ext = ScrollContainer.new()
+	vbox_audio.add_child(chk_hit_snd)
+
+	# === ВКЛАДКА 5: РАСШИРЕНИЯ ===
+	var scroll_ext := ScrollContainer.new()
 	scroll_ext.name = "Расширения"
 	tabs.add_child(scroll_ext)
-
-	var vbox_ext = VBoxContainer.new()
+	var vbox_ext := VBoxContainer.new()
 	vbox_ext.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox_ext.add_theme_constant_override("separation", 10)
 	scroll_ext.add_child(vbox_ext)
 
-	var chk_debug = CheckBox.new()
+	var chk_debug := CheckBox.new()
 	chk_debug.text = "Панель отладки (Debug Info: FPS, Ping, Loss)"
-	chk_debug.button_pressed = debug_label.visible if debug_label else false
+	chk_debug.button_pressed = GameSettings.show_debug
 	chk_debug.toggled.connect(func(pressed):
+		GameSettings.show_debug = pressed
 		if debug_label:
 			debug_label.visible = pressed
 	)
 	vbox_ext.add_child(chk_debug)
 
-	var chk_ammo_3d = CheckBox.new()
-	chk_ammo_3d.text = "Патроны на оружии (3D)"
-	chk_ammo_3d.button_pressed = player.show_ammo_on_weapon if player and "show_ammo_on_weapon" in player else false
+	var chk_ammo_3d := CheckBox.new()
+	chk_ammo_3d.text = "Показывать патроны на оружии (3D вместо HUD)"
+	chk_ammo_3d.button_pressed = GameSettings.show_ammo_3d
 	chk_ammo_3d.toggled.connect(func(pressed):
-		if player and "show_ammo_on_weapon" in player:
-			player.show_ammo_on_weapon = pressed
-			if ammo_label:
-				ammo_label.visible = not pressed
-			if player.current_view and player.current_view.has_method("set_ammo_3d_visible"):
-				player.current_view.set_ammo_3d_visible(pressed)
-				if pressed:
-					player.current_view.set_ammo_display(player.current_ammo, player.reserve_ammo)
+		GameSettings.show_ammo_3d = pressed
+		if player and player.has_method("set_show_ammo_on_weapon"):
+			player.set_show_ammo_on_weapon(pressed)
+		if ammo_label:
+			ammo_label.visible = not pressed
 	)
 	vbox_ext.add_child(chk_ammo_3d)
 
-	add_child(settings_menu)
+	main_vbox.add_child(HSeparator.new())
+	var btn_back := Button.new()
+	btn_back.text = "Сохранить и закрыть"
+	btn_back.theme_type_variation = "AccentButton"
+	btn_back.custom_minimum_size = Vector2(0, 42)
+	btn_back.pressed.connect(func():
+		GameSettings.save_to_disk()
+		settings_menu.hide()
+		settings_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if is_paused and pause_menu:
+			pause_menu.show()
+	)
+	main_vbox.add_child(btn_back)
 
 func _sync_fps_option() -> void:
 	if not option_fps:
@@ -1018,9 +1161,9 @@ func _update_mobile_buttons_visual() -> void:
 		if is_editing_hud and selected_hud_btn_id == id:
 			node.modulate = Color(1.0, 0.65, 0.2, 1.0)
 		elif active:
-			node.modulate = Color(1.0, 0.54, 0.16, 1.0)
+			node.modulate = Color(1.0, 0.54, 0.16, GameSettings.mobile_btn_opacity)
 		else:
-			node.modulate = Color(1.0, 1.0, 1.0, 0.9)
+			node.modulate = Color(1.0, 1.0, 1.0, GameSettings.mobile_btn_opacity)
 
 func _build_hud_layout_editor() -> void:
 	hud_editor_panel = Control.new()
@@ -1207,3 +1350,22 @@ func _reset_mobile_hud_layout() -> void:
 		ctrl.offset_bottom = off.y + sz.y
 	if hud_scale_slider:
 		hud_scale_slider.set_value_no_signal(1.0)
+
+func _apply_saved_settings_on_start() -> void:
+	GameSettings.apply_to_engine(get_viewport(), _get_env())
+	GameSettings.apply_to_player(player)
+	if debug_label:
+		debug_label.visible = GameSettings.show_debug
+	if ammo_label:
+		ammo_label.visible = not GameSettings.show_ammo_3d
+	if option_res and GameSettings.res_index >= 0 and GameSettings.res_index < current_res_list.size():
+		option_res.selected = GameSettings.res_index
+		_apply_game_resolution(current_res_list[GameSettings.res_index])
+	if GameSettings.potato_mode and not is_potato_mode:
+		_toggle_potato_mode()
+	_apply_crosshair_settings()
+
+func _apply_crosshair_settings() -> void:
+	if crosshair_view:
+		crosshair_view.modulate = GameSettings.get_crosshair_color()
+		crosshair_view.scale = Vector2.ONE * GameSettings.crosshair_scale

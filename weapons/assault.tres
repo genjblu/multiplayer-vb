@@ -11,5 +11,7 @@ fire_rate = 0.1
 reload_time = 2.2
 hip_pos = Vector3(0.21000001, -0.23000002, -0.4)
 ads_pos = Vector3(0, -0.16000001, -0.35)
+ammo_3d_offset = Vector3(-0.215, 0.035, -0.095)
+ammo_3d_rotation_deg = Vector3(0, 90, 0)
 view_scene = ExtResource("2_7mjyd")
 crosshair_hide_in_ads = true

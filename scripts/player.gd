@@ -37,6 +37,8 @@ const DEFAULT_WEAPON_PATHS: Array[String] = ["res://weapons/pistol.tres", "res:/
 var weapon_holder: Node3D = null
 var current_view: Node3D = null
 var show_ammo_on_weapon: bool = false
+var invert_y: bool = false
+var base_fov: float = 75.0
 
 var current_weapon: WeaponType = WeaponType.ASSAULT
 var weapon_stats = {
@@ -209,6 +211,7 @@ func _ready() -> void:
 		body_mesh.set_layer_mask_value(1, false)
 		body_mesh.set_layer_mask_value(3, true)
 
+	GameSettings.apply_to_player(self)
 	health_changed.emit(health)
 	ammo_changed.emit(current_ammo, reserve_ammo)
 
@@ -284,6 +287,12 @@ func _switch_weapon(type: WeaponType) -> void:
 		weapon_holder.add_child(current_view)
 		current_view.position = stats.get("hip_pos", Vector3(0.2, -0.2, -0.4))
 		current_weapon_node = current_view
+		if current_view.has_method("setup_ammo_3d_params"):
+			var a_off: Vector3 = stats.get("ammo_3d_offset", Vector3(-0.06, 0.05, -0.18))
+			var a_rot: Vector3 = stats.get("ammo_3d_rotation_deg", Vector3.ZERO)
+			var a_font: int = stats.get("ammo_3d_font_size", 96)
+			var a_scale: float = stats.get("ammo_3d_scale", 0.0005)
+			current_view.call("setup_ammo_3d_params", a_off, a_rot, a_font, a_scale)
 		_sync_weapon_ammo_3d(current_ammo, reserve_ammo)
 	elif current_weapon_node:
 		# Старый способ: узел-заглушка (запасной вариант)
@@ -303,6 +312,22 @@ func _sync_weapon_ammo_3d(current: int, reserve: int) -> void:
 			current_view.call("set_ammo_display", current, reserve)
 		if current_view.has_method("set_ammo_3d_visible"):
 			current_view.call("set_ammo_3d_visible", show_ammo_on_weapon and is_multiplayer_authority())
+	elif is_instance_valid(current_weapon_node):
+		var lbl: Label3D = current_weapon_node.get_node_or_null("BoxAmmoLabel3D") as Label3D
+		if show_ammo_on_weapon and is_multiplayer_authority():
+			if lbl == null:
+				lbl = Label3D.new()
+				lbl.name = "BoxAmmoLabel3D"
+				lbl.font_size = 80
+				lbl.outline_size = 20
+				lbl.pixel_size = 0.0006
+				lbl.no_depth_test = true
+				lbl.position = Vector3(0, 0.1, 0)
+				current_weapon_node.add_child(lbl)
+			lbl.visible = true
+			lbl.text = "%d/%d" % [current, reserve]
+		elif lbl != null:
+			lbl.visible = false
 
 func cycle_weapon() -> void:
 	if is_reloading:
@@ -471,7 +496,7 @@ func _physics_process(delta: float) -> void:
 		fire_timer = 0.0
 
 	var stats = weapon_stats[current_weapon]
-	var target_fov = stats["ads_fov"] if is_ads else 75.0
+	var target_fov = stats["ads_fov"] if is_ads else base_fov
 	camera.fov = lerp(camera.fov, target_fov, delta * 15.0)
 
 	var target_weapon_pos: Vector3 = stats.get("ads_pos", Vector3(0, -0.12, -0.35)) if is_ads else stats.get("hip_pos", Vector3(0.2, -0.2, -0.4))
@@ -698,7 +723,8 @@ func die() -> void:
 
 func _rotate_camera(relative: Vector2) -> void:
 	rotate_y(-relative.x)
-	head.rotate_x(-relative.y)
+	var y_mult: float = 1.0 if invert_y else -1.0
+	head.rotate_x(relative.y * y_mult)
 	head.rotation.x = clamp(head.rotation.x, deg_to_rad(-89), deg_to_rad(89))
 
 func _load_weapon_data() -> void:

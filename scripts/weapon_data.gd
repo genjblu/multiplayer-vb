@@ -21,6 +21,10 @@ extends Resource
 @export var ads_fov: float = 45.0
 @export var hip_pos: Vector3 = Vector3(0.2, -0.2, -0.4)
 @export var ads_pos: Vector3 = Vector3(0, -0.12, -0.35)
+@export var ammo_3d_offset: Vector3 = Vector3(-0.06, 0.05, -0.18)
+@export var ammo_3d_rotation_deg: Vector3 = Vector3.ZERO
+@export var ammo_3d_font_size: int = 96
+@export var ammo_3d_scale: float = 0.0005
 
 @export_group("Модель")
 @export var view_scene: PackedScene
@@ -67,9 +71,14 @@ func to_stats() -> Dictionary:
 		"reload_time": reload_time,
 		"hip_pos": hip_pos,
 		"ads_pos": ads_pos,
+		"ammo_3d_offset": ammo_3d_offset,
+		"ammo_3d_rotation_deg": ammo_3d_rotation_deg,
+		"ammo_3d_font_size": ammo_3d_font_size,
+		"ammo_3d_scale": ammo_3d_scale,
 		"view_scene": view_scene,
 		"spread_degrees": spread_degrees,
 		"max_range": max_range,
 		"falloff_start": falloff_start,
 		"min_damage_factor": min_damage_factor
+		
 	}

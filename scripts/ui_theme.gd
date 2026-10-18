@@ -80,6 +80,48 @@ static func build() -> Theme:
 	t.set_stylebox("separator", "HSeparator", line)
 	t.set_constant("separation", "HSeparator", 12)
 
+	# Вкладки (TabContainer) и списки (OptionButton) в едином стиле
+	var tab_unsel := _box(FIELD_COLOR, BORDER_COLOR, 1)
+	tab_unsel.content_margin_left = 14
+	tab_unsel.content_margin_right = 14
+	tab_unsel.content_margin_top = 8
+	tab_unsel.content_margin_bottom = 8
+	var tab_sel := _box(ACCENT_COLOR)
+	tab_sel.content_margin_left = 14
+	tab_sel.content_margin_right = 14
+	tab_sel.content_margin_top = 8
+	tab_sel.content_margin_bottom = 8
+	var tab_panel := _box(PANEL_COLOR, BORDER_COLOR, 1)
+	tab_panel.set_content_margin_all(18)
+	t.set_stylebox("tab_unselected", "TabContainer", tab_unsel)
+	t.set_stylebox("tab_hovered", "TabContainer", _box(Color("252a32"), BORDER_COLOR, 1))
+	t.set_stylebox("tab_selected", "TabContainer", tab_sel)
+	t.set_stylebox("panel", "TabContainer", tab_panel)
+	t.set_color("font_selected_color", "TabContainer", BG_COLOR)
+	t.set_color("font_unselected_color", "TabContainer", MUTED_COLOR)
+	t.set_color("font_hovered_color", "TabContainer", TEXT_COLOR)
+
+	# OptionButton и PopupMenu
+	t.set_stylebox("normal", "OptionButton", _box(FIELD_COLOR, BORDER_COLOR, 1))
+	t.set_stylebox("hover", "OptionButton", _box(Color("252a32"), ACCENT_COLOR, 1))
+	t.set_stylebox("pressed", "OptionButton", _box(FIELD_COLOR, ACCENT_COLOR, 1))
+	t.set_color("font_color", "OptionButton", TEXT_COLOR)
+	t.set_stylebox("panel", "PopupMenu", _box(PANEL_COLOR, BORDER_COLOR, 1))
+	t.set_stylebox("hover", "PopupMenu", _box( Color("2f3540")))
+	t.set_color("font_color", "PopupMenu", TEXT_COLOR)
+	t.set_color("font_hover_color", "PopupMenu", ACCENT_COLOR)
+
+	# Слайдеры (HSlider)
+	var sl_bg := _box(FIELD_COLOR, BORDER_COLOR, 1)
+	sl_bg.content_margin_top = 4
+	sl_bg.content_margin_bottom = 4
+	var sl_fill := _box(ACCENT_COLOR)
+	sl_fill.content_margin_top = 4
+	sl_fill.content_margin_bottom = 4
+	t.set_stylebox("slider", "HSlider", sl_bg)
+	t.set_stylebox("grabber_area", "HSlider", sl_fill)
+	t.set_stylebox("grabber_area_highlight", "HSlider", sl_fill)
+
 	# Стилизация CheckBox (одинаковые отступы исключают прыжки текста)
 	var cb_normal := _box(Color.TRANSPARENT)
 	cb_normal.content_margin_left = 8
