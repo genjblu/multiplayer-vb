@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://bv5u22lucbn0y"]
+
+[ext_resource type="Shader" uid="uid://bpg8dmc2sq6p3" path="res://new_shader.gdshader" id="1_8ixp1"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_03328"]
+shader = ExtResource("1_8ixp1")
+shader_parameter/scope_color = Color(0.04, 0.05, 0.07, 1)
+shader_parameter/inner_radius = 0.38
+shader_parameter/vignette_softness = 0.04
+shader_parameter/reticle_color = Color(0.08, 0.08, 0.08, 0.95)
+
+[node name="ScopeOverlay" type="ColorRect" unique_id=1671644383]
+material = SubResource("ShaderMaterial_03328")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

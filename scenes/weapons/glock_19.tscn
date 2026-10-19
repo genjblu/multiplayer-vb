@@ -1,6 +1,7 @@
 [gd_scene format=4 uid="uid://dmxw7yevlorpi"]
 
 [ext_resource type="Script" uid="uid://brvaqlkupmb46" path="res://scripts/weapon_view.gd" id="1_p60da"]
+[ext_resource type="Material" uid="uid://j2vrv88crggt" path="res://materials/hands_material.tres" id="2_80vg8"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hns8m"]
 resource_name = "Material.029"
@@ -1243,70 +1244,87 @@ transform = Transform3D(-0.8260215, -0.38403907, -0.102386676, 0.38645706, -0.83
 
 [node name="hand" type="MeshInstance3D" parent="Glock/LeftHand" unique_id=261680663]
 transform = Transform3D(0.99302256, 0, 0.11792446, 0, 1, 0, -0.11792446, 0, 0.99302256, 0.17449148, -7.627264e-09, 0.9689328)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_q053b")
 
 [node name="arm_lower" type="MeshInstance3D" parent="Glock/LeftHand/hand" unique_id=616735686]
 transform = Transform3D(0.99999994, 5.5879354e-09, 2.9802322e-08, -6.519258e-09, 1, 7.450581e-09, 0, 3.7252903e-09, 1.0000002, 0.06292857, -0.10587401, -0.051225483)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_7pmyi")
 
 [node name="index_0" type="MeshInstance3D" parent="Glock/LeftHand/hand" unique_id=288718650]
 transform = Transform3D(0.9978672, 0.04299366, -0.049116816, 0.015587797, 0.5737335, 0.8188937, 0.063387215, -0.8179127, 0.57183963, 0.6355153, 0, -1.8432965)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_lusyb")
 
 [node name="index_1" type="MeshInstance3D" parent="Glock/LeftHand/hand/index_0" unique_id=137750548]
 transform = Transform3D(1, 0, 0, 0, 0.92050487, 0.39073113, 0, -0.39073113, 0.92050487, 0, 0, -0.5205416)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_ha55u")
 
 [node name="index_2" type="MeshInstance3D" parent="Glock/LeftHand/hand/index_0/index_1" unique_id=729013327]
 transform = Transform3D(1, 0, 0, 0, 0.92050487, 0.39073113, 0, -0.39073113, 0.92050487, 0, 0, -0.49683595)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_td2hk")
 
 [node name="middle_0" type="MeshInstance3D" parent="Glock/LeftHand/hand" unique_id=1956842578]
 transform = Transform3D(0.9863619, -0.105174914, 0.12660417, -0.05387871, 0.5204977, 0.85216165, -0.15552318, -0.8473609, 0.5077324, 0.21942228, 0, -1.963667)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_qks83")
 
 [node name="middle_1" type="MeshInstance3D" parent="Glock/LeftHand/hand/middle_0" unique_id=2026080174]
 transform = Transform3D(1, 0, 0, 0, 0.95105654, 0.309017, 0, -0.309017, 0.95105654, 0, 0, -0.59544945)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_qotvi")
 
 [node name="middle_2" type="MeshInstance3D" parent="Glock/LeftHand/hand/middle_0/middle_1" unique_id=1361187536]
 transform = Transform3D(1, 0, 0, 0, 0.95105654, 0.309017, 0, -0.309017, 0.95105654, 0, 0, -0.5765768)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_t566i")
 
 [node name="pinky_0" type="MeshInstance3D" parent="Glock/LeftHand/hand" unique_id=1943246456]
 transform = Transform3D(0.9139822, -0.38443184, 0.12980244, -0.118994586, 0.051882073, 0.9915384, -0.38791335, -0.9216944, 0.0016740263, -0.6369156, 0, -1.8759395)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_unyke")
 
 [node name="pinky_1" type="MeshInstance3D" parent="Glock/LeftHand/hand/pinky_0" unique_id=733558863]
 transform = Transform3D(1, 0, 0, 0, 0.95105654, 0.309017, 0, -0.309017, 0.95105654, 0, 0, -0.5086312)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_dv0r2")
 
 [node name="pinky_2" type="MeshInstance3D" parent="Glock/LeftHand/hand/pinky_0/pinky_1" unique_id=8301595]
 transform = Transform3D(1, 0, 0, 0, 0.95105654, 0.309017, 0, -0.309017, 0.95105654, 0, 0, -0.48415732)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_80x66")
 
 [node name="ring_0" type="MeshInstance3D" parent="Glock/LeftHand/hand" unique_id=337215481]
 transform = Transform3D(0.9887851, -0.111496866, 0.099359974, -0.04569749, 0.4075153, 0.9120543, -0.14218186, -0.90636617, 0.39784998, -0.2216101, 0, -1.9495702)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_lpqem")
 
 [node name="ring_1" type="MeshInstance3D" parent="Glock/LeftHand/hand/ring_0" unique_id=1024756007]
 transform = Transform3D(1, 0, 0, 0, 0.95105654, 0.309017, 0, -0.309017, 0.95105654, 0, 0, -0.5784105)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_vnndc")
 
 [node name="ring_2" type="MeshInstance3D" parent="Glock/LeftHand/hand/ring_0/ring_1" unique_id=1778513162]
 transform = Transform3D(1, 0, 0, 0, 0.95105654, 0.309017, 0, -0.309017, 0.95105654, 0, 0, -0.55843866)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_0px68")
 
 [node name="thumb_0" type="MeshInstance3D" parent="Glock/LeftHand/hand" unique_id=860032960]
 transform = Transform3D(0.6068115, 1.0323627, -0.05316944, -1.0284222, 0.6091366, 0.0901114, 0.104628175, -3.7252903e-09, 1.194099, 0.62791723, -0.21416587, -0.35154828)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_mu3uh")
 
 [node name="thumb_1" type="MeshInstance3D" parent="Glock/LeftHand/hand/thumb_0" unique_id=1189621669]
 transform = Transform3D(0.9989662, -0.0023319048, -0.045397405, 0.0037318803, 0.9995192, 0.030777935, 0.045303803, -0.03091554, 0.9984947, 0.41884798, 0, -0.5414748)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_11tp2")
 
 [node name="thumb_2" type="MeshInstance3D" parent="Glock/LeftHand/hand/thumb_0/thumb_1" unique_id=454756881]
 transform = Transform3D(1, 0, 0, 0, 0.99917614, 0.04058337, 0, -0.04058337, 0.99917614, 0.28644383, 0, -0.39743483)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_orfw5")
 
 [node name="RightHand" type="Node3D" parent="Glock" unique_id=70951302]
@@ -1314,70 +1332,87 @@ transform = Transform3D(-1.7008963e-08, 0.9166667, -8.796722e-08, 0.88280594, 4.
 
 [node name="hand" type="MeshInstance3D" parent="Glock/RightHand" unique_id=1140343315]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.9167175)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_q053b")
 
 [node name="arm_lower" type="MeshInstance3D" parent="Glock/RightHand/hand" unique_id=319326231]
 transform = Transform3D(0.9630865, 0.20016298, -0.17999779, -0.04561395, 0.78033483, 0.6236965, 0.26529938, -0.5924634, 0.7606601, 0, -0.11885368, 0.0011925697)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_7pmyi")
 
 [node name="index_0" type="MeshInstance3D" parent="Glock/RightHand/hand" unique_id=2128318446]
 transform = Transform3D(0.9332025, 0.055564694, -0.35502917, 0.0222965, 0.9771166, 0.2115328, 0.35865864, -0.20531884, 0.91060877, 0.6355153, 0, -1.8432965)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_lusyb")
 
 [node name="index_1" type="MeshInstance3D" parent="Glock/RightHand/hand/index_0" unique_id=250106046]
 transform = Transform3D(1, 0, 0, 0, 0.94492483, 0.32728755, 0, -0.32728755, 0.94492483, 0, 0, -0.5205416)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_ha55u")
 
 [node name="index_2" type="MeshInstance3D" parent="Glock/RightHand/hand/index_0/index_1" unique_id=639254176]
 transform = Transform3D(1, 0, 0, 0, 0.93521106, 0.3540907, 0, -0.3540907, 0.93521106, 0, 0, -0.49683595)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_td2hk")
 
 [node name="middle_0" type="MeshInstance3D" parent="Glock/RightHand/hand" unique_id=559615928]
 transform = Transform3D(0.995602, 0.02529282, -0.09020486, 0.057401028, 0.59626704, 0.80073136, 0.07403894, -0.8023876, 0.5921929, 0.21942228, 0, -1.963667)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_qks83")
 
 [node name="middle_1" type="MeshInstance3D" parent="Glock/RightHand/hand/middle_0" unique_id=1489811795]
 transform = Transform3D(1, 0, 0, 0, 0.59902364, 0.80073136, 0, -0.80073136, 0.59902364, 0, 0, -0.59544945)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_qotvi")
 
 [node name="middle_2" type="MeshInstance3D" parent="Glock/RightHand/hand/middle_0/middle_1" unique_id=252650936]
 transform = Transform3D(1, 0, 0, 0, 0.59902364, 0.80073136, 0, -0.80073136, 0.59902364, 0, 0, -0.5765768)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_t566i")
 
 [node name="pinky_0" type="MeshInstance3D" parent="Glock/RightHand/hand" unique_id=680552912]
 transform = Transform3D(0.9974709, 0.006240062, 0.07080096, -0.055221383, 0.69518185, 0.71670955, -0.044747233, -0.7188068, 0.69376826, -0.6369156, 0, -1.8759395)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_unyke")
 
 [node name="pinky_1" type="MeshInstance3D" parent="Glock/RightHand/hand/pinky_0" unique_id=104508453]
 transform = Transform3D(1, 0, 0, 0, 0.6971651, 0.7169106, 0, -0.7169106, 0.6971651, 0, 0, -0.5086312)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_dv0r2")
 
 [node name="pinky_2" type="MeshInstance3D" parent="Glock/RightHand/hand/pinky_0/pinky_1" unique_id=1679574151]
 transform = Transform3D(1, 0, 0, 0, 0.6971651, 0.7169106, 0, -0.7169106, 0.6971651, 0, 0, -0.48415732)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_80x66")
 
 [node name="ring_0" type="MeshInstance3D" parent="Glock/RightHand/hand" unique_id=1913112316]
 transform = Transform3D(0.9986746, 0.006773903, -0.0510207, 0.03845061, 0.56076664, 0.82708055, 0.03421327, -0.827946, 0.559763, -0.2216101, 0, -1.9495702)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_lpqem")
 
 [node name="ring_1" type="MeshInstance3D" parent="Glock/RightHand/hand/ring_0" unique_id=682715050]
 transform = Transform3D(1, 0, 0, 0, 0.56208336, 0.82708055, 0, -0.82708055, 0.56208336, 0, 0, -0.5784105)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_vnndc")
 
 [node name="ring_2" type="MeshInstance3D" parent="Glock/RightHand/hand/ring_0/ring_1" unique_id=901797341]
 transform = Transform3D(1, 0, 0, 0, 0.56208336, 0.82708055, 0, -0.82708055, 0.56208336, 0, 0, -0.55843866)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_0px68")
 
 [node name="thumb_0" type="MeshInstance3D" parent="Glock/RightHand/hand" unique_id=1560833958]
 transform = Transform3D(-0.03430264, 1.192217, -0.11941996, -1.1695001, -0.0073308423, 0.262745, 0.2605993, 0.12403247, 1.1634103, 0.58653134, -0.39436135, -0.39054608)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_mu3uh")
 
 [node name="thumb_1" type="MeshInstance3D" parent="Glock/RightHand/hand/thumb_0" unique_id=1840280568]
 transform = Transform3D(0.7718803, 0.18612717, 0.6079124, -0.14622302, 0.98252565, -0.1151614, -0.6187242, 3.493167e-09, 0.7856083, 0.41884798, 0, -0.5414748)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_11tp2")
 
 [node name="thumb_2" type="MeshInstance3D" parent="Glock/RightHand/hand/thumb_0/thumb_1" unique_id=283230863]
 transform = Transform3D(0.9428938, 0, 0.33309343, 0, 1, 0, -0.33309343, 0, 0.9428938, 0.28644383, 0, -0.39743483)
+material_override = ExtResource("2_80vg8")
 mesh = SubResource("ArrayMesh_orfw5")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=1322523526]

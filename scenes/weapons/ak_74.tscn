@@ -1501,6 +1501,49 @@ _surfaces = [{
 blend_shape_mode = 0
 shadow_mesh = SubResource("ArrayMesh_58unv")
 
+[sub_resource type="Gradient" id="Gradient_q0arv"]
+colors = PackedColorArray(0.11858138, 0.11858138, 0.11858138, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_3scan"]
+gradient = SubResource("Gradient_q0arv")
+
+[sub_resource type="Curve" id="Curve_7g5m4"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_8yffb"]
+curve = SubResource("Curve_7g5m4")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_03328"]
+direction = Vector3(0, 1, 0)
+spread = 25.0
+initial_velocity_min = 0.19999999
+initial_velocity_max = 0.5
+gravity = Vector3(0, 0.2, 0)
+scale_min = 0.049999997
+scale_max = 0.099999994
+scale_curve = SubResource("CurveTexture_8yffb")
+color_ramp = SubResource("GradientTexture1D_3scan")
+
+[sub_resource type="Gradient" id="Gradient_8t5mj"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_rsrxx"]
+gradient = SubResource("Gradient_8t5mj")
+fill = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ht5xe"]
+transparency = 1
+vertex_color_use_as_albedo = true
+albedo_texture = SubResource("GradientTexture2D_rsrxx")
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_s2jg5"]
+material = SubResource("StandardMaterial3D_ht5xe")
+
 [sub_resource type="Animation" id="Animation_eiecg"]
 resource_name = "RESET"
 tracks/0/type = "value"
@@ -1880,8 +1923,9 @@ _data = {
 &"reload": SubResource("Animation_kvinn")
 }
 
-[node name="AK74" type="Node3D" unique_id=910433449]
+[node name="AK74" type="Node3D" unique_id=910433449 node_paths=PackedStringArray("muzzle_smoke")]
 script = ExtResource("1_q0arv")
+muzzle_smoke = NodePath("AK-74/Marker3D/GPUParticles3D")
 
 [node name="AK-74" type="Node3D" parent="." unique_id=227600250]
 transform = Transform3D(-4.371138e-08, 0, -1, 0, 0.9999998, 0, 0.9999998, 0, -4.371139e-08, 0, 0, 0)
@@ -1948,6 +1992,7 @@ transform = Transform3D(1.1646703e-23, 2.4041265e-09, 0.055, 0.055, 2.4041265e-0
 
 [node name="hand" type="MeshInstance3D" parent="AK-74/RightHand" unique_id=259444940]
 transform = Transform3D(1, 0, 0, 0, 0.98887783, 0.14873016, 0, -0.14873016, 0.98887783, -7.962808e-08, 0.36664724, 1.1255007)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_7g5m4")
 
 [node name="arm_lower" type="MeshInstance3D" parent="AK-74/RightHand/hand" unique_id=1324390411]
@@ -1957,62 +2002,77 @@ mesh = SubResource("ArrayMesh_tabce")
 
 [node name="index_0" type="MeshInstance3D" parent="AK-74/RightHand/hand" unique_id=707204391]
 transform = Transform3D(1, 0, 0, 0, 0.9893494, 0.14555983, 0, -0.14555983, 0.9893494, 0.6355153, 0, -1.8432965)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_v8h2t")
 
 [node name="index_1" type="MeshInstance3D" parent="AK-74/RightHand/hand/index_0" unique_id=837377669]
 transform = Transform3D(0.9999999, 0, 0, 0, 0.9014562, 0.4328702, 0, -0.4328702, 0.9014562, -5.9604645e-08, -5.9604645e-08, -0.5205414)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_48qqr")
 
 [node name="index_2" type="MeshInstance3D" parent="AK-74/RightHand/hand/index_0/index_1" unique_id=101660858]
 transform = Transform3D(1.0000001, 0, 0, 0, 0.53658783, 0.84384465, 0, -0.84384465, 0.53658783, 0, 0, -0.49683607)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_bugyx")
 
 [node name="middle_0" type="MeshInstance3D" parent="AK-74/RightHand/hand" unique_id=744684277]
 transform = Transform3D(1, 0, 0, 0, 0.21643965, 0.976296, 0, -0.976296, 0.21643965, 0.21942228, 0, -1.963667)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_wla7u")
 
 [node name="middle_1" type="MeshInstance3D" parent="AK-74/RightHand/hand/middle_0" unique_id=1464427874]
 transform = Transform3D(1, 0, 0, 0, 0.21643965, 0.976296, 0, -0.976296, 0.21643965, 0, 0, -0.59544945)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_oxera")
 
 [node name="middle_2" type="MeshInstance3D" parent="AK-74/RightHand/hand/middle_0/middle_1" unique_id=1228610128]
 transform = Transform3D(1, 0, 0, 0, 0.6989452, 0.7151752, 0, -0.7151752, 0.6989452, 0, 0, -0.5765768)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_dxdok")
 
 [node name="pinky_0" type="MeshInstance3D" parent="AK-74/RightHand/hand" unique_id=2062967357]
 transform = Transform3D(1, 0, 0, 0, 0.35836798, 0.9335804, 0, -0.9335804, 0.35836798, -0.6369156, 0, -1.8759395)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_4b0dg")
 
 [node name="pinky_1" type="MeshInstance3D" parent="AK-74/RightHand/hand/pinky_0" unique_id=1304842093]
 transform = Transform3D(1, 0, 0, 0, 0.35836798, 0.9335804, 0, -0.9335804, 0.35836798, 0, 0, -0.5086312)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_4gqmf")
 
 [node name="pinky_2" type="MeshInstance3D" parent="AK-74/RightHand/hand/pinky_0/pinky_1" unique_id=1842998151]
 transform = Transform3D(1, 0, 0, 0, 0.7796577, 0.62620586, 0, -0.62620586, 0.7796577, 0, 0, -0.48415732)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_swi4h")
 
 [node name="ring_0" type="MeshInstance3D" parent="AK-74/RightHand/hand" unique_id=1316623395]
 transform = Transform3D(1, 0, 0, 0, 0.23344542, 0.9723699, 0, -0.9723699, 0.23344542, -0.2216101, 0, -1.9495702)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_ktam8")
 
 [node name="ring_1" type="MeshInstance3D" parent="AK-74/RightHand/hand/ring_0" unique_id=1588887036]
 transform = Transform3D(1, 0, 0, 0, 0.23344542, 0.9723699, 0, -0.9723699, 0.23344542, 0, 0, -0.5784105)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_t8l1k")
 
 [node name="ring_2" type="MeshInstance3D" parent="AK-74/RightHand/hand/ring_0/ring_1" unique_id=1670117145]
 transform = Transform3D(1, 0, 0, 0, 0.8367384, 0.5476029, 0, -0.5476029, 0.8367384, 0, 0, -0.55843866)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_0rswx")
 
 [node name="thumb_0" type="MeshInstance3D" parent="AK-74/RightHand/hand" unique_id=2124590871]
 transform = Transform3D(0.048501763, 1.1976924, 0, -1.1976924, 0.048501763, 0, 0, 0, 1.1986741, 0.53538513, -0.27117008, -0.36542696)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_5gint")
 
 [node name="thumb_1" type="MeshInstance3D" parent="AK-74/RightHand/hand/thumb_0" unique_id=1335908119]
 transform = Transform3D(0.95520383, 0, 0.29594865, 0, 1, 0, -0.29594865, 0, 0.95520383, 0.41884798, 0, -0.5414748)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_6cksg")
 
 [node name="thumb_2" type="MeshInstance3D" parent="AK-74/RightHand/hand/thumb_0/thumb_1" unique_id=175751452]
 transform = Transform3D(0.76519674, 0, 0.6437965, 0, 1, 0, -0.6437965, 0, 0.76519674, 0.28644383, 0, -0.39743483)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_c11c2")
 
 [node name="Mag" type="Node3D" parent="AK-74" unique_id=2056988572]
@@ -2026,6 +2086,7 @@ transform = Transform3D(-0.19173457, 1.9686619e-08, -0.71556354, 1.6182534e-08, 
 
 [node name="hand" type="MeshInstance3D" parent="AK-74/Mag/LeftHand" unique_id=261680663]
 transform = Transform3D(-0.06635482, -0.98198235, 0.17693931, 0.53303057, 0.11502107, 0.8382411, -0.8434896, 0.14993547, 0.5157946, -0.03526061, 0.43893987, 0.2937106)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_q053b")
 
 [node name="arm_lower" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand" unique_id=616735686]
@@ -2035,63 +2096,88 @@ mesh = SubResource("ArrayMesh_7pmyi")
 
 [node name="index_0" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand" unique_id=288718650]
 transform = Transform3D(1, 0, 0, 0, 0.62265664, 0.7824952, 0, -0.7824952, 0.62265664, 0.6355153, 0, -1.8432965)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_lusyb")
 
 [node name="index_1" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/index_0" unique_id=137750548]
 transform = Transform3D(1, 0, 0, 0, 0.8813034, 0.47255078, 0, -0.47255078, 0.8813034, 0, 0, -0.5205416)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_ha55u")
 
 [node name="index_2" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/index_0/index_1" unique_id=729013327]
 transform = Transform3D(1, 0, 0, 0, 0.8813034, 0.47255078, 0, -0.47255078, 0.8813034, 0, 0, -0.49683595)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_td2hk")
 
 [node name="middle_0" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand" unique_id=1956842578]
 transform = Transform3D(1, 0, 0, 0, 0.32297006, 0.9464091, 0, -0.9464091, 0.32297006, 0.21942228, 0, -1.963667)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_qks83")
 
 [node name="middle_1" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/middle_0" unique_id=2026080174]
 transform = Transform3D(1, 0, 0, 0, 0.9258706, 0.3778408, 0, -0.3778408, 0.9258706, 0, 0, -0.59544945)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_qotvi")
 
 [node name="middle_2" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/middle_0/middle_1" unique_id=1361187536]
 transform = Transform3D(1, 0, 0, 0, 0.9258706, 0.3778408, 0, -0.3778408, 0.9258706, 0, 0, -0.5765768)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_t566i")
 
 [node name="pinky_0" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand" unique_id=1943246456]
 transform = Transform3D(1, 0, 0, 0, -0.4003443, 0.9163648, 0, -0.9163648, -0.4003443, -0.6369156, 0, -1.8759395)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_unyke")
 
 [node name="pinky_1" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/pinky_0" unique_id=733558863]
 transform = Transform3D(1, 0, 0, 0, 0.9747612, 0.22325012, 0, -0.22325012, 0.9747612, 0, 0, -0.5086312)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_dv0r2")
 
 [node name="pinky_2" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/pinky_0/pinky_1" unique_id=8301595]
 transform = Transform3D(1, 0, 0, 0, 0.9747612, 0.22325012, 0, -0.22325012, 0.9747612, 0, 0, -0.48415732)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_80x66")
 
 [node name="ring_0" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand" unique_id=337215481]
 transform = Transform3D(1, 0, 0, 0, -0.040547818, 0.99917775, 0, -0.99917775, -0.040547818, -0.2216101, 0, -1.9495702)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_lpqem")
 
 [node name="ring_1" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/ring_0" unique_id=1024756007]
 transform = Transform3D(1, 0, 0, 0, 0.93544406, 0.35347486, 0, -0.35347486, 0.93544406, 0, 0, -0.5784105)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_vnndc")
 
 [node name="ring_2" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/ring_0/ring_1" unique_id=1778513162]
 transform = Transform3D(1, 0, 0, 0, 0.93544406, 0.35347486, 0, -0.35347486, 0.93544406, 0, 0, -0.55843866)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_0px68")
 
 [node name="thumb_0" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand" unique_id=860032960]
 transform = Transform3D(0.6009114, 0.9758539, -0.3513317, -1.0240433, 0.6226289, -0.022099353, 0.16450135, 0.31122598, 1.1458174, 0.6567485, -0.13981675, -0.3047684)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_mu3uh")
 
 [node name="thumb_1" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/thumb_0" unique_id=1189621669]
 transform = Transform3D(0.9993975, 0.033695094, 0.008322895, -0.0347078, 0.97070855, 0.23773906, -6.8463385e-05, -0.23788482, 0.97129345, 0.41884804, 0, -0.5414749)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_11tp2")
 
 [node name="thumb_2" type="MeshInstance3D" parent="AK-74/Mag/LeftHand/hand/thumb_0/thumb_1" unique_id=454756881]
 transform = Transform3D(0.98648447, 0.040703606, 0.15871954, -0.089633524, 0.94492644, 0.3147699, -0.13716602, -0.3247423, 0.93580353, 0.2864437, 0, -0.39743483)
+material_override = ExtResource("2_q0arv")
 mesh = SubResource("ArrayMesh_orfw5")
+
+[node name="Marker3D" type="Marker3D" parent="AK-74" unique_id=577217371]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.45990363, 0.10394343, 3.5004184e-08)
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="AK-74/Marker3D" unique_id=1780831363]
+emitting = false
+explosiveness = 1.0
+local_coords = true
+process_material = SubResource("ParticleProcessMaterial_03328")
+draw_pass_1 = SubResource("QuadMesh_s2jg5")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=2027749015]
 libraries/ = SubResource("AnimationLibrary_tabce")

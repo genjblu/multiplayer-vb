@@ -1,19 +1,27 @@
-[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://dg66ys1qrvy0l"]
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://c8l0cyxa7rrup"]
 
 [ext_resource type="Script" uid="uid://yh3fgf0xxc2t" path="res://scripts/weapon_data.gd" id="1_data"]
+[ext_resource type="PackedScene" uid="uid://cpf18agb4mgmj" path="res://scenes/weapons/awp.tscn" id="2_fkq78"]
 
 [resource]
 script = ExtResource("1_data")
 display_name = "Снайперская винтовка"
-damage = 95
+damage = 115
 max_ammo = 5
 reserve_ammo = 20
 recoil = 0.05
-fire_rate = 1.5
-reload_time = 2.0
+fire_rate = 0.75
+reload_time = 3.2
 ads_fov = 20.0
+hip_pos = Vector3(0.2, -0.24000002, -0.5399999)
+ads_pos = Vector3(0, -0.17400002, -0.42999992)
+ammo_3d_offset = Vector3(-0.05, 0.13, 0.02)
+ammo_3d_rotation_deg = Vector3(-15, -30, 0)
+ammo_3d_font_size = 96
+ammo_3d_scale = 0.0004
+view_scene = ExtResource("2_fkq78")
 placeholder_size = Vector3(0.08, 0.08, 1.1)
-base_spread_deg = 0.0
+base_spread_deg = 5.0
 move_spread_deg = 4.0
 sprint_spread_deg = 7.0
 air_spread_deg = 8.0

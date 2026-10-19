@@ -1,6 +1,7 @@
 class_name WeaponView
 extends Node3D
 
+@export var muzzle_smoke: GPUParticles3D
 # Если пусто, AnimationPlayer ищется среди дочерних узлов
 @export var animation_player: AnimationPlayer
 @export var cast_shadows: bool = false
@@ -22,6 +23,7 @@ extends Node3D
 var _queued: StringName = &""
 
 func _ready() -> void:
+	_setup_smoke()
 	if animation_player == null:
 		animation_player = find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if ammo_label_3d == null:
@@ -54,6 +56,7 @@ func _ready() -> void:
 			ammo_label_3d.font_size = 96
 			ammo_label_3d.outline_size = 24
 		ammo_label_3d.shaded = false
+		ammo_label_3d.no_depth_test = true
 		ammo_label_3d.render_priority = 5
 		ammo_label_3d.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	if not cast_shadows:
@@ -65,15 +68,15 @@ func _ready() -> void:
 		elif animation_player.has_animation("idle"):
 			animation_player.play("idle")
 
-func play_fire() -> void:
-	_request(&"fire")
-
 func play_reload() -> void:
 	_request(&"reload")
 
 func set_ammo_display(current: int, reserve: int) -> void:
 	if ammo_label_3d:
 		ammo_label_3d.text = "%d/%d" % [current, reserve]
+
+func set_ammo(current: int, reserve: int) -> void:
+	set_ammo_display(current, reserve)
 
 func set_ammo_3d_visible(vis: bool) -> void:
 	if ammo_label_3d:
@@ -134,3 +137,67 @@ func can_fire() -> bool:
 	if not block_fire_during_draw or animation_player == null:
 		return true
 	return not (animation_player.is_playing() and animation_player.current_animation == "draw")
+
+func play_fire() -> void:
+	_request(&"fire")
+	if muzzle_smoke and not muzzle_smoke.emitting:
+		muzzle_smoke.restart()
+		
+func _setup_smoke() -> void:
+	if muzzle_smoke == null:
+		return
+	muzzle_smoke.amount = 8
+	muzzle_smoke.lifetime = 1.0
+	muzzle_smoke.one_shot = true
+	muzzle_smoke.explosiveness = 1.0
+	muzzle_smoke.local_coords = false
+	muzzle_smoke.emitting = false
+
+	var pm := ParticleProcessMaterial.new()
+	pm.direction = Vector3(0, 1, 0)
+	pm.spread = 25.0
+	pm.initial_velocity_min = 0.2
+	pm.initial_velocity_max = 0.5
+	pm.gravity = Vector3(0, 0.2, 0)
+	pm.scale_min = 0.6
+	pm.scale_max = 1.0
+	# Дым растёт со временем
+	var curve := Curve.new()
+	curve.add_point(Vector2(0.0, 0.4))
+	curve.add_point(Vector2(1.0, 1.0))
+	var curve_tex := CurveTexture.new()
+	curve_tex.curve = curve
+	pm.scale_curve = curve_tex
+	# Серый, плавно исчезающий
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array([0.0, 1.0])
+	ramp.colors = PackedColorArray([Color(0.75, 0.75, 0.75, 0.5), Color(0.75, 0.75, 0.75, 0.0)])
+	var ramp_tex := GradientTexture1D.new()
+	ramp_tex.gradient = ramp
+	pm.color_ramp = ramp_tex
+	muzzle_smoke.process_material = pm
+
+	# Мягкое круглое пятно
+	var soft := Gradient.new()
+	soft.offsets = PackedFloat32Array([0.0, 1.0])
+	soft.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	var soft_tex := GradientTexture2D.new()
+	soft_tex.gradient = soft
+	soft_tex.width = 64
+	soft_tex.height = 64
+	soft_tex.fill = GradientTexture2D.FILL_RADIAL
+	soft_tex.fill_from = Vector2(0.5, 0.5)
+	soft_tex.fill_to = Vector2(1.0, 0.5)
+
+	var mat := StandardMaterial3D.new()
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+	mat.billboard_keep_scale = true
+	mat.vertex_color_use_as_albedo = true
+	mat.albedo_texture = soft_tex
+
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.12, 0.12)
+	quad.material = mat
+	muzzle_smoke.draw_pass_1 = quad
