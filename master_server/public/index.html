@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мониторинг серверов | Multiplayer FPS</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="header">
+        <div class="container header-container">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <div class="logo-text">
+                    <h1>FPS ARENA</h1>
+                    <span class="subtitle">LIVE SERVER TRACKER</span>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge">
+                    <span class="stat-dot green"></span>
+                    <span class="stat-label">Серверов онлайн:</span>
+                    <strong id="stat-servers">0</strong>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-dot blue"></span>
+                    <span class="stat-label">Игроков в бою:</span>
+                    <strong id="stat-players">0</strong>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container main-content">
+        <div class="controls-bar">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Поиск сервера по названию, хосту или карте...">
+            </div>
+            <div class="filter-group">
+                <select id="mode-filter">
+                    <option value="all">Все режимы</option>
+                    <option value="ffa">FFA (Каждый за себя)</option>
+                    <option value="2v2">2v2 Команды</option>
+                    <option value="3v3v3">3v3v3</option>
+                    <option value="4v4">4v4</option>
+                </select>
+                <button id="refresh-btn" class="btn-refresh" title="Обновить">
+                    <span>↻</span> Обновить
+                </button>
+            </div>
+        </div>
+
+        <div class="servers-container">
+            <div id="loading" class="state-message">
+                <div class="spinner"></div>
+                <p>Загрузка активных серверов...</p>
+            </div>
+
+            <div id="empty-state" class="state-message hidden">
+                <div class="empty-icon">📡</div>
+                <h3>Нет активных серверов</h3>
+                <p>В данный момент никто не создал публичный сервер. Запустите игру и создайте первую комнату!</p>
+            </div>
+
+            <div id="servers-grid" class="servers-grid">
+                <!-- Server cards injected by JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-content">
+            <p>Master Server Tracker • Обновление каждые 3 секунды</p>
+            <p class="direct-help">Для подключения скопируйте IP и вставьте в игре в разделе «Подключиться по IP»</p>
+        </div>
+    </footer>
+
+    <div id="toast" class="toast hidden">IP скопирован в буфер обмена!</div>
+
+    <script src="app.js"></script>
+</body>
+</html>

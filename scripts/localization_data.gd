@@ -24,10 +24,14 @@ const TRANSLATIONS: Dictionary = {
 		"MENU_NICK": "Ник",
 		"MENU_HOST": "Создать сервер",
 		"MENU_JOIN": "Подключиться по IP",
-		"MENU_LAN": "Комнаты в сети",
+		"MENU_LAN": "Список серверов",
 		"MENU_SETTINGS": "Настройки",
 		"MENU_QUIT": "Выход",
 		"STATUS_IDLE": "Статус: ожидание...",
+		"HOST_PUBLISH_ONLINE": "Опубликовать в глобальный список (Интернет)",
+		"TAB_ONLINE": "🌐 Интернет (Онлайн)",
+		"TAB_LAN": "🏠 Локальная сеть (LAN)",
+		"MASTER_SERVER_URL": "URL мастер-сервера (Интернет):",
 		
 		# Настройки и лобби
 		"SETTINGS_TITLE": "Настройки",
@@ -95,10 +99,14 @@ const TRANSLATIONS: Dictionary = {
 		"MENU_NICK": "Nickname",
 		"MENU_HOST": "Host Game",
 		"MENU_JOIN": "Direct Connect",
-		"MENU_LAN": "LAN Rooms",
+		"MENU_LAN": "Server Browser",
 		"MENU_SETTINGS": "Settings",
 		"MENU_QUIT": "Quit",
 		"STATUS_IDLE": "Status: waiting...",
+		"HOST_PUBLISH_ONLINE": "Publish to Master Server (Online)",
+		"TAB_ONLINE": "🌐 Online (Internet)",
+		"TAB_LAN": "🏠 Local Network (LAN)",
+		"MASTER_SERVER_URL": "Master Server URL (Online):",
 		
 		# Settings and Lobby
 		"SETTINGS_TITLE": "Settings",

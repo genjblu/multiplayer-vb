@@ -6,6 +6,7 @@ var default_port: int = 7777
 var menu: MenuManager
 var screen_main: ScreenMain
 var screen_host: ScreenHost
+var screen_lan: ScreenLan
 var screen_lobby: ScreenLobby
 
 @onready var ip_input: LineEdit = %IPInput
@@ -48,7 +49,7 @@ func _build_ui() -> void:
 	screen_main = ScreenMain.new()
 	screen_host = ScreenHost.new()
 	var screen_join := ScreenJoin.new()
-	var screen_lan := ScreenLan.new()
+	screen_lan = ScreenLan.new()
 	screen_lobby = ScreenLobby.new()
 
 	menu.register("main", screen_main)
@@ -79,7 +80,7 @@ func _build_ui() -> void:
 	menu.show_screen("main")
 	screen_main.nick_edit.text = GameStats.local_nick
 
-func _on_host_requested(port: int, room_name: String, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false) -> void:
+func _on_host_requested(port: int, room_name: String, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false, publish_online: bool = true) -> void:
 	GameStats.set_nick(screen_main.get_nick())
 	if port <= 0:
 		menu.set_status("Статус: Укажите корректный порт!", true)
@@ -97,6 +98,8 @@ func _on_host_requested(port: int, room_name: String, map_id: String = "default_
 				if res:
 					map_title = res.display_name
 			LanDiscovery.start_broadcast(room_name, port, map_title, mode, ff, false)
+			if publish_online and OnlineMatchmaking:
+				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff)
 
 			screen_lobby.setup_lobby(map_title, mode, ff, true)
 			menu.show_screen("lobby")
@@ -122,6 +125,13 @@ func _on_join_requested(ip: String, port: int) -> void:
 		s_data = LanDiscovery.discovered_servers[key]["data"]
 		is_server_in_game = s_data.get("in_game", false)
 		map_id = s_data.get("map_id", "default_arena")
+	elif screen_lan and screen_lan.online_servers_list:
+		for s in screen_lan.online_servers_list:
+			if str(s.get("ip")) == ip and int(s.get("port", 7777)) == port:
+				s_data = s
+				is_server_in_game = s.get("in_game", false)
+				map_id = s.get("map", "default_arena")
+				break
 
 	if is_server_in_game:
 		net_manager.joined_as_late = true
@@ -129,7 +139,7 @@ func _on_join_requested(ip: String, port: int) -> void:
 		net_manager.pending_port = port
 		net_manager.current_map_id = map_id
 		net_manager.current_mode = str(s_data.get("mode", "ffa"))
-		net_manager.friendly_fire = bool(s_data.get("ff", false))
+		net_manager.friendly_fire = bool(s_data.get("friendly_fire", s_data.get("ff", false)))
 		_on_launch_match()
 	else:
 		net_manager.joined_as_late = false
@@ -431,6 +441,17 @@ func _open_main_menu_settings() -> void:
 	chk_ammo_3d.button_pressed = GameSettings.show_ammo_3d
 	chk_ammo_3d.toggled.connect(func(pressed): GameSettings.show_ammo_3d = pressed)
 	vbox_ext.add_child(chk_ammo_3d)
+
+	vbox_ext.add_child(HSeparator.new())
+	var lbl_ms := Label.new()
+	lbl_ms.text = "URL мастер-сервера (Интернет):"
+	vbox_ext.add_child(lbl_ms)
+
+	var edit_ms := LineEdit.new()
+	edit_ms.text = GameSettings.master_server_url
+	edit_ms.placeholder_text = "https://your-server.onrender.com"
+	edit_ms.text_changed.connect(func(new_url): GameSettings.master_server_url = new_url.strip_edges())
+	vbox_ext.add_child(edit_ms)
 
 	main_vbox.add_child(HSeparator.new())
 	var btn_close := Button.new()

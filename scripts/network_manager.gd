@@ -74,6 +74,9 @@ func disconnect_peer() -> void:
 	joined_as_late = false
 	_reset_peer()
 	GameStats.reset_stats()
+	LanDiscovery.stop_broadcast()
+	if OnlineMatchmaking:
+		OnlineMatchmaking.unregister_server()
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
 func _on_peer_connected(id: int) -> void:
@@ -81,13 +84,17 @@ func _on_peer_connected(id: int) -> void:
 	if multiplayer.is_server():
 		# Отправляем новому игроку текущие данные и флаг is_match_running
 		_sync_match_info.rpc_id(id, current_map_id, current_mode, friendly_fire, is_match_running)
-		# Обновляем счётчик игроков в UDP-рассылке
+		# Обновляем счётчик игроков в UDP-рассылке и онлайн-трекере
 		LanDiscovery.update_room_info(GameStats.players.size(), is_match_running)
+		if OnlineMatchmaking:
+			OnlineMatchmaking.update_room_info(GameStats.players.size(), is_match_running)
 		
 func _on_peer_disconnected(id: int) -> void:
 	player_disconnected.emit(id)
 	if multiplayer.is_server():
 		LanDiscovery.update_room_info(GameStats.players.size(), is_match_running)
+		if OnlineMatchmaking:
+			OnlineMatchmaking.update_room_info(GameStats.players.size(), is_match_running)
 
 func _on_server_disconnected() -> void:
 	multiplayer.multiplayer_peer = null

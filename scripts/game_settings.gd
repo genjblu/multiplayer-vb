@@ -50,6 +50,7 @@ static var hitmarker_sound: bool = true
 # Расширения
 static var show_debug: bool = false
 static var show_ammo_3d: bool = false
+static var master_server_url: String = "http://localhost:8080"
 
 static func ensure_loaded() -> void:
 	if not is_loaded:
@@ -105,6 +106,7 @@ static func save_to_disk() -> void:
 
 	cfg.set_value("ext", "show_debug", show_debug)
 	cfg.set_value("ext", "show_ammo_3d", show_ammo_3d)
+	cfg.set_value("network", "master_server_url", master_server_url)
 	
 	cfg.set_value("general", "language", language)
 	
@@ -166,6 +168,7 @@ static func load_from_disk() -> void:
 
 	show_debug = bool(cfg.get_value("ext", "show_debug", show_debug))
 	show_ammo_3d = bool(cfg.get_value("ext", "show_ammo_3d", show_ammo_3d))
+	master_server_url = str(cfg.get_value("network", "master_server_url", master_server_url))
 
 	if cfg.has_section("keys"):
 		for act in cfg.get_section_keys("keys"):

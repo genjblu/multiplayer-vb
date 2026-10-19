@@ -917,6 +917,17 @@ func _build_settings_menu() -> void:
 	)
 	vbox_ext.add_child(chk_ammo_3d)
 
+	vbox_ext.add_child(HSeparator.new())
+	var lbl_ms := Label.new()
+	lbl_ms.text = "URL мастер-сервера (Интернет):"
+	vbox_ext.add_child(lbl_ms)
+
+	var edit_ms := LineEdit.new()
+	edit_ms.text = GameSettings.master_server_url
+	edit_ms.placeholder_text = "https://your-server.onrender.com"
+	edit_ms.text_changed.connect(func(new_url): GameSettings.master_server_url = new_url.strip_edges())
+	vbox_ext.add_child(edit_ms)
+
 	main_vbox.add_child(HSeparator.new())
 	var btn_back := Button.new()
 	btn_back.text = "Сохранить и закрыть"

@@ -33,3 +33,7 @@ Thumbs.db
 
 .Trash-*
 
+
+# Node.js
+node_modules/
+

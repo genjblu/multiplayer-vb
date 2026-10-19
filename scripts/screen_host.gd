@@ -1,13 +1,14 @@
 class_name ScreenHost
 extends MenuScreen
 
-signal host_requested(port: int, room_name: String, map_id: String, mode: String, friendly_fire: bool)
+signal host_requested(port: int, room_name: String, map_id: String, mode: String, friendly_fire: bool, publish_online: bool)
 
 var room_edit: LineEdit
 var port_edit: LineEdit
 var map_option: OptionButton
 var mode_option: OptionButton
 var ff_checkbox: CheckBox
+var online_checkbox: CheckBox
 var available_maps: Array[MapData] = []
 const MAP_PATHS: Array[String] = [
 	"res://maps/default_arena.tres",
@@ -45,6 +46,11 @@ func _ready() -> void:
 	ff_checkbox.button_pressed = false
 	add_child(ff_checkbox)
 
+	online_checkbox = CheckBox.new()
+	online_checkbox.text = tr("HOST_PUBLISH_ONLINE")
+	online_checkbox.button_pressed = true
+	add_child(online_checkbox)
+
 	var b_create := _make_button(tr("HOST_BTN_CREATE"), true)
 	b_create.pressed.connect(_on_create_pressed)
 	add_child(b_create)
@@ -81,4 +87,5 @@ func _on_create_pressed() -> void:
 	var modes := ["ffa", "2v2", "3v3v3", "4v4"]
 	var selected_mode: String = modes[mode_option.selected] if mode_option.selected < modes.size() else "ffa"
 	var ff: bool = ff_checkbox.button_pressed
-	host_requested.emit(port, room, selected_map_id, selected_mode, ff)
+	var pub_online: bool = online_checkbox.button_pressed
+	host_requested.emit(port, room, selected_map_id, selected_mode, ff, pub_online)
