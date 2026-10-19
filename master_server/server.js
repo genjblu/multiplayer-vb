@@ -64,8 +64,18 @@ app.post('/api/servers/register', (req, res) => {
     const { name, host_name, port, map, mode, players, max_players, friendly_fire, custom_ip } = req.body;
     
     // Auto-detect public IP or accept explicit custom_ip
-    const detectedIp = custom_ip && custom_ip.trim() !== '' ? custom_ip.trim() : getClientIp(req);
-    const serverPort = parseInt(port) || 7777;
+    let detectedIp = custom_ip && custom_ip.trim() !== '' ? custom_ip.trim() : getClientIp(req);
+    let serverPort = parseInt(port) || 7777;
+
+    // Handle tunnel host:port format (e.g. playit.gg:12345 or 147.185.x.x:12345)
+    if (detectedIp.includes(':')) {
+        const parts = detectedIp.split(':');
+        detectedIp = parts[0].trim();
+        if (parts[1]) {
+            serverPort = parseInt(parts[1]) || serverPort;
+        }
+    }
+
     const serverId = `${detectedIp}:${serverPort}`;
 
     const serverData = {

@@ -80,7 +80,7 @@ func _build_ui() -> void:
 	menu.show_screen("main")
 	screen_main.nick_edit.text = GameStats.local_nick
 
-func _on_host_requested(port: int, room_name: String, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false, publish_online: bool = true) -> void:
+func _on_host_requested(port: int, room_name: String, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false, publish_online: bool = true, custom_ip: String = "") -> void:
 	GameStats.set_nick(screen_main.get_nick())
 	if port <= 0:
 		menu.set_status("Статус: Укажите корректный порт!", true)
@@ -99,7 +99,7 @@ func _on_host_requested(port: int, room_name: String, map_id: String = "default_
 					map_title = res.display_name
 			LanDiscovery.start_broadcast(room_name, port, map_title, mode, ff, false)
 			if publish_online and OnlineMatchmaking:
-				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff)
+				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff, custom_ip)
 
 			screen_lobby.setup_lobby(map_title, mode, ff, true)
 			menu.show_screen("lobby")

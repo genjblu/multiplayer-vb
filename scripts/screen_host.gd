@@ -1,10 +1,11 @@
 class_name ScreenHost
 extends MenuScreen
 
-signal host_requested(port: int, room_name: String, map_id: String, mode: String, friendly_fire: bool, publish_online: bool)
+signal host_requested(port: int, room_name: String, map_id: String, mode: String, friendly_fire: bool, publish_online: bool, custom_ip: String)
 
 var room_edit: LineEdit
 var port_edit: LineEdit
+var tunnel_edit: LineEdit
 var map_option: OptionButton
 var mode_option: OptionButton
 var ff_checkbox: CheckBox
@@ -26,6 +27,11 @@ func _ready() -> void:
 	port_edit.text = "7777"
 	port_edit.max_length = 5
 	add_child(_make_row(tr("HOST_PORT"), port_edit))
+
+	tunnel_edit = LineEdit.new()
+	tunnel_edit.placeholder_text = tr("HOST_TUNNEL_PLACEHOLDER")
+	tunnel_edit.max_length = 64
+	add_child(_make_row(tr("HOST_TUNNEL_ADDR"), tunnel_edit))
 
 	_scan_maps()
 
@@ -88,4 +94,5 @@ func _on_create_pressed() -> void:
 	var selected_mode: String = modes[mode_option.selected] if mode_option.selected < modes.size() else "ffa"
 	var ff: bool = ff_checkbox.button_pressed
 	var pub_online: bool = online_checkbox.button_pressed
-	host_requested.emit(port, room, selected_map_id, selected_mode, ff, pub_online)
+	var custom_ip: String = tunnel_edit.text.strip_edges()
+	host_requested.emit(port, room, selected_map_id, selected_mode, ff, pub_online, custom_ip)
