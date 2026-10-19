@@ -1,0 +1,24 @@
+keys,ru,en
+SETTINGS_TITLE,Настройки,Settings
+RESUME,Продолжить,Resume
+SAVE_AND_CLOSE,Сохранить и закрыть,Save & Close
+TAB_CONTROLS,Управление,Controls
+TAB_VIDEO,Графика,Graphics
+TAB_AUDIO,Аудио,Audio
+TAB_CROSSHAIR,Прицел,Crosshair
+TAB_EXTENSIONS,Расширения,Extensions
+SENSITIVITY,Чувствительность мыши: %.4f,Mouse Sensitivity: %.4f
+FULLSCREEN,Полноэкранный режим,Fullscreen
+VSYNC,Вертикальная синхронизация (VSync),Vertical Sync (VSync)
+LOBBY_TITLE,Комната ожидания (Лобби),Lobby Room
+START_GAME,Начать игру,Start Game
+LEAVE_LOBBY,Покинуть лобби,Leave Lobby
+PLAYERS_LIST,Подключённые игроки:,Connected Players:
+TEAM_SELECT,Выберите сторону / цвет:,Select Team / Color:
+TEAM_BLUE,СИНИЕ,BLUE
+TEAM_RED,КРАСНЫЕ,RED
+TEAM_GREEN,ЗЕЛЁНЫЕ,GREEN
+TEAM_YELLOW,ЖЁЛТЫЕ,YELLOW
+KILLS_HEADER,К,K
+DEATHS_HEADER,С,D
+KD_HEADER,K/D,K/D

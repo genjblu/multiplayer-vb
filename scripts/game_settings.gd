@@ -4,6 +4,9 @@ extends RefCounted
 const CFG_PATH: String = "user://settings.cfg"
 static var is_loaded: bool = false
 
+# Общие / Локализация
+static var language: String = "en" # "en" или "ru"
+
 # Управление
 static var mouse_sensitivity: float = 0.003
 static var ads_mouse_multiplier: float = 0.6
@@ -54,8 +57,16 @@ static func ensure_loaded() -> void:
 		ui_scale = 1.35 if is_mob else 1.0
 		load_from_disk()
 
+static func set_language(lang_code: String) -> void:
+	language = lang_code
+	TranslationServer.set_locale(lang_code)
+	save_to_disk()
+
 static func save_to_disk() -> void:
 	var cfg := ConfigFile.new()
+
+	cfg.set_value("general", "language", language)
+
 	cfg.set_value("controls", "mouse_sensitivity", mouse_sensitivity)
 	cfg.set_value("controls", "ads_mouse_multiplier", ads_mouse_multiplier)
 	cfg.set_value("controls", "touch_sensitivity", touch_sensitivity)
@@ -94,7 +105,9 @@ static func save_to_disk() -> void:
 
 	cfg.set_value("ext", "show_debug", show_debug)
 	cfg.set_value("ext", "show_ammo_3d", show_ammo_3d)
-
+	
+	cfg.set_value("general", "language", language)
+	
 	for act in ["move_forward", "move_back", "move_left", "move_right", "ui_accept", "crouch", "sprint", "reload", "fire", "ads"]:
 		if InputMap.has_action(act):
 			for ev in InputMap.action_get_events(act):
@@ -107,7 +120,14 @@ static func load_from_disk() -> void:
 	is_loaded = true
 	var cfg := ConfigFile.new()
 	if cfg.load(CFG_PATH) != OK:
+		# По умолчанию английский интерфейс
+		language = "en"
+		TranslationServer.set_locale(language)
 		return
+
+	language = str(cfg.get_value("general", "language", "en"))
+	TranslationServer.set_locale(language)
+
 	mouse_sensitivity = float(cfg.get_value("controls", "mouse_sensitivity", mouse_sensitivity))
 	ads_mouse_multiplier = float(cfg.get_value("controls", "ads_mouse_multiplier", ads_mouse_multiplier))
 	touch_sensitivity = float(cfg.get_value("controls", "touch_sensitivity", touch_sensitivity))
@@ -161,14 +181,15 @@ static func load_from_disk() -> void:
 
 static func get_crosshair_color() -> Color:
 	match crosshair_color_idx:
-		1: return Color(0.2, 1.0, 0.3, 0.95) # Зеленый
-		2: return Color(0.2, 0.95, 1.0, 0.95) # Бирюзовый
-		3: return Color(1.0, 0.54, 0.16, 0.95) # Оранжевый
-		4: return Color(1.0, 0.95, 0.2, 0.95) # Желтый
-		_: return Color(1.0, 1.0, 1.0, 0.9) # Белый
+		1: return Color(0.2, 1.0, 0.3, 0.95)
+		2: return Color(0.2, 0.95, 1.0, 0.95)
+		3: return Color(1.0, 0.54, 0.16, 0.95)
+		4: return Color(1.0, 0.95, 0.2, 0.95)
+		_: return Color(1.0, 1.0, 1.0, 0.9)
 
 static func apply_to_engine(vp: Viewport, env: Environment = null) -> void:
 	ensure_loaded()
+	TranslationServer.set_locale(language)
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(master_volume, 0.0001)))
 	var is_mobile_os: bool = OS.get_name() in ["Android", "iOS"]
 	if not is_mobile_os:
@@ -224,3 +245,4 @@ static func apply_to_player(p: Node) -> void:
 		p.base_fov = base_fov
 	if p.has_method("set_show_ammo_on_weapon"):
 		p.set_show_ammo_on_weapon(show_ammo_3d)
+		
