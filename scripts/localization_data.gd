@@ -34,6 +34,7 @@ const TRANSLATIONS: Dictionary = {
 		"TAB_ONLINE": "🌐 Интернет (Онлайн)",
 		"TAB_LAN": "🏠 Локальная сеть (LAN)",
 		"MASTER_SERVER_URL": "URL мастер-сервера (Интернет):",
+		"SETTINGS_PLAYIT_TUNNEL": "Адрес туннеля playit.gg (для хоста):",
 		
 		# Настройки и лобби
 		"SETTINGS_TITLE": "Настройки",
@@ -111,6 +112,7 @@ const TRANSLATIONS: Dictionary = {
 		"TAB_ONLINE": "🌐 Online (Internet)",
 		"TAB_LAN": "🏠 Local Network (LAN)",
 		"MASTER_SERVER_URL": "Master Server URL (Online):",
+		"SETTINGS_PLAYIT_TUNNEL": "playit.gg Tunnel Address (for host):",
 		
 		# Settings and Lobby
 		"SETTINGS_TITLE": "Settings",

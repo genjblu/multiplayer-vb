@@ -928,6 +928,16 @@ func _build_settings_menu() -> void:
 	edit_ms.text_changed.connect(func(new_url): GameSettings.master_server_url = new_url.strip_edges())
 	vbox_ext.add_child(edit_ms)
 
+	var lbl_tunnel := Label.new()
+	lbl_tunnel.text = "Адрес туннеля playit.gg (для хоста):"
+	vbox_ext.add_child(lbl_tunnel)
+
+	var edit_tunnel := LineEdit.new()
+	edit_tunnel.text = GameSettings.playit_tunnel_address
+	edit_tunnel.placeholder_text = "Авто (или 147.185.x.x:12345)"
+	edit_tunnel.text_changed.connect(func(new_addr): GameSettings.playit_tunnel_address = new_addr.strip_edges())
+	vbox_ext.add_child(edit_tunnel)
+
 	main_vbox.add_child(HSeparator.new())
 	var btn_back := Button.new()
 	btn_back.text = "Сохранить и закрыть"

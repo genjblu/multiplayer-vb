@@ -444,7 +444,7 @@ func _open_main_menu_settings() -> void:
 
 	vbox_ext.add_child(HSeparator.new())
 	var lbl_ms := Label.new()
-	lbl_ms.text = "URL мастер-сервера (Интернет):"
+	lbl_ms.text = tr("MASTER_SERVER_URL")
 	vbox_ext.add_child(lbl_ms)
 
 	var edit_ms := LineEdit.new()
@@ -452,6 +452,16 @@ func _open_main_menu_settings() -> void:
 	edit_ms.placeholder_text = "https://your-server.onrender.com"
 	edit_ms.text_changed.connect(func(new_url): GameSettings.master_server_url = new_url.strip_edges())
 	vbox_ext.add_child(edit_ms)
+
+	var lbl_tunnel := Label.new()
+	lbl_tunnel.text = tr("SETTINGS_PLAYIT_TUNNEL")
+	vbox_ext.add_child(lbl_tunnel)
+
+	var edit_tunnel := LineEdit.new()
+	edit_tunnel.text = GameSettings.playit_tunnel_address
+	edit_tunnel.placeholder_text = tr("HOST_TUNNEL_PLACEHOLDER")
+	edit_tunnel.text_changed.connect(func(new_addr): GameSettings.playit_tunnel_address = new_addr.strip_edges())
+	vbox_ext.add_child(edit_tunnel)
 
 	main_vbox.add_child(HSeparator.new())
 	var btn_close := Button.new()

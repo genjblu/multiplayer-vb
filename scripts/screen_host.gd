@@ -28,7 +28,9 @@ func _ready() -> void:
 	port_edit.max_length = 5
 	add_child(_make_row(tr("HOST_PORT"), port_edit))
 
+	GameSettings.ensure_loaded()
 	tunnel_edit = LineEdit.new()
+	tunnel_edit.text = GameSettings.playit_tunnel_address
 	tunnel_edit.placeholder_text = tr("HOST_TUNNEL_PLACEHOLDER")
 	tunnel_edit.max_length = 64
 	add_child(_make_row(tr("HOST_TUNNEL_ADDR"), tunnel_edit))
@@ -79,6 +81,10 @@ func _scan_maps() -> void:
 		def_map.scene_path = "res://scenes/arena.tscn"
 		available_maps.append(def_map)
 
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and is_visible_in_tree() and tunnel_edit:
+		tunnel_edit.text = GameSettings.playit_tunnel_address
+
 func _on_create_pressed() -> void:
 	var port := port_edit.text.strip_edges().to_int()
 	if port < 1024 or port > 65535:
@@ -95,4 +101,6 @@ func _on_create_pressed() -> void:
 	var ff: bool = ff_checkbox.button_pressed
 	var pub_online: bool = online_checkbox.button_pressed
 	var custom_ip: String = tunnel_edit.text.strip_edges()
+	GameSettings.playit_tunnel_address = custom_ip
+	GameSettings.save_to_disk()
 	host_requested.emit(port, room, selected_map_id, selected_mode, ff, pub_online, custom_ip)
