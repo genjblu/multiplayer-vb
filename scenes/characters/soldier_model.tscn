@@ -1,0 +1,248 @@
+[gd_scene format=3 uid="uid://c7soldier77model"]
+
+[ext_resource type="Script" path="res://scripts/soldier_model.gd" id="1_model"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_Camo"]
+albedo_color = Color(0.24, 0.26, 0.28, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Mat_Gear"]
+albedo_color = Color(0.11, 0.12, 0.14, 1)
+roughness = 0.55
+
+[sub_resource type="StandardMaterial3D" id="Mat_Skin"]
+albedo_color = Color(0.16, 0.17, 0.19, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="Mat_Visor"]
+albedo_color = Color(0.95, 0.55, 0.12, 1)
+metallic = 0.85
+roughness = 0.15
+
+[sub_resource type="StandardMaterial3D" id="Mat_Team"]
+albedo_color = Color(1, 0.55, 0.1, 1)
+roughness = 0.45
+
+[sub_resource type="BoxMesh" id="Mesh_Belt"]
+material = SubResource("Mat_Gear")
+size = Vector3(0.38, 0.12, 0.24)
+
+[sub_resource type="BoxMesh" id="Mesh_Pouch"]
+material = SubResource("Mat_Gear")
+size = Vector3(0.08, 0.1, 0.06)
+
+[sub_resource type="BoxMesh" id="Mesh_Holster"]
+material = SubResource("Mat_Gear")
+size = Vector3(0.08, 0.15, 0.1)
+
+[sub_resource type="BoxMesh" id="Mesh_Jacket"]
+material = SubResource("Mat_Camo")
+size = Vector3(0.36, 0.42, 0.22)
+
+[sub_resource type="BoxMesh" id="Mesh_TeamVest"]
+material = SubResource("Mat_Team")
+size = Vector3(0.39, 0.34, 0.26)
+
+[sub_resource type="BoxMesh" id="Mesh_ShoulderPad"]
+material = SubResource("Mat_Gear")
+size = Vector3(0.1, 0.06, 0.14)
+
+[sub_resource type="BoxMesh" id="Mesh_UpperArm"]
+material = SubResource("Mat_Camo")
+size = Vector3(0.11, 0.22, 0.11)
+
+[sub_resource type="BoxMesh" id="Mesh_ArmBand"]
+material = SubResource("Mat_Team")
+size = Vector3(0.12, 0.05, 0.12)
+
+[sub_resource type="BoxMesh" id="Mesh_LowerArm"]
+material = SubResource("Mat_Camo")
+size = Vector3(0.1, 0.2, 0.1)
+
+[sub_resource type="BoxMesh" id="Mesh_Glove"]
+material = SubResource("Mat_Gear")
+size = Vector3(0.09, 0.08, 0.09)
+
+[sub_resource type="BoxMesh" id="Mesh_Head"]
+material = SubResource("Mat_Skin")
+size = Vector3(0.2, 0.22, 0.2)
+
+[sub_resource type="BoxMesh" id="Mesh_Helmet"]
+material = SubResource("Mat_Gear")
+size = Vector3(0.24, 0.15, 0.25)
+
+[sub_resource type="BoxMesh" id="Mesh_HelmetStripe"]
+material = SubResource("Mat_Team")
+size = Vector3(0.06, 0.02, 0.25)
+
+[sub_resource type="BoxMesh" id="Mesh_Visor"]
+material = SubResource("Mat_Visor")
+size = Vector3(0.19, 0.06, 0.05)
+
+[sub_resource type="BoxMesh" id="Mesh_Headset"]
+material = SubResource("Mat_Gear")
+size = Vector3(0.04, 0.08, 0.06)
+
+[sub_resource type="BoxMesh" id="Mesh_Thigh"]
+material = SubResource("Mat_Camo")
+size = Vector3(0.14, 0.36, 0.14)
+
+[sub_resource type="BoxMesh" id="Mesh_Calf"]
+material = SubResource("Mat_Camo")
+size = Vector3(0.13, 0.34, 0.13)
+
+[sub_resource type="BoxMesh" id="Mesh_KneePad"]
+material = SubResource("Mat_Gear")
+size = Vector3(0.12, 0.09, 0.04)
+
+[sub_resource type="BoxMesh" id="Mesh_Boot"]
+material = SubResource("Mat_Gear")
+size = Vector3(0.14, 0.12, 0.22)
+
+[node name="SoldierModel" type="Node3D"]
+script = ExtResource("1_model")
+
+[node name="Pelvis" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+
+[node name="BeltMesh" type="MeshInstance3D" parent="Pelvis"]
+mesh = SubResource("Mesh_Belt")
+
+[node name="PouchL" type="MeshInstance3D" parent="Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.14, 0, 0.12)
+mesh = SubResource("Mesh_Pouch")
+
+[node name="PouchR" type="MeshInstance3D" parent="Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.14, 0, 0.12)
+mesh = SubResource("Mesh_Pouch")
+
+[node name="Holster" type="MeshInstance3D" parent="Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.06, 0)
+mesh = SubResource("Mesh_Holster")
+
+[node name="Torso" type="Node3D" parent="Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.26, 0)
+
+[node name="JacketMesh" type="MeshInstance3D" parent="Pelvis/Torso"]
+mesh = SubResource("Mesh_Jacket")
+
+[node name="TeamVestMesh" type="MeshInstance3D" parent="Pelvis/Torso"]
+mesh = SubResource("Mesh_TeamVest")
+
+[node name="ShoulderPadL" type="MeshInstance3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.21, 0.16, 0)
+mesh = SubResource("Mesh_ShoulderPad")
+
+[node name="ShoulderPadR" type="MeshInstance3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.21, 0.16, 0)
+mesh = SubResource("Mesh_ShoulderPad")
+
+[node name="ArmL" type="Node3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.24, 0.14, 0)
+
+[node name="UpperArmL" type="MeshInstance3D" parent="Pelvis/Torso/ArmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.11, 0)
+mesh = SubResource("Mesh_UpperArm")
+
+[node name="TeamArmBandL" type="MeshInstance3D" parent="Pelvis/Torso/ArmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.06, 0)
+mesh = SubResource("Mesh_ArmBand")
+
+[node name="ForearmL" type="Node3D" parent="Pelvis/Torso/ArmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.22, 0)
+
+[node name="LowerArmL" type="MeshInstance3D" parent="Pelvis/Torso/ArmL/ForearmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+mesh = SubResource("Mesh_LowerArm")
+
+[node name="GloveL" type="MeshInstance3D" parent="Pelvis/Torso/ArmL/ForearmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.22, 0)
+mesh = SubResource("Mesh_Glove")
+
+[node name="ArmR" type="Node3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0.14, 0)
+
+[node name="UpperArmR" type="MeshInstance3D" parent="Pelvis/Torso/ArmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.11, 0)
+mesh = SubResource("Mesh_UpperArm")
+
+[node name="ForearmR" type="Node3D" parent="Pelvis/Torso/ArmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.22, 0)
+
+[node name="LowerArmR" type="MeshInstance3D" parent="Pelvis/Torso/ArmR/ForearmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+mesh = SubResource("Mesh_LowerArm")
+
+[node name="GloveR" type="MeshInstance3D" parent="Pelvis/Torso/ArmR/ForearmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.22, 0)
+mesh = SubResource("Mesh_Glove")
+
+[node name="Head" type="Node3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.32, 0)
+
+[node name="HeadMesh" type="MeshInstance3D" parent="Pelvis/Torso/Head"]
+mesh = SubResource("Mesh_Head")
+
+[node name="Helmet" type="MeshInstance3D" parent="Pelvis/Torso/Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.06, -0.01)
+mesh = SubResource("Mesh_Helmet")
+
+[node name="TeamHelmetStripe" type="MeshInstance3D" parent="Pelvis/Torso/Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.14, -0.01)
+mesh = SubResource("Mesh_HelmetStripe")
+
+[node name="Visor" type="MeshInstance3D" parent="Pelvis/Torso/Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, -0.11)
+mesh = SubResource("Mesh_Visor")
+
+[node name="HeadsetL" type="MeshInstance3D" parent="Pelvis/Torso/Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.13, 0.02, 0)
+mesh = SubResource("Mesh_Headset")
+
+[node name="HeadsetR" type="MeshInstance3D" parent="Pelvis/Torso/Head"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.13, 0.02, 0)
+mesh = SubResource("Mesh_Headset")
+
+[node name="LegL" type="Node3D" parent="Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.11, -0.06, 0)
+
+[node name="ThighL" type="MeshInstance3D" parent="Pelvis/LegL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0)
+mesh = SubResource("Mesh_Thigh")
+
+[node name="ShinL" type="Node3D" parent="Pelvis/LegL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0)
+
+[node name="CalfL" type="MeshInstance3D" parent="Pelvis/LegL/ShinL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0)
+mesh = SubResource("Mesh_Calf")
+
+[node name="KneePadL" type="MeshInstance3D" parent="Pelvis/LegL/ShinL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.04, -0.07)
+mesh = SubResource("Mesh_KneePad")
+
+[node name="BootL" type="MeshInstance3D" parent="Pelvis/LegL/ShinL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.32, -0.04)
+mesh = SubResource("Mesh_Boot")
+
+[node name="LegR" type="Node3D" parent="Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.11, -0.06, 0)
+
+[node name="ThighR" type="MeshInstance3D" parent="Pelvis/LegR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0)
+mesh = SubResource("Mesh_Thigh")
+
+[node name="ShinR" type="Node3D" parent="Pelvis/LegR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0)
+
+[node name="CalfR" type="MeshInstance3D" parent="Pelvis/LegR/ShinR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0)
+mesh = SubResource("Mesh_Calf")
+
+[node name="KneePadR" type="MeshInstance3D" parent="Pelvis/LegR/ShinR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.04, -0.07)
+mesh = SubResource("Mesh_KneePad")
+
+[node name="BootR" type="MeshInstance3D" parent="Pelvis/LegR/ShinR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.32, -0.04)
+mesh = SubResource("Mesh_Boot")
