@@ -1,15 +1,24 @@
 extends Node
 
+
 signal player_connected(peer_id: int)
 signal player_disconnected(peer_id: int)
 signal server_disconnected
 signal connection_failed
 signal game_started
+signal match_launch_requested
 
 const DEFAULT_PORT := 7777
 const MAX_CLIENTS := 32
 
 var peer: ENetMultiplayerPeer = null
+var current_map_id: String = "default_arena"
+var current_mode: String = "ffa"
+var friendly_fire: bool = false
+var is_match_running: bool = false
+var joined_as_late: bool = false
+var pending_ip: String = ""
+var pending_port: int = DEFAULT_PORT
 
 func _ready() -> void:
 	multiplayer.peer_connected.connect(_on_peer_connected)
@@ -30,7 +39,7 @@ func _reset_peer() -> void:
 		peer.close()
 		peer = null
 
-func host_game(port: int = DEFAULT_PORT) -> Error:
+func host_game(port: int = DEFAULT_PORT, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false) -> Error:
 	_reset_peer()
 	peer = ENetMultiplayerPeer.new()
 	var error := peer.create_server(port, MAX_CLIENTS)
@@ -38,10 +47,14 @@ func host_game(port: int = DEFAULT_PORT) -> Error:
 		printerr("Failed to create server: ", error)
 		peer = null
 		return error
+
 	multiplayer.multiplayer_peer = peer
-	print("Server hosted successfully on port %d" % port)
-	player_connected.emit(1)
-	game_started.emit()
+	current_map_id = map_id
+	current_mode = mode
+	friendly_fire = ff
+
+	# Хост сразу регистрирует себя в GameStats
+	GameStats.register_name(GameStats.local_nick)
 	return OK
 
 func join_game(ip: String, port: int = DEFAULT_PORT) -> Error:
@@ -52,35 +65,58 @@ func join_game(ip: String, port: int = DEFAULT_PORT) -> Error:
 		printerr("Failed to create client for IP %s:%d -> %s" % [ip, port, error])
 		peer = null
 		return error
+
 	multiplayer.multiplayer_peer = peer
-	print("Connecting to server at %s:%d..." % [ip, port])
 	return OK
 
 func disconnect_peer() -> void:
+	is_match_running = false
+	joined_as_late = false
 	_reset_peer()
+	GameStats.reset_stats()
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 
-func close_connection() -> void:
-	disconnect_peer()
-
 func _on_peer_connected(id: int) -> void:
-	print("Peer connected: %d" % id)
 	player_connected.emit(id)
-
+	if multiplayer.is_server():
+		# Отправляем новому игроку текущие данные и флаг is_match_running
+		_sync_match_info.rpc_id(id, current_map_id, current_mode, friendly_fire, is_match_running)
+		# Обновляем счётчик игроков в UDP-рассылке
+		LanDiscovery.update_room_info(GameStats.players.size(), is_match_running)
+		
 func _on_peer_disconnected(id: int) -> void:
-	print("Peer disconnected: %d" % id)
 	player_disconnected.emit(id)
+	if multiplayer.is_server():
+		LanDiscovery.update_room_info(GameStats.players.size(), is_match_running)
 
 func _on_server_disconnected() -> void:
-	print("Server disconnected.")
 	multiplayer.multiplayer_peer = null
 	server_disconnected.emit()
 
 func _on_multiplayer_connection_failed() -> void:
-	print("Connection failed.")
 	multiplayer.multiplayer_peer = null
 	connection_failed.emit()
 
 func _on_connected_to_server() -> void:
-	print("Connected to server successfully!")
+	# Сообщаем хосту свой ник
+	GameStats.register_name.rpc_id(1, GameStats.local_nick)
+
+@rpc("authority", "call_local", "reliable")
+func _sync_match_info(map_id: String, mode: String, ff: bool, in_game: bool) -> void:
+	current_map_id = map_id
+	current_mode = mode
+	friendly_fire = ff
+	is_match_running = in_game
 	game_started.emit()
+
+# Хост запускает матч у всех сразу
+func host_start_match() -> void:
+	if multiplayer.is_server():
+		is_match_running = true
+		LanDiscovery.update_room_info(GameStats.players.size(), true)
+		_launch_match_for_all.rpc()
+
+@rpc("authority", "call_local", "reliable")
+func _launch_match_for_all() -> void:
+	is_match_running = true
+	match_launch_requested.emit()

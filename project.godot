@@ -21,6 +21,7 @@ NetworkManager="*res://scripts/network_manager.gd"
 GameStats="*res://scripts/game_stats.gd"
 LanDiscovery="*res://scripts/lan_discovery.gd"
 BulletDecals="*res://scripts/bullet_decals.gd"
+LocalizationData="*uid://escx3jmpe60v"
 _mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [display]
