@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MapData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/map_data.gd" id="1_map"]
+
+[resource]
+script = ExtResource("1_map")
+id = "default_arena"
+display_name = "Арена"
+description = "Стандартная тренировочная арена для сетевых перестрелок."
+scene_path = "res://scenes/arena.tscn"
+supported_modes = ["ffa", "2v2", "3v3v3", "4v4"]

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="MapData" format=3 uid="uid://bpqi4agx3uylr"]
+
+[ext_resource type="Script" uid="uid://dcy054ab7k3dj" path="res://scripts/map_data.gd" id="1_pxtp5"]
+
+[resource]
+script = ExtResource("1_pxtp5")
+id = "Industrial"
+display_name = "MAP_INDUSTRIAL"
+description = "MAP_INDUSTRIAL_DESC"
+scene_path = "uid://cpfd2hd5p61ts"
