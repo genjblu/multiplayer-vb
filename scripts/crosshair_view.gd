@@ -3,6 +3,7 @@ extends Control
 
 var player: CharacterBody3D = null
 var hit_amount: float = 0.0  # 0..1, насколько прицел покраснел
+var hit_is_headshot: bool = false
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -44,3 +45,16 @@ func _draw() -> void:
 
 	if wd.crosshair_center_dot and wd.crosshair_style != WeaponData.CrosshairStyle.DOT:
 		draw_circle(center, wd.crosshair_dot_size, col)
+
+	# Отрисовка тактического X-хитмаркера (как в CS2 / CoD)
+	if hit_amount > 0.02:
+		var hm_alpha: float = clampf(hit_amount, 0.0, 1.0)
+		var hm_col: Color = Color(1.0, 0.2, 0.2, hm_alpha) if hit_is_headshot else Color(1.0, 1.0, 1.0, hm_alpha)
+		var hm_inner: float = 6.0 + (1.0 - hm_alpha) * 3.0
+		var hm_len: float = 7.0
+		var hm_w: float = 2.2
+		# 4 диагональные засечки
+		draw_line(center + Vector2(-hm_inner, -hm_inner), center + Vector2(-hm_inner - hm_len, -hm_inner - hm_len), hm_col, hm_w, true)
+		draw_line(center + Vector2(hm_inner, -hm_inner), center + Vector2(hm_inner + hm_len, -hm_inner - hm_len), hm_col, hm_w, true)
+		draw_line(center + Vector2(-hm_inner, hm_inner), center + Vector2(-hm_inner - hm_len, hm_inner + hm_len), hm_col, hm_w, true)
+		draw_line(center + Vector2(hm_inner, hm_inner), center + Vector2(hm_inner + hm_len, hm_inner + hm_len), hm_col, hm_w, true)

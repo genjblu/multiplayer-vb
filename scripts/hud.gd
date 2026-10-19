@@ -1,5 +1,8 @@
 extends CanvasLayer
 
+const SoundFX = preload("res://scripts/sound_effects.gd")
+const DamageIndicatorView = preload("res://scripts/damage_indicator.gd")
+
 @onready var health_bar: ProgressBar = %HealthBar if has_node("%HealthBar") else null
 @onready var ammo_label: Label = %AmmoLabel if has_node("%AmmoLabel") else null
 @onready var disconnect_label: Label = get_node("../DisconnectLabel") if has_node("../DisconnectLabel") else null
@@ -16,6 +19,10 @@ var viewmodel: ViewmodelRenderer
 
 var scoreboard: Scoreboard
 var kill_feed: KillFeed
+var weapon_wheel: WeaponWheel
+var _wheel_press_time: float = 0.0
+var hit_sound_player: AudioStreamPlayer
+var damage_indicator: DamageIndicatorView
 
 var pause_menu: Control
 var settings_menu: Control
@@ -75,6 +82,8 @@ func _ready() -> void:
 		player.ammo_changed.connect(_on_ammo_changed)
 	if player.has_signal("hit_target"):
 		player.hit_target.connect(_on_hit_target)
+	if player.has_signal("damage_taken"):
+		player.damage_taken.connect(_on_damage_taken)
 	if player.has_signal("weapon_changed"):
 		player.weapon_changed.connect(_on_weapon_changed)
 
@@ -114,6 +123,23 @@ func _ready() -> void:
 	crosshair_view = CrosshairView.new()
 	crosshair_view.player = player
 	add_child(crosshair_view)
+
+	damage_indicator = DamageIndicatorView.new()
+	add_child(damage_indicator)
+	move_child(damage_indicator, 0)
+
+	hit_sound_player = AudioStreamPlayer.new()
+	hit_sound_player.name = "HitmarkerSound2D"
+	hit_sound_player.bus = "Master"
+	add_child(hit_sound_player)
+
+	weapon_wheel = WeaponWheel.new()
+	weapon_wheel.player = player
+	weapon_wheel.weapon_selected.connect(func(w_idx: int):
+		if player and player.has_method("_switch_weapon"):
+			player._switch_weapon(w_idx)
+	)
+	add_child(weapon_wheel)
 	#if weapon_root_node:
 		#viewmodel = ViewmodelRenderer.new()
 		#add_child(viewmodel)
@@ -139,17 +165,19 @@ func _build_hud_elements() -> void:
 	var hud_container = $TouchOverlay/HUDContainer if has_node("TouchOverlay/HUDContainer") else self
 	var is_mobile = _is_mobile()
 
-	# Debug-панель (Top Right): FPS, Avg, Min/Max, Ping, Loss
+	# Debug-панель (Top Left, под полоской здоровья, чтобы не перекрывать киллфид в правом углу)
 	debug_label = Label.new()
-	debug_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	debug_label.offset_left = -260
-	debug_label.offset_top = 10
-	debug_label.offset_right = -15
-	debug_label.offset_bottom = 120
-	debug_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	debug_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	debug_label.offset_left = 16
+	debug_label.offset_top = 80
+	debug_label.offset_right = 340
+	debug_label.offset_bottom = 150
+	debug_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	debug_label.text = "DEBUG INFO"
 	debug_label.add_theme_color_override("font_color", Color(0.2, 1.0, 0.4, 0.9))
-	debug_label.add_theme_font_size_override("font_size", 14)
+	debug_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.85))
+	debug_label.add_theme_constant_override("outline_size", 3)
+	debug_label.add_theme_font_size_override("font_size", 13)
 	hud_container.add_child(debug_label)
 	debug_label.visible = false
 
@@ -262,7 +290,44 @@ func _input(event: InputEvent) -> void:
 
 	if not player or not player.is_multiplayer_authority():
 		return
+
+	if event.is_action_pressed("weapon_wheel") and not is_paused:
+		_wheel_press_time = Time.get_ticks_msec() / 1000.0
+		if weapon_wheel and not weapon_wheel.is_open:
+			weapon_wheel.open()
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			if crosshair_view:
+				crosshair_view.visible = false
+		get_viewport().set_input_as_handled()
+		return
+
+	if event.is_action_released("weapon_wheel") and not is_paused:
+		var duration: float = (Time.get_ticks_msec() / 1000.0) - _wheel_press_time
+		if weapon_wheel and weapon_wheel.is_open:
+			# Если был короткий тап (< 0.2 сек) и мышь не двигали — переключаем на следующее оружие (Quick Switch)
+			if duration < 0.2 and not weapon_wheel.has_mouse_moved:
+				weapon_wheel.close()
+				if player and player.has_method("cycle_weapon"):
+					player.cycle_weapon()
+			else:
+				weapon_wheel.close()
+
+			if not is_paused and not _is_mobile():
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			if crosshair_view:
+				crosshair_view.visible = true
+		get_viewport().set_input_as_handled()
+		return
+
 	if event.is_action_pressed("ui_cancel"):
+		if weapon_wheel and weapon_wheel.is_open:
+			weapon_wheel.close()
+			if not is_paused and not _is_mobile():
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			if crosshair_view:
+				crosshair_view.visible = true
+			get_viewport().set_input_as_handled()
+			return
 		_toggle_pause()
 
 func _toggle_pause() -> void:
@@ -487,7 +552,8 @@ func _build_settings_menu() -> void:
 			{"action": "sprint", "label": "Спринт"},
 			{"action": "reload", "label": "Перезарядка"},
 			{"action": "fire", "label": "Огонь"},
-			{"action": "ads", "label": "Прицел"}
+			{"action": "ads", "label": "Прицел"},
+			{"action": "weapon_wheel", "label": "Колесо оружия / Быстрая смена"}
 		]
 		for item in rebind_actions:
 			var act_name: String = item["action"]
@@ -813,6 +879,20 @@ func _build_settings_menu() -> void:
 	var vbox_ext := VBoxContainer.new()
 	vbox_ext.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	vbox_ext.add_theme_constant_override("separation", 10)
+	var lbl_lang := Label.new()
+	lbl_lang.text = "Язык интерфейса / Language:"
+	vbox_ext.add_child(lbl_lang)
+
+	var opt_lang := OptionButton.new()
+	opt_lang.add_item("Русский (RU)", 0)
+	opt_lang.add_item("English (EN)", 1)
+	opt_lang.selected = 1 if GameSettings.language == "en" else 0
+	opt_lang.item_selected.connect(func(idx: int):
+		var selected_lang := "en" if idx == 1 else "ru"
+		GameSettings.set_language(selected_lang)
+	)
+	vbox_ext.add_child(opt_lang)
+	vbox_ext.add_child(HSeparator.new())
 	scroll_ext.add_child(vbox_ext)
 
 	var chk_debug := CheckBox.new()
@@ -1026,8 +1106,20 @@ func _process(delta: float) -> void:
 		else:
 			crosshair.color = Color(1, 1, 1, 0.8)
 
-func _on_hit_target() -> void:
-	hit_flash_timer = 0.15
+func _on_hit_target(is_hs: bool = false) -> void:
+	hit_flash_timer = 0.18
+	if crosshair_view:
+		crosshair_view.hit_is_headshot = is_hs
+	if hit_sound_player:
+		hit_sound_player.stream = SoundFX.get_hitmarker(is_hs)
+		hit_sound_player.pitch_scale = randf_range(0.97, 1.03)
+		hit_sound_player.volume_db = 0.0
+		hit_sound_player.play()
+
+func _on_damage_taken(amount: int, attacker_dir: Vector3) -> void:
+	if damage_indicator:
+		var cam: Camera3D = get_viewport().get_camera_3d()
+		damage_indicator.add_indicator(attacker_dir, cam)
 
 func _on_health_changed(new_health: int) -> void:
 	if health_bar:
@@ -1427,3 +1519,17 @@ func _apply_crosshair_settings() -> void:
 	if crosshair_view:
 		crosshair_view.modulate = GameSettings.get_crosshair_color()
 		crosshair_view.scale = Vector2.ONE * GameSettings.crosshair_scale
+
+func toggle_weapon_wheel() -> void:
+	if weapon_wheel:
+		if weapon_wheel.is_open:
+			weapon_wheel.close()
+			if not is_paused and not _is_mobile():
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			if crosshair_view:
+				crosshair_view.visible = true
+		else:
+			weapon_wheel.open()
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			if crosshair_view:
+				crosshair_view.visible = false
