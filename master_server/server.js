@@ -49,6 +49,7 @@ app.get('/api/servers', (req, res) => {
         ip: s.ip,
         port: s.port,
         map: s.map,
+        map_id: s.map_id || (s.map === 'MAP_INDUSTRIAL' || s.map === 'Industrial' ? 'Industrial' : 'default_arena'),
         mode: s.mode,
         players: s.players,
         max_players: s.max_players,
@@ -61,7 +62,7 @@ app.get('/api/servers', (req, res) => {
 
 // 2. Register a new server (called by Godot host)
 app.post('/api/servers/register', (req, res) => {
-    const { name, host_name, port, map, mode, players, max_players, friendly_fire, custom_ip } = req.body;
+    const { name, host_name, port, map, map_id, mode, players, max_players, friendly_fire, custom_ip } = req.body;
     
     // Auto-detect public IP or accept explicit custom_ip
     let detectedIp = custom_ip && custom_ip.trim() !== '' ? custom_ip.trim() : getClientIp(req);
@@ -85,6 +86,7 @@ app.post('/api/servers/register', (req, res) => {
         ip: detectedIp,
         port: serverPort,
         map: map || 'Industrial',
+        map_id: map_id || (map === 'MAP_INDUSTRIAL' || map === 'Industrial' ? 'Industrial' : 'default_arena'),
         mode: mode || 'ffa',
         players: parseInt(players) || 1,
         max_players: parseInt(max_players) || 16,

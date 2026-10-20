@@ -241,6 +241,8 @@ func is_local_player() -> bool:
 	return is_multiplayer_authority()
 
 func _ready() -> void:
+	if not is_in_group("players"):
+		add_to_group("players")
 	if scope_overlay == null:
 		scope_overlay = get_node_or_null("TouchUI/TouchOverlay/HUDContainer/ScopeOverlay") as Control
 	if scope_overlay:
@@ -1014,7 +1016,8 @@ func shoot() -> void:
 		var sender_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
 		for target in damage_per_target.keys():
 			var total: int = maxi(int(round(damage_per_target[target])), 1)
-			if multiplayer.has_multiplayer_peer() and target.is_in_group("players"):
+			var is_target_player: bool = target.is_in_group("players") or target.has_method("is_local_player")
+			if multiplayer.has_multiplayer_peer() and is_target_player:
 				target.take_damage.rpc_id(target.get_multiplayer_authority(), total, sender_id, str(stats.get("name", "Дробовик")), false)
 			else:
 				target.take_damage(total, sender_id, str(stats.get("name", "Дробовик")), false)
@@ -1048,7 +1051,8 @@ func shoot() -> void:
 
 				var w_name: String = str(stats.get("name", ""))
 				var sender_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
-				if multiplayer.has_multiplayer_peer() and collider.is_in_group("players"):
+				var is_target_player: bool = collider.is_in_group("players") or collider.has_method("is_local_player")
+				if multiplayer.has_multiplayer_peer() and is_target_player:
 					collider.take_damage.rpc_id(collider.get_multiplayer_authority(), int(round(dmg)), sender_id, w_name, is_headshot)
 				else:
 					collider.take_damage(int(round(dmg)), sender_id, w_name, is_headshot)

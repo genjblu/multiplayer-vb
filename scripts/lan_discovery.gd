@@ -5,9 +5,11 @@ signal server_found(server_info: Dictionary)
 const BROADCAST_PORT := 8999
 const BROADCAST_INTERVAL := 1.0
 
-var udp_peer: PacketPeerUDP = null
+var udp_broadcaster: PacketPeerUDP = null
+var udp_listener: PacketPeerUDP = null
 var broadcast_timer: float = 0.0
 var is_broadcasting: bool = false
+var is_listening: bool = false
 var current_room_data: Dictionary = {}
 var discovered_servers: Dictionary = {}
 
@@ -15,7 +17,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 func _process(delta: float) -> void:
-	if is_broadcasting and udp_peer:
+	if is_broadcasting and udp_broadcaster:
 		broadcast_timer += delta
 		if broadcast_timer >= BROADCAST_INTERVAL:
 			broadcast_timer = 0.0
@@ -25,14 +27,14 @@ func _process(delta: float) -> void:
 
 	var now := Time.get_ticks_msec() / 1000.0
 	for key in discovered_servers.keys():
-		if now - discovered_servers[key]["last_seen"] > 3.5:
+		if now - discovered_servers[key]["last_seen"] > 5.0:
 			discovered_servers.erase(key)
 
 func start_broadcast(room_name: String, port: int, map_name: String = "Арена", mode: String = "ffa", ff: bool = false, in_game: bool = false) -> void:
 	stop_broadcast()
-	udp_peer = PacketPeerUDP.new()
-	udp_peer.set_broadcast_enabled(true)
-	udp_peer.set_dest_address("255.255.255.255", BROADCAST_PORT)
+	udp_broadcaster = PacketPeerUDP.new()
+	udp_broadcaster.set_broadcast_enabled(true)
+	udp_broadcaster.set_dest_address("255.255.255.255", BROADCAST_PORT)
 
 	current_room_data = {
 		"room": room_name,
@@ -56,35 +58,37 @@ func update_room_info(players_count: int, in_game: bool) -> void:
 
 func stop_broadcast() -> void:
 	is_broadcasting = false
-	if udp_peer:
-		udp_peer.close()
-		udp_peer = null
+	if udp_broadcaster:
+		udp_broadcaster.close()
+		udp_broadcaster = null
 
 func start_listening() -> void:
-	if udp_peer == null:
-		udp_peer = PacketPeerUDP.new()
-		udp_peer.bind(BROADCAST_PORT)
+	is_listening = true
+	if udp_listener == null:
+		udp_listener = PacketPeerUDP.new()
+	if not udp_listener.is_bound():
+		var err := udp_listener.bind(BROADCAST_PORT)
+		if err != OK:
+			printerr("[LAN] Could not bind UDP port %d: %s" % [BROADCAST_PORT, err])
 
 func stop_listening() -> void:
-	if not is_broadcasting and udp_peer:
-		udp_peer.close()
-		udp_peer = null
+	is_listening = false
 	discovered_servers.clear()
 
 func _send_broadcast_packet() -> void:
-	if not udp_peer:
+	if not udp_broadcaster:
 		return
 	if GameStats:
 		current_room_data["players"] = maxi(GameStats.players.size(), 1)
 	var json_str := JSON.stringify(current_room_data)
-	udp_peer.put_packet(json_str.to_utf8_buffer())
+	udp_broadcaster.put_packet(json_str.to_utf8_buffer())
 
 func _listen_packets() -> void:
-	if not udp_peer or not udp_peer.is_bound():
+	if not is_listening or not udp_listener or not udp_listener.is_bound():
 		return
-	while udp_peer.get_available_packet_count() > 0:
-		var pkt := udp_peer.get_packet()
-		var sender_ip := udp_peer.get_packet_ip()
+	while udp_listener.get_available_packet_count() > 0:
+		var pkt := udp_listener.get_packet()
+		var sender_ip := udp_listener.get_packet_ip()
 		var json_str := pkt.get_string_from_utf8()
 		var parsed = JSON.parse_string(json_str)
 		if parsed is Dictionary:

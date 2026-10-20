@@ -29,9 +29,12 @@ func _ready() -> void:
 
 	http_heartbeat = HTTPRequest.new()
 	add_child(http_heartbeat)
+	http_heartbeat.request_completed.connect(_on_heartbeat_completed)
 
 	http_unregister = HTTPRequest.new()
 	add_child(http_unregister)
+
+var last_register_params: Dictionary = {}
 
 func _process(delta: float) -> void:
 	if is_registered and not current_server_id.is_empty():
@@ -71,9 +74,22 @@ func _on_fetch_completed(result: int, response_code: int, headers: PackedStringA
 		online_servers_received.emit([])
 
 # 2. Register server with Master Server
-func register_server(room_name: String, port: int, map_name: String, mode: String, ff: bool, custom_ip: String = "") -> void:
+func register_server(room_name: String, port: int, map_name: String, mode: String, ff: bool, custom_ip: String = "", map_id: String = "") -> void:
 	is_registered = false
 	current_server_id = ""
+
+	if map_id.is_empty() and NetworkManager:
+		map_id = NetworkManager.current_map_id
+
+	last_register_params = {
+		"room_name": room_name,
+		"port": port,
+		"map_name": map_name,
+		"mode": mode,
+		"ff": ff,
+		"custom_ip": custom_ip,
+		"map_id": map_id
+	}
 
 	var url := "%s/api/servers/register" % get_api_base_url()
 	var headers := ["Content-Type: application/json", "User-Agent: GodotFPSServer/1.0"]
@@ -82,6 +98,7 @@ func register_server(room_name: String, port: int, map_name: String, mode: Strin
 		"host_name": GameStats.local_nick if not GameStats.local_nick.is_empty() else "Хост",
 		"port": port,
 		"map": map_name,
+		"map_id": map_id,
 		"mode": mode,
 		"players": GameStats.players.size() if GameStats.players.size() > 0 else 1,
 		"max_players": 16,
@@ -125,9 +142,25 @@ func _send_heartbeat() -> void:
 	}
 	http_heartbeat.request(url, headers, HTTPClient.METHOD_POST, JSON.stringify(data))
 
+func _on_heartbeat_completed(result: int, response_code: int, _headers: PackedStringArray, _body: PackedByteArray) -> void:
+	if result == HTTPRequest.RESULT_SUCCESS:
+		if response_code == 404 and not last_register_params.is_empty():
+			# Мастер-сервер перезапустился или сбросил таймаут — регистрируемся заново
+			print("[OnlineMatchmaking] Heartbeat got 404, re-registering...")
+			register_server(
+				str(last_register_params.get("room_name", "")),
+				int(last_register_params.get("port", 7777)),
+				str(last_register_params.get("map_name", "")),
+				str(last_register_params.get("mode", "ffa")),
+				bool(last_register_params.get("ff", false)),
+				str(last_register_params.get("custom_ip", "")),
+				str(last_register_params.get("map_id", ""))
+			)
+
 # 4. Unregister
 func unregister_server() -> void:
 	if not is_registered or current_server_id.is_empty():
+		last_register_params.clear()
 		return
 
 	var url := "%s/api/servers/unregister" % get_api_base_url()
@@ -137,4 +170,5 @@ func unregister_server() -> void:
 
 	is_registered = false
 	current_server_id = ""
+	last_register_params.clear()
 	print("[OnlineMatchmaking] Unregistered from Master Server")

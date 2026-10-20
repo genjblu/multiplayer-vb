@@ -34,7 +34,7 @@ properties/3/replication_mode = 1
 
 [sub_resource type="BoxMesh" id="BoxMesh_fjrip"]
 
-[node name="Player" type="CharacterBody3D" unique_id=433830383 node_paths=PackedStringArray("scope_overlay")]
+[node name="Player" type="CharacterBody3D" unique_id=433830383 groups=["players"] node_paths=PackedStringArray("scope_overlay")]
 script = ExtResource("1_3vyb7")
 slide_duration = 1.0
 scope_overlay = NodePath("TouchUI/TouchOverlay/HUDContainer/ScopeOverlay")

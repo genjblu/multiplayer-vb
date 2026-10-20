@@ -7,6 +7,11 @@ extends Node3D
 var team_dialog_canvas: CanvasLayer = null
 
 func _ready() -> void:
+	if has_node("FallbackCamera"):
+		var cam := get_node("FallbackCamera") as Camera3D
+		if cam:
+			cam.make_current()
+
 	player_spawner.add_spawnable_scene("res://scenes/player.tscn")
 
 	if NetworkManager:
@@ -224,7 +229,10 @@ func _confirm_late_join(team_id: int, col: Color) -> void:
 	if not multiplayer.has_multiplayer_peer():
 		return
 	var my_id := multiplayer.get_unique_id()
-	request_late_spawn.rpc_id(1, my_id, team_id, col)
+	if NetworkManager:
+		NetworkManager.request_late_spawn.rpc_id(1, team_id, col)
+	else:
+		request_late_spawn.rpc_id(1, my_id, team_id, col)
 
 @rpc("any_peer", "call_local", "reliable")
 func request_late_spawn(target_peer_id: int, team_id: int, col: Color) -> void:
@@ -234,7 +242,42 @@ func request_late_spawn(target_peer_id: int, team_id: int, col: Color) -> void:
 	if target_peer_id == 0 or sender != 0:
 		target_peer_id = sender
 	GameStats.set_player_team_and_color(target_peer_id, team_id, col)
-	_spawn_player(target_peer_id)
+	spawn_player_for_peer(target_peer_id)
+
+func spawn_player_for_peer(peer_id: int) -> void:
+	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	if not has_node(str(peer_id)):
+		_spawn_player(peer_id)
+
+	# Отправляем новому игроку данные обо всех уже существующих игроках
+	# на случай, если пакеты MultiplayerSpawner были пропущены до входа в арену
+	var existing: Array = []
+	for child in get_children():
+		if child is CharacterBody3D and child.name.is_valid_int():
+			var pid: int = child.name.to_int()
+			existing.append({
+				"id": pid,
+				"pos": child.global_position,
+				"team": GameStats.get_player_team(pid)
+			})
+	_sync_existing_players.rpc_id(peer_id, existing)
+
+@rpc("authority", "call_local", "reliable")
+func _sync_existing_players(players_data: Array) -> void:
+	if multiplayer.is_server():
+		return
+	for p_info in players_data:
+		var pid: int = int(p_info.get("id", 0))
+		if pid <= 0:
+			continue
+		var node_name := str(pid)
+		if not has_node(node_name):
+			var player_instance = player_scene.instantiate()
+			player_instance.name = node_name
+			player_instance.position = p_info.get("pos", Vector3.ZERO)
+			player_instance.set_multiplayer_authority(pid)
+			add_child(player_instance)
 
 func _spawn_player(peer_id: int) -> void:
 	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
@@ -273,8 +316,6 @@ func get_spawn_position(team_id: int = 0) -> Vector3:
 	return Vector3(randf_range(-4, 4), 2.0, randf_range(-4, 4))
 
 func _remove_player(peer_id: int) -> void:
-	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
-		return
 	var p = get_node_or_null(str(peer_id))
 	if p:
 		p.queue_free()

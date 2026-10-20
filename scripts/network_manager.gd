@@ -84,6 +84,8 @@ func _on_peer_connected(id: int) -> void:
 	if multiplayer.is_server():
 		# Отправляем новому игроку текущие данные и флаг is_match_running
 		_sync_match_info.rpc_id(id, current_map_id, current_mode, friendly_fire, is_match_running)
+		# Сразу синхронизируем список игроков, чтобы лобби не было пустым при первом входе
+		GameStats._sync_stats.rpc_id(id, GameStats.players)
 		# Обновляем счётчик игроков в UDP-рассылке и онлайн-трекере
 		LanDiscovery.update_room_info(GameStats.players.size(), is_match_running)
 		if OnlineMatchmaking:
@@ -92,6 +94,7 @@ func _on_peer_connected(id: int) -> void:
 func _on_peer_disconnected(id: int) -> void:
 	player_disconnected.emit(id)
 	if multiplayer.is_server():
+		GameStats.remove_player(id)
 		LanDiscovery.update_room_info(GameStats.players.size(), is_match_running)
 		if OnlineMatchmaking:
 			OnlineMatchmaking.update_room_info(GameStats.players.size(), is_match_running)
@@ -127,3 +130,15 @@ func host_start_match() -> void:
 func _launch_match_for_all() -> void:
 	is_match_running = true
 	match_launch_requested.emit()
+
+@rpc("any_peer", "call_local", "reliable")
+func request_late_spawn(team_id: int, col: Color) -> void:
+	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	var sender_id := multiplayer.get_remote_sender_id()
+	if sender_id == 0:
+		sender_id = multiplayer.get_unique_id()
+	GameStats.set_player_team_and_color(sender_id, team_id, col)
+	var current_scene = get_tree().current_scene
+	if current_scene and current_scene.has_method("spawn_player_for_peer"):
+		current_scene.spawn_player_for_peer(sender_id)

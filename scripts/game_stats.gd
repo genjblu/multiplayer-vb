@@ -36,6 +36,8 @@ func _process(delta: float) -> void:
 			_send_client_ping()
 
 func _update_server_pings() -> void:
+	if not multiplayer.has_multiplayer_peer() or multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return
 	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
 	if not enet or not enet.get_host():
 		return
@@ -58,6 +60,8 @@ func _update_server_pings() -> void:
 		_broadcast()
 
 func _send_client_ping() -> void:
+	if not multiplayer.has_multiplayer_peer() or multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
+		return
 	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
 	if enet and enet.get_host():
 		var p = enet.get_peer(1)
@@ -192,10 +196,14 @@ func _announce_death(victim_name: String, victim_col: Color) -> void:
 	})
 	kill_feed_message.emit("%s погиб" % victim_name)
 
-func _on_peer_disconnected(id: int) -> void:
-	if multiplayer.is_server() and players.has(id):
+func remove_player(id: int) -> void:
+	if players.has(id):
 		players.erase(id)
-		_broadcast()
+		if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
+			_broadcast()
+
+func _on_peer_disconnected(id: int) -> void:
+	remove_player(id)
 
 # Универсальный метод: поддерживает вызов и с 2 аргументами (team_id, col), и с 3 (target_id, team_id, col)
 @rpc("any_peer", "call_local", "reliable")

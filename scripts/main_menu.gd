@@ -132,7 +132,7 @@ func _on_host_requested(port: int, room_name: String, map_id: String = "default_
 					map_title = res.display_name
 			LanDiscovery.start_broadcast(room_name, port, map_title, mode, ff, false)
 			if publish_online and OnlineMatchmaking:
-				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff, custom_ip)
+				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff, custom_ip, map_id)
 
 			screen_lobby.setup_lobby(map_title, mode, ff, true)
 			menu.show_screen("lobby")
@@ -163,7 +163,15 @@ func _on_join_requested(ip: String, port: int) -> void:
 			if str(s.get("ip")) == ip and int(s.get("port", 7777)) == port:
 				s_data = s
 				is_server_in_game = s.get("in_game", false)
-				map_id = s.get("map", "default_arena")
+				var raw_map: String = str(s.get("map_id", s.get("map", "default_arena")))
+				if raw_map in ["MAP_INDUSTRIAL", "Industrial", "industrial", "Промзона"]:
+					map_id = "Industrial"
+				elif raw_map in ["MAP_DEFAULT_ARENA", "Arena", "arena", "Арена", "default_arena"]:
+					map_id = "default_arena"
+				elif raw_map in ["MAP_POLYGON", "polygon", "Полигон"]:
+					map_id = "polygon"
+				else:
+					map_id = raw_map
 				break
 
 	if is_server_in_game:
