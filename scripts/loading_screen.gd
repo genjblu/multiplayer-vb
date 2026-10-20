@@ -122,24 +122,27 @@ func _process(delta: float) -> void:
 	var net_manager = get_node_or_null("/root/NetworkManager")
 	var has_peer: bool = multiplayer.has_multiplayer_peer()
 	var is_server: bool = has_peer and multiplayer.is_server()
+	var is_offline: bool = not has_peer and (net_manager == null or not net_manager.joined_as_late)
 	var is_client_connected: bool = false
-	if net_manager and net_manager.peer:
+	if is_offline:
+		is_client_connected = true
+	elif net_manager and net_manager.peer:
 		is_client_connected = (net_manager.peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED)
 	elif net_manager and net_manager.joined_as_late:
 		is_client_connected = true # При Late-Join клиент открывает карту, а подключение выполняет сцена арены
 
-	# Клиент ждет подтверждения от сервера
-	if not is_server and not is_client_connected:
+	# Клиент ждет подтверждения от сервера (только в сетевом режиме)
+	if not is_offline and not is_server and not is_client_connected:
 		anim_progress = move_toward(anim_progress, 0.85, delta * 0.8)
 		progress_bar.value = anim_progress
 		stage_lbl.text = tr("CONNECTING_TO_SERVER")
 		return
 
-	anim_progress = move_toward(anim_progress, 1.0, delta * 1.8)
+	anim_progress = move_toward(anim_progress, 1.0, delta * 2.2)
 	progress_bar.value = anim_progress
 
 	if anim_progress < 0.95:
-		stage_lbl.text = tr("LATE_JOIN_WAITING")
+		stage_lbl.text = tr("LATE_JOIN_WAITING") if not is_offline else "Загрузка..."
 	else:
 		stage_lbl.text = tr("STATUS_READY") if tr("STATUS_READY") != "STATUS_READY" else "Ready!"
 
