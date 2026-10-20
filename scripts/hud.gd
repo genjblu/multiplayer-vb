@@ -464,9 +464,8 @@ func _build_settings_menu() -> void:
 	var panel := PanelContainer.new()
 	panel.theme = UITheme.build()
 	var is_mob := _is_mobile()
-	var vp_size := get_viewport_rect().size
-	if vp_size == Vector2.ZERO:
-		vp_size = Vector2(1280, 720)
+	var vp := get_viewport()
+	var vp_size: Vector2 = vp.get_visible_rect().size if vp else Vector2(1280, 720)
 	var w: float = minf(vp_size.x - 30.0, 460.0 if is_mob else 680.0)
 	var h: float = minf(vp_size.y - 30.0, 320.0 if is_mob else 500.0)
 	panel.custom_minimum_size = Vector2(w, h)
@@ -1643,4 +1642,3 @@ func handle_weapon_wheel_drag(pos: Vector2) -> void:
 	if delta.length() > 18.0:
 		_wheel_touch_has_moved = true
 		weapon_wheel.update_selection_from_vector(delta)
-

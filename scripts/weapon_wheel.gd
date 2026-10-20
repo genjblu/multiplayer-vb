@@ -45,9 +45,8 @@ func open(custom_center: Vector2 = Vector2.ZERO) -> void:
 		var cur_w: int = int(player.current_weapon)
 		selected_index = SLOT_WEAPON_MAP.find(cur_w)
 
-	var vp_size := get_viewport_rect().size
-	if vp_size == Vector2.ZERO:
-		vp_size = size
+	var vp := get_viewport()
+	var vp_size: Vector2 = vp.get_visible_rect().size if vp else size
 	if custom_center != Vector2.ZERO:
 		center_pos.x = clampf(custom_center.x, WHEEL_RADIUS + 20.0, maxf(vp_size.x - WHEEL_RADIUS - 20.0, WHEEL_RADIUS + 20.0))
 		center_pos.y = clampf(custom_center.y, WHEEL_RADIUS + 20.0, maxf(vp_size.y - WHEEL_RADIUS - 20.0, WHEEL_RADIUS + 20.0))
