@@ -10,16 +10,22 @@ var status_label: Label
 func _ready() -> void:
 	theme = UITheme.build()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	# Фон: кинематографичный радиально-вертикальный градиент
+	var is_mob := OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
+
+	# 1. Кинематографичный левосторонний виньет (чтобы UI слева четко читался, а 3D битва справа оставалась открытой)
 	var grad := Gradient.new()
-	grad.set_color(0, Color("1a202c"))
-	grad.set_color(1, Color("080a0e"))
+	grad.set_color(0, Color(0.04, 0.05, 0.08, 0.92))
+	grad.set_offset(0, 0.0)
+	grad.add_point(0.38, Color(0.04, 0.05, 0.08, 0.70))
+	grad.add_point(0.70, Color(0.04, 0.05, 0.08, 0.0))
 	var tex := GradientTexture2D.new()
 	tex.gradient = grad
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.4)
-	tex.fill_to = Vector2(1.0, 1.0)
+	tex.fill = GradientTexture2D.FILL_LINEAR
+	tex.fill_from = Vector2(0.0, 0.5)
+	tex.fill_to = Vector2(1.0, 0.5)
+
 	var bg := TextureRect.new()
 	bg.texture = tex
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -28,39 +34,43 @@ func _ready() -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
-	var is_mob := OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
-
+	# 2. Левосторонний скролл-контейнер меню
 	var scroll := ScrollContainer.new()
 	scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	scroll.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(scroll)
 
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.add_child(center)
+	var margin_container := MarginContainer.new()
+	margin_container.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	margin_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margin_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	margin_container.add_theme_constant_override("margin_left", 20 if is_mob else 64)
+	margin_container.add_theme_constant_override("margin_top", 24 if is_mob else 48)
+	margin_container.add_theme_constant_override("margin_bottom", 24 if is_mob else 48)
+	scroll.add_child(margin_container)
 
 	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(380 if is_mob else 460, 0)
-	center.add_child(panel)
+	panel.custom_minimum_size = Vector2(360 if is_mob else 420, 0)
+	margin_container.add_child(panel)
 
 	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 8 if is_mob else 12)
+	outer.add_theme_constant_override("separation", 10 if is_mob else 14)
 	panel.add_child(outer)
 
+	# Заголовок игры (Genjvaniya)
 	var title := Label.new()
 	title.theme_type_variation = "TitleLabel"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.text = "3D FPS MULTIPLAYER"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	title.text = tr("GENJVANIA_TITLE")
 	outer.add_child(title)
 
 	var subtitle := Label.new()
 	subtitle.theme_type_variation = "HintLabel"
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.text = "TACTICAL COMBAT • MULTIPLAYER & TRAINING"
-	subtitle.add_theme_color_override("font_color", Color("ff9933"))
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	subtitle.text = tr("GENJVANIA_SUBTITLE")
+	subtitle.add_theme_color_override("font_color", UITheme.ACCENT_COLOR)
 	outer.add_child(subtitle)
 
 	outer.add_child(HSeparator.new())
@@ -69,11 +79,20 @@ func _ready() -> void:
 	outer.add_child(content)
 
 	outer.add_child(HSeparator.new())
+
 	status_label = Label.new()
 	status_label.theme_type_variation = "HintLabel"
-	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	outer.add_child(status_label)
-	set_status("Статус: ожидание...")
+	set_status(tr("STATUS_IDLE"))
+
+	# Подсказка по управлению 3D сценой
+	var cam_hint := Label.new()
+	cam_hint.theme_type_variation = "HintLabel"
+	cam_hint.text = tr("HINT_CAMERA_DRAG")
+	cam_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cam_hint.add_theme_color_override("font_color", Color(0.65, 0.7, 0.78, 0.75))
+	outer.add_child(cam_hint)
 
 func register(screen_name: String, screen: MenuScreen) -> void:
 	screens[screen_name] = screen

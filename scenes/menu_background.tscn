@@ -1,0 +1,131 @@
+[gd_scene format=3 uid="uid://d378amenu29b"]
+
+[ext_resource type="Script" uid="uid://cbgscript001" path="res://scripts/menu_background.gd" id="1_bg"]
+[ext_resource type="Script" uid="uid://cbgscript002" path="res://scripts/menu_camera.gd" id="2_cam"]
+[ext_resource type="Script" uid="uid://cbgscript003" path="res://scripts/menu_robot.gd" id="3_bot"]
+[ext_resource type="ArrayMesh" uid="uid://ddnd8gi8t45em" path="res://models/areas/fps_shooter_game_arena_map_v3/scene.gltf" id="4_mesh"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_menu"]
+sky_top_color = Color(0.35, 0.44, 0.58, 1)
+sky_horizon_color = Color(0.65, 0.68, 0.72, 1)
+ground_bottom_color = Color(0.18, 0.19, 0.22, 1)
+ground_horizon_color = Color(0.55, 0.58, 0.62, 1)
+
+[sub_resource type="Sky" id="Sky_menu"]
+sky_material = SubResource("ProceduralSkyMaterial_menu")
+
+[sub_resource type="Environment" id="Environment_menu"]
+background_mode = 2
+sky = SubResource("Sky_menu")
+ambient_light_source = 2
+ambient_light_color = Color(0.45, 0.45, 0.5, 1)
+tonemap_mode = 2
+ssao_enabled = true
+glow_enabled = true
+glow_intensity = 0.6
+glow_bloom = 0.15
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_floor"]
+size = Vector3(60, 1, 60)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_lr"]
+size = Vector3(1, 14, 40)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall_fb"]
+size = Vector3(40, 14, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_walkway_fb"]
+size = Vector3(28, 0.6, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_walkway_lr"]
+size = Vector3(6, 0.6, 28)
+
+[node name="MenuBackground" type="Node3D"]
+script = ExtResource("1_bg")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_menu")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." groups=["directional_lights"]]
+transform = Transform3D(0.707107, -0.5, 0.5, 0, 0.707107, 0.707107, -0.707107, -0.5, 0.5, 0, 15, 0)
+shadow_enabled = true
+directional_shadow_split_1 = 0.05
+directional_shadow_blend_splits = true
+
+[node name="ArenaMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, -1, 15)
+mesh = ExtResource("4_mesh")
+
+[node name="Colliders" type="StaticBody3D" parent="."]
+
+[node name="Floor" type="CollisionShape3D" parent="Colliders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("BoxShape3D_floor")
+
+[node name="WallLeft" type="CollisionShape3D" parent="Colliders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -16, 5, 0)
+shape = SubResource("BoxShape3D_wall_lr")
+
+[node name="WallRight" type="CollisionShape3D" parent="Colliders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 5, 0)
+shape = SubResource("BoxShape3D_wall_lr")
+
+[node name="WallFront" type="CollisionShape3D" parent="Colliders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 16)
+shape = SubResource("BoxShape3D_wall_fb")
+
+[node name="WallBack" type="CollisionShape3D" parent="Colliders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -16)
+shape = SubResource("BoxShape3D_wall_fb")
+
+[node name="WalkwayNorth" type="CollisionShape3D" parent="Colliders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, -12)
+shape = SubResource("BoxShape3D_walkway_fb")
+
+[node name="WalkwaySouth" type="CollisionShape3D" parent="Colliders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.8, 12)
+shape = SubResource("BoxShape3D_walkway_fb")
+
+[node name="WalkwayWest" type="CollisionShape3D" parent="Colliders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -12, 3.8, 0)
+shape = SubResource("BoxShape3D_walkway_lr")
+
+[node name="WalkwayEast" type="CollisionShape3D" parent="Colliders"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12, 3.8, 0)
+shape = SubResource("BoxShape3D_walkway_lr")
+
+[node name="MenuCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 16, 27)
+current = true
+fov = 65.0
+script = ExtResource("2_cam")
+
+[node name="Robots" type="Node3D" parent="."]
+
+[node name="BotAlpha" type="CharacterBody3D" parent="Robots"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.8, 6)
+script = ExtResource("3_bot")
+bot_name = "Unit-Alpha"
+team_color = Color(1, 0.55, 0.1, 1)
+team_id = 0
+
+[node name="BotBeta" type="CharacterBody3D" parent="Robots"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.8, -6)
+script = ExtResource("3_bot")
+bot_name = "Unit-Beta"
+team_color = Color(0.1, 0.85, 0.85, 1)
+team_id = 1
+
+[node name="BotGamma" type="CharacterBody3D" parent="Robots"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.8, -7)
+script = ExtResource("3_bot")
+bot_name = "Unit-Gamma"
+team_color = Color(0.7, 0.3, 0.95, 1)
+team_id = 2
+
+[node name="BotDelta" type="CharacterBody3D" parent="Robots"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0.8, 7)
+script = ExtResource("3_bot")
+bot_name = "Unit-Delta"
+team_color = Color(0.4, 0.95, 0.2, 1)
+team_id = 3

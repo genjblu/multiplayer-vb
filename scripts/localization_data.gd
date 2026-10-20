@@ -23,9 +23,13 @@ const TRANSLATIONS: Dictionary = {
 		"MAP_POLYGON_DESC": "Закрытый полигон для тренировки стрельбы по мишеням, оружия и паркура.",
 		
 		# Главное меню
+		"GENJVANIA_TITLE": "Genjvaniya",
+		"GENJVANIA_SUBTITLE": "TACTICAL 3D COMBAT",
+		"MENU_PLAY": "Играть",
+		"MENU_BACK_MAIN": "« Назад",
 		"MENU_NICK": "Ник",
 		"MENU_NICK_PLACEHOLDER": "Введите никнейм...",
-		"MENU_TRAINING": "🎯 Полигон (Тренировка)",
+		"MENU_TRAINING": "🎯 Тренировка (Полигон)",
 		"MENU_HOST": "Создать сервер",
 		"MENU_JOIN": "Подключиться по IP",
 		"MENU_LAN": "Список серверов",
@@ -39,6 +43,18 @@ const TRANSLATIONS: Dictionary = {
 		"TAB_LAN": "🏠 Локальная сеть (LAN)",
 		"MASTER_SERVER_URL": "URL мастер-сервера (Интернет):",
 		"SETTINGS_PLAYIT_TUNNEL": "Адрес туннеля playit.gg (для хоста):",
+		
+		# Камера диорамы
+		"TAB_MENU_CAMERA": "Камера меню",
+		"LBL_CAMERA_MODE": "Режим камеры:",
+		"CAM_MODE_ORBIT": "Орбита арены",
+		"CAM_MODE_ACTION": "Слежение за боем",
+		"CAM_MODE_STATIC": "Фиксированный ракурс",
+		"LBL_CAMERA_SPEED": "Скорость вращения: %.1fx",
+		"LBL_CAMERA_DIST": "Дистанция обзора: %.1fм",
+		"LBL_CAMERA_HEIGHT": "Высота камеры: %.1fм",
+		"BTN_CAMERA_RESET": "Сбросить ракурс камеры",
+		"HINT_CAMERA_DRAG": "💡 Зажмите ЛКМ / Свайп для вращения • Колесо для зума",
 		
 		# Настройки и лобби
 		"SETTINGS_TITLE": "Настройки",
@@ -105,12 +121,16 @@ const TRANSLATIONS: Dictionary = {
 		"MAP_POLYGON_DESC": "Indoor training ground with target dummies, all weapons, and parkour course.",
 		
 		# Main Menu
+		"GENJVANIA_TITLE": "Genjvaniya",
+		"GENJVANIA_SUBTITLE": "TACTICAL 3D COMBAT",
+		"MENU_PLAY": "Play",
+		"MENU_BACK_MAIN": "« Back",
 		"MENU_NICK": "Nickname",
 		"MENU_NICK_PLACEHOLDER": "Enter nickname...",
-		"MENU_TRAINING": "🎯 Firing Range (Training)",
-		"MENU_HOST": "Host Game",
+		"MENU_TRAINING": "🎯 Training (Polygon)",
+		"MENU_HOST": "Create Server",
 		"MENU_JOIN": "Direct Connect",
-		"MENU_LAN": "Server Browser",
+		"MENU_LAN": "Server List",
 		"MENU_SETTINGS": "Settings",
 		"MENU_QUIT": "Quit",
 		"STATUS_IDLE": "Status: waiting...",
@@ -121,6 +141,18 @@ const TRANSLATIONS: Dictionary = {
 		"TAB_LAN": "🏠 Local Network (LAN)",
 		"MASTER_SERVER_URL": "Master Server URL (Online):",
 		"SETTINGS_PLAYIT_TUNNEL": "playit.gg Tunnel Address (for host):",
+		
+		# Menu Camera
+		"TAB_MENU_CAMERA": "Menu Camera",
+		"LBL_CAMERA_MODE": "Camera Mode:",
+		"CAM_MODE_ORBIT": "Arena Orbit",
+		"CAM_MODE_ACTION": "Dynamic Combat Track",
+		"CAM_MODE_STATIC": "Static View",
+		"LBL_CAMERA_SPEED": "Orbit Speed: %.1fx",
+		"LBL_CAMERA_DIST": "Distance: %.1fm",
+		"LBL_CAMERA_HEIGHT": "Height: %.1fm",
+		"BTN_CAMERA_RESET": "Reset Camera View",
+		"HINT_CAMERA_DRAG": "💡 Drag LMB / Touch to rotate • Wheel to zoom",
 		
 		# Settings and Lobby
 		"SETTINGS_TITLE": "Settings",

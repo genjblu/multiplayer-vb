@@ -9,10 +9,11 @@ var list: VBoxContainer
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	offset_left = -340
+	grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	offset_left = -440
 	offset_top = 16
-	offset_right = -16
-	offset_bottom = 260
+	offset_right = -24
+	offset_bottom = 280
 
 	list = VBoxContainer.new()
 	list.name = "List"
@@ -28,6 +29,7 @@ func _ready() -> void:
 func _on_kill_event(data: Dictionary) -> void:
 	var row := PanelContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.size_flags_horizontal = Control.SIZE_SHRINK_END
 
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.06, 0.08, 0.11, 0.85)

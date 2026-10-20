@@ -41,7 +41,16 @@ func _build_ui() -> void:
 		if child is CanvasItem:
 			child.visible = false
 
+	# 3D диорама с ареной и сражающимися роботами
+	if not has_node("MenuBackground"):
+		var bg_scene := load("res://scenes/menu_background.tscn") as PackedScene
+		if bg_scene:
+			var bg := bg_scene.instantiate()
+			bg.name = "MenuBackground"
+			add_child(bg)
+
 	var ui_layer := CanvasLayer.new()
+	ui_layer.name = "UILayer"
 	add_child(ui_layer)
 	menu = MenuManager.new()
 	ui_layer.add_child(menu)
@@ -517,6 +526,95 @@ func _open_main_menu_settings() -> void:
 	edit_tunnel.placeholder_text = tr("HOST_TUNNEL_PLACEHOLDER")
 	edit_tunnel.text_changed.connect(func(new_addr): GameSettings.playit_tunnel_address = new_addr.strip_edges())
 	vbox_ext.add_child(edit_tunnel)
+
+	# === ВКЛАДКА 5: КАМЕРА МЕНЮ ===
+	var scroll_cam := ScrollContainer.new()
+	scroll_cam.name = tr("TAB_MENU_CAMERA")
+	tabs.add_child(scroll_cam)
+	var vbox_cam := VBoxContainer.new()
+	vbox_cam.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox_cam.add_theme_constant_override("separation", 10)
+	scroll_cam.add_child(vbox_cam)
+
+	var lbl_cam_mode := Label.new()
+	lbl_cam_mode.text = tr("LBL_CAMERA_MODE")
+	vbox_cam.add_child(lbl_cam_mode)
+
+	var opt_cam_mode := OptionButton.new()
+	opt_cam_mode.add_item(tr("CAM_MODE_ORBIT"), 0)
+	opt_cam_mode.add_item(tr("CAM_MODE_ACTION"), 1)
+	opt_cam_mode.add_item(tr("CAM_MODE_STATIC"), 2)
+	opt_cam_mode.selected = GameSettings.menu_camera_mode
+	opt_cam_mode.item_selected.connect(func(idx: int):
+		GameSettings.menu_camera_mode = idx
+	)
+	vbox_cam.add_child(opt_cam_mode)
+
+	var lbl_cam_spd := Label.new()
+	lbl_cam_spd.text = _tr_fmt("LBL_CAMERA_SPEED", GameSettings.menu_camera_speed)
+	vbox_cam.add_child(lbl_cam_spd)
+	var cam_spd_slider := HSlider.new()
+	cam_spd_slider.min_value = 0.0
+	cam_spd_slider.max_value = 3.0
+	cam_spd_slider.step = 0.1
+	cam_spd_slider.value = GameSettings.menu_camera_speed
+	cam_spd_slider.value_changed.connect(func(val):
+		GameSettings.menu_camera_speed = val
+		lbl_cam_spd.text = _tr_fmt("LBL_CAMERA_SPEED", val)
+	)
+	vbox_cam.add_child(cam_spd_slider)
+
+	var lbl_cam_dst := Label.new()
+	lbl_cam_dst.text = _tr_fmt("LBL_CAMERA_DIST", GameSettings.menu_camera_distance)
+	vbox_cam.add_child(lbl_cam_dst)
+	var cam_dst_slider := HSlider.new()
+	cam_dst_slider.min_value = 12.0
+	cam_dst_slider.max_value = 45.0
+	cam_dst_slider.step = 1.0
+	cam_dst_slider.value = GameSettings.menu_camera_distance
+	cam_dst_slider.value_changed.connect(func(val):
+		GameSettings.menu_camera_distance = val
+		lbl_cam_dst.text = _tr_fmt("LBL_CAMERA_DIST", val)
+		var cam_node := get_tree().root.find_child("MenuCamera", true, false) as MenuCamera
+		if cam_node:
+			cam_node.target_dist = val
+	)
+	vbox_cam.add_child(cam_dst_slider)
+
+	var lbl_cam_hgt := Label.new()
+	lbl_cam_hgt.text = _tr_fmt("LBL_CAMERA_HEIGHT", GameSettings.menu_camera_height)
+	vbox_cam.add_child(lbl_cam_hgt)
+	var cam_hgt_slider := HSlider.new()
+	cam_hgt_slider.min_value = 4.0
+	cam_hgt_slider.max_value = 26.0
+	cam_hgt_slider.step = 0.5
+	cam_hgt_slider.value = GameSettings.menu_camera_height
+	cam_hgt_slider.value_changed.connect(func(val):
+		GameSettings.menu_camera_height = val
+		lbl_cam_hgt.text = _tr_fmt("LBL_CAMERA_HEIGHT", val)
+		var cam_node := get_tree().root.find_child("MenuCamera", true, false) as MenuCamera
+		if cam_node:
+			cam_node.target_height = val
+	)
+	vbox_cam.add_child(cam_hgt_slider)
+
+	var btn_cam_reset := Button.new()
+	btn_cam_reset.text = tr("BTN_CAMERA_RESET")
+	btn_cam_reset.pressed.connect(func():
+		GameSettings.menu_camera_speed = 1.0
+		GameSettings.menu_camera_distance = 27.0
+		GameSettings.menu_camera_height = 16.0
+		GameSettings.menu_camera_mode = 0
+		opt_cam_mode.selected = 0
+		cam_spd_slider.value = 1.0
+		cam_dst_slider.value = 27.0
+		cam_hgt_slider.value = 16.0
+		var cam_node := get_tree().root.find_child("MenuCamera", true, false) as MenuCamera
+		if cam_node:
+			cam_node.target_dist = 27.0
+			cam_node.target_height = 16.0
+	)
+	vbox_cam.add_child(btn_cam_reset)
 
 	main_vbox.add_child(HSeparator.new())
 	var btn_close := Button.new()

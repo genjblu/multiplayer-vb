@@ -47,6 +47,12 @@ static var sfx_volume: float = 1.0
 static var ui_volume: float = 1.0
 static var hitmarker_sound: bool = true
 
+# Меню / Камера диорамы
+static var menu_camera_speed: float = 1.0
+static var menu_camera_distance: float = 27.0
+static var menu_camera_height: float = 16.0
+static var menu_camera_mode: int = 0 # 0 = Орбита, 1 = Экшен (слежение за ботом), 2 = Статичный ракурс
+
 # Расширения
 static var show_debug: bool = false
 static var show_ammo_3d: bool = false
@@ -104,6 +110,11 @@ static func save_to_disk() -> void:
 	cfg.set_value("audio", "sfx", sfx_volume)
 	cfg.set_value("audio", "ui", ui_volume)
 	cfg.set_value("audio", "hitmarker", hitmarker_sound)
+
+	cfg.set_value("menu_camera", "speed", menu_camera_speed)
+	cfg.set_value("menu_camera", "distance", menu_camera_distance)
+	cfg.set_value("menu_camera", "height", menu_camera_height)
+	cfg.set_value("menu_camera", "mode", menu_camera_mode)
 
 	cfg.set_value("ext", "show_debug", show_debug)
 	cfg.set_value("ext", "show_ammo_3d", show_ammo_3d)
@@ -170,6 +181,11 @@ static func load_from_disk() -> void:
 	sfx_volume = float(cfg.get_value("audio", "sfx", sfx_volume))
 	ui_volume = float(cfg.get_value("audio", "ui", ui_volume))
 	hitmarker_sound = bool(cfg.get_value("audio", "hitmarker", hitmarker_sound))
+
+	menu_camera_speed = float(cfg.get_value("menu_camera", "speed", menu_camera_speed))
+	menu_camera_distance = float(cfg.get_value("menu_camera", "distance", menu_camera_distance))
+	menu_camera_height = float(cfg.get_value("menu_camera", "height", menu_camera_height))
+	menu_camera_mode = int(cfg.get_value("menu_camera", "mode", menu_camera_mode))
 
 	show_debug = bool(cfg.get_value("ext", "show_debug", show_debug))
 	show_ammo_3d = bool(cfg.get_value("ext", "show_ammo_3d", show_ammo_3d))
