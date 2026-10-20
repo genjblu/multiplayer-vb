@@ -1,34 +1,40 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мониторинг серверов | Multiplayer FPS</title>
+    <title id="doc-title">Server Browser | Multiplayer FPS</title>
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <header class="header">
         <div class="container header-container">
             <div class="logo">
-                <span class="logo-icon">⚡</span>
                 <div class="logo-text">
                     <h1>FPS ARENA</h1>
                     <span class="subtitle">LIVE SERVER TRACKER</span>
                 </div>
             </div>
-            <div class="header-stats">
-                <div class="stat-badge">
-                    <span class="stat-dot green"></span>
-                    <span class="stat-label">Серверов онлайн:</span>
-                    <strong id="stat-servers">0</strong>
+            <div class="header-right">
+                <div class="header-stats">
+                    <div class="stat-badge">
+                        <span class="stat-dot green"></span>
+                        <span class="stat-label" data-i18n="serversOnline">Servers Online:</span>
+                        <strong id="stat-servers">0</strong>
+                    </div>
+                    <div class="stat-badge">
+                        <span class="stat-dot blue"></span>
+                        <span class="stat-label" data-i18n="playersOnline">Players in Game:</span>
+                        <strong id="stat-players">0</strong>
+                    </div>
                 </div>
-                <div class="stat-badge">
-                    <span class="stat-dot blue"></span>
-                    <span class="stat-label">Игроков в бою:</span>
-                    <strong id="stat-players">0</strong>
+                <div class="lang-switch">
+                    <button id="lang-en" class="lang-btn active" type="button">EN</button>
+                    <span class="lang-divider">/</span>
+                    <button id="lang-ru" class="lang-btn" type="button">RU</button>
                 </div>
             </div>
         </div>
@@ -37,18 +43,18 @@
     <main class="container main-content">
         <div class="controls-bar">
             <div class="search-box">
-                <input type="text" id="search-input" placeholder="Поиск сервера по названию, хосту или карте...">
+                <input type="text" id="search-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search by room name, host, map, or IP...">
             </div>
             <div class="filter-group">
                 <select id="mode-filter">
-                    <option value="all">Все режимы</option>
-                    <option value="ffa">FFA (Каждый за себя)</option>
-                    <option value="2v2">2v2 Команды</option>
-                    <option value="3v3v3">3v3v3</option>
-                    <option value="4v4">4v4</option>
+                    <option value="all" data-i18n="allModes">All Modes</option>
+                    <option value="ffa" data-i18n="modeFFA">FFA (Free For All)</option>
+                    <option value="2v2" data-i18n="mode2v2">2v2 Teams</option>
+                    <option value="3v3v3" data-i18n="mode3v3v3">3v3v3</option>
+                    <option value="4v4" data-i18n="mode4v4">4v4</option>
                 </select>
-                <button id="refresh-btn" class="btn-refresh" title="Обновить">
-                    <span>↻</span> Обновить
+                <button id="refresh-btn" class="btn-refresh" title="Refresh">
+                    <span data-i18n="refresh">Refresh</span>
                 </button>
             </div>
         </div>
@@ -56,13 +62,12 @@
         <div class="servers-container">
             <div id="loading" class="state-message">
                 <div class="spinner"></div>
-                <p>Загрузка активных серверов...</p>
+                <p data-i18n="loading">Loading active servers...</p>
             </div>
 
             <div id="empty-state" class="state-message hidden">
-                <div class="empty-icon">📡</div>
-                <h3>Нет активных серверов</h3>
-                <p>В данный момент никто не создал публичный сервер. Запустите игру и создайте первую комнату!</p>
+                <h3 data-i18n="noServersTitle">No active servers</h3>
+                <p data-i18n="noServersDesc">No public servers online right now. Launch the game and host a room!</p>
             </div>
 
             <div id="servers-grid" class="servers-grid">
@@ -73,12 +78,12 @@
 
     <footer class="footer">
         <div class="container footer-content">
-            <p>Master Server Tracker • Обновление каждые 3 секунды</p>
-            <p class="direct-help">Для подключения скопируйте IP и вставьте в игре в разделе «Подключиться по IP»</p>
+            <p data-i18n="footerUpdate">Master Server Tracker • Auto-refreshes every 3 seconds</p>
+            <p class="direct-help" data-i18n="footerHelp">To join, copy the server IP:Port and paste it into Direct Connect in-game.</p>
         </div>
     </footer>
 
-    <div id="toast" class="toast hidden">IP скопирован в буфер обмена!</div>
+    <div id="toast" class="toast hidden">IP copied to clipboard!</div>
 
     <script src="app.js"></script>
 </body>
