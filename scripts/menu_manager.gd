@@ -11,14 +11,15 @@ func _ready() -> void:
 	theme = UITheme.build()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
-	# Фон: вертикальный градиент. Для однотонного фона замени на ColorRect.
+	# Фон: кинематографичный радиально-вертикальный градиент
 	var grad := Gradient.new()
-	grad.set_color(0, Color("171a20"))
-	grad.set_color(1, Color("0d0f13"))
+	grad.set_color(0, Color("1a202c"))
+	grad.set_color(1, Color("080a0e"))
 	var tex := GradientTexture2D.new()
 	tex.gradient = grad
-	tex.fill_from = Vector2(0.5, 0.0)
-	tex.fill_to = Vector2(0.5, 1.0)
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.4)
+	tex.fill_to = Vector2(1.0, 1.0)
 	var bg := TextureRect.new()
 	bg.texture = tex
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -36,7 +37,7 @@ func _ready() -> void:
 	center.add_child(panel)
 
 	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 16)
+	outer.add_theme_constant_override("separation", 14)
 	panel.add_child(outer)
 
 	var title := Label.new()
@@ -44,6 +45,14 @@ func _ready() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.text = "3D FPS MULTIPLAYER"
 	outer.add_child(title)
+
+	var subtitle := Label.new()
+	subtitle.theme_type_variation = "HintLabel"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.text = "TACTICAL COMBAT • MULTIPLAYER & TRAINING"
+	subtitle.add_theme_color_override("font_color", Color("ff9933"))
+	outer.add_child(subtitle)
+
 	outer.add_child(HSeparator.new())
 
 	content = VBoxContainer.new()

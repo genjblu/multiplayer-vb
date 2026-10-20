@@ -9,6 +9,12 @@ func _ready() -> void:
 	nick_edit = LineEdit.new()
 	nick_edit.placeholder_text = tr("MENU_NICK_PLACEHOLDER")
 	nick_edit.max_length = 16
+	if GameStats and not GameStats.local_nick.is_empty():
+		nick_edit.text = GameStats.local_nick
+	nick_edit.text_changed.connect(func(new_text):
+		if GameStats:
+			GameStats.set_nick(new_text)
+	)
 	add_child(_make_row(tr("MENU_NICK"), nick_edit))
 
 	var b_training := _make_button(tr("MENU_TRAINING"), true)
@@ -32,9 +38,10 @@ func _ready() -> void:
 	b_settings.pressed.connect(func(): navigate.emit("settings"))
 	add_child(b_settings)
 
-	var b_quit := _make_button(tr("MENU_QUIT"))
-	b_quit.pressed.connect(func(): get_tree().quit())
-	add_child(b_quit)
+	if not OS.has_feature("web"):
+		var b_quit := _make_button(tr("MENU_QUIT"))
+		b_quit.pressed.connect(func(): get_tree().quit())
+		add_child(b_quit)
 
 func get_nick() -> String:
 	return nick_edit.text

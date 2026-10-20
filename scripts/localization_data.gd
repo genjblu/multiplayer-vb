@@ -24,6 +24,7 @@ const TRANSLATIONS: Dictionary = {
 		
 		# Главное меню
 		"MENU_NICK": "Ник",
+		"MENU_NICK_PLACEHOLDER": "Введите никнейм...",
 		"MENU_TRAINING": "🎯 Полигон (Тренировка)",
 		"MENU_HOST": "Создать сервер",
 		"MENU_JOIN": "Подключиться по IP",
@@ -105,6 +106,7 @@ const TRANSLATIONS: Dictionary = {
 		
 		# Main Menu
 		"MENU_NICK": "Nickname",
+		"MENU_NICK_PLACEHOLDER": "Enter nickname...",
 		"MENU_TRAINING": "🎯 Firing Range (Training)",
 		"MENU_HOST": "Host Game",
 		"MENU_JOIN": "Direct Connect",

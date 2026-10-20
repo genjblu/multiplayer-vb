@@ -22,3 +22,11 @@ TEAM_YELLOW,ЖЁЛТЫЕ,YELLOW
 KILLS_HEADER,К,K
 DEATHS_HEADER,С,D
 KD_HEADER,K/D,K/D
+MENU_NICK,Ник,Nickname
+MENU_NICK_PLACEHOLDER,Введите никнейм...,Enter nickname...
+MENU_TRAINING,🎯 Полигон (Тренировка),🎯 Firing Range (Training)
+MENU_HOST,Создать сервер,Host Game
+MENU_JOIN,Подключиться по IP,Direct Connect
+MENU_LAN,Список серверов,Server Browser
+MENU_SETTINGS,Настройки,Settings
+MENU_QUIT,Выход,Quit
