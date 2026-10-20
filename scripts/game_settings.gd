@@ -50,7 +50,7 @@ static var hitmarker_sound: bool = true
 # Расширения
 static var show_debug: bool = false
 static var show_ammo_3d: bool = false
-static var master_server_url: String = "http://localhost:8080"
+static var master_server_url: String = "https://fps-master-server.onrender.com"
 static var playit_tunnel_address: String = ""
 
 static func ensure_loaded() -> void:

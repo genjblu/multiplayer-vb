@@ -44,7 +44,7 @@ func get_api_base_url() -> String:
 	GameSettings.ensure_loaded()
 	var url: String = GameSettings.master_server_url.strip_edges()
 	if url.is_empty():
-		url = "http://localhost:8080"
+		url = "https://fps-master-server.onrender.com"
 	if url.ends_with("/"):
 		url = url.substr(0, url.length() - 1)
 	return url
