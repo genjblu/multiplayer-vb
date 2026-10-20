@@ -1209,17 +1209,20 @@ func _process(delta: float) -> void:
 	if debug_label:
 		var ping_ms = 0
 		var packet_loss_pct = 0.0
-		var peer = multiplayer.multiplayer_peer
-		if peer is ENetMultiplayerPeer:
+		if multiplayer.has_multiplayer_peer() and multiplayer.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED:
 			if multiplayer.is_server():
 				ping_ms = 0
 				packet_loss_pct = 0.0
 			else:
-				var enet_peer = peer as ENetMultiplayerPeer
-				if enet_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED:
+				if GameStats:
+					ping_ms = GameStats.get_my_ping()
+				var peer = multiplayer.multiplayer_peer
+				if peer is ENetMultiplayerPeer:
+					var enet_peer = peer as ENetMultiplayerPeer
 					var p = enet_peer.get_peer(1)
 					if p:
-						ping_ms = int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
+						if ping_ms == 0:
+							ping_ms = int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
 						# В ENet статистика PEER_PACKET_LOSS нормализуется шкалой от 0 до 65536
 						var raw_loss = p.get_statistic(ENetPacketPeer.PEER_PACKET_LOSS)
 						packet_loss_pct = clampf((float(raw_loss) / 65536.0) * 100.0, 0.0, 100.0)

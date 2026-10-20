@@ -11,9 +11,22 @@ var local_nick: String = ""
 # peer_id -> {"name": String, "kills": int, "deaths": int, "team": int, "color": Color, "ping": int}
 var players: Dictionary = {}
 
+var my_ping: int = 0
 var _ping_timer: float = 0.0
 var _client_ping_timer: float = 0.0
 const PING_UPDATE_INTERVAL: float = 1.0
+
+func get_my_ping() -> int:
+	if not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
+		return 0
+	if my_ping > 0:
+		return my_ping
+	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if enet and enet.get_host():
+		var p = enet.get_peer(1)
+		if p and p.get_state() == ENetPacketPeer.STATE_CONNECTED:
+			return int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
+	return 0
 
 func _ready() -> void:
 	_load_nick()
@@ -21,7 +34,7 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(reset_stats)
 
 func _process(delta: float) -> void:
-	if not multiplayer.has_multiplayer_peer():
+	if not multiplayer.has_multiplayer_peer() or multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
 
 	if multiplayer.is_server():
@@ -31,44 +44,74 @@ func _process(delta: float) -> void:
 			_update_server_pings()
 	else:
 		_client_ping_timer += delta
-		if _client_ping_timer >= 1.5:
+		if _client_ping_timer >= 1.0:
 			_client_ping_timer = 0.0
 			_send_client_ping()
 
 func _update_server_pings() -> void:
 	if not multiplayer.has_multiplayer_peer() or multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
-	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
-	if not enet or not enet.get_host():
+	if not multiplayer.is_server():
 		return
 
-	var changed: bool = false
-	for pid in players.keys():
-		var p_id: int = int(pid)
-		var p_val: int = 0
-		if p_id == 1:
-			p_val = 0
-		else:
-			var p = enet.get_peer(p_id)
-			if p:
-				p_val = int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
-		if players[pid].get("ping", -1) != p_val:
-			players[pid]["ping"] = p_val
-			changed = true
-
-	if changed:
-		_broadcast()
+	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
+	if enet and enet.get_host():
+		for pid in players.keys():
+			var p_id: int = int(pid)
+			if p_id == 1:
+				if players[pid].get("ping", -1) != 0:
+					players[pid]["ping"] = 0
+			else:
+				var p = enet.get_peer(p_id)
+				if p and p.get_state() == ENetPacketPeer.STATE_CONNECTED:
+					var p_val: int = int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
+					if p_val > 0 and players[pid].get("ping", -1) != p_val:
+						players[pid]["ping"] = p_val
+						_sync_player_ping.rpc(p_id, p_val)
 
 func _send_client_ping() -> void:
 	if not multiplayer.has_multiplayer_peer() or multiplayer.multiplayer_peer.get_connection_status() != MultiplayerPeer.CONNECTION_CONNECTED:
 		return
+	if multiplayer.is_server():
+		return
+	if not (1 in multiplayer.get_peers()):
+		return
+
+	# If ENet, fast-read statistic directly if available:
 	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
 	if enet and enet.get_host():
 		var p = enet.get_peer(1)
 		if p and p.get_state() == ENetPacketPeer.STATE_CONNECTED:
-			var my_ping: int = int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
-			if my_ping > 0:
+			var ep_ping: int = int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
+			if ep_ping > 0:
+				my_ping = ep_ping
+				var my_id := multiplayer.get_unique_id()
+				if players.has(my_id):
+					players[my_id]["ping"] = my_ping
 				report_ping.rpc_id(1, my_ping)
+				return
+
+	# Universal ping-pong RPC probe (for WebRTC & any transport)
+	_ping_server.rpc_id(1, Time.get_ticks_msec())
+
+@rpc("any_peer", "call_remote", "unreliable")
+func _ping_server(client_time: int) -> void:
+	var sender_id := multiplayer.get_remote_sender_id()
+	if sender_id != 0:
+		_pong_client.rpc_id(sender_id, client_time)
+
+@rpc("authority", "call_remote", "unreliable")
+func _pong_client(client_time: int) -> void:
+	var rtt := Time.get_ticks_msec() - client_time
+	if rtt >= 0:
+		if my_ping == 0:
+			my_ping = maxi(1, rtt)
+		else:
+			my_ping = maxi(1, int(my_ping * 0.6 + rtt * 0.4))
+		var my_id := multiplayer.get_unique_id()
+		if players.has(my_id):
+			players[my_id]["ping"] = my_ping
+		report_ping.rpc_id(1, my_ping)
 
 @rpc("any_peer", "call_local", "unreliable")
 func report_ping(val: int) -> void:
@@ -78,7 +121,15 @@ func report_ping(val: int) -> void:
 	if sender_id == 0:
 		sender_id = multiplayer.get_unique_id()
 	if players.has(sender_id):
-		players[sender_id]["ping"] = val
+		if players[sender_id].get("ping", 0) != val:
+			players[sender_id]["ping"] = val
+			_sync_player_ping.rpc(sender_id, val)
+
+@rpc("authority", "call_local", "unreliable")
+func _sync_player_ping(peer_id: int, val: int) -> void:
+	if players.has(peer_id):
+		players[peer_id]["ping"] = val
+		stats_changed.emit()
 
 
 func set_nick(nick: String) -> void:
@@ -101,6 +152,9 @@ func _sanitize(nick: String) -> String:
 
 func reset_stats() -> void:
 	players.clear()
+	my_ping = 0
+	_ping_timer = 0.0
+	_client_ping_timer = 0.0
 	stats_changed.emit()
 
 # Клиент или сервер сообщает серверу свой ник

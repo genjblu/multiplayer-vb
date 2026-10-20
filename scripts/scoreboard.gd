@@ -309,15 +309,8 @@ func _create_player_row(p_data: Dictionary) -> PanelContainer:
 	hbox.add_child(kd_lbl)
 
 	var ping_val: int = int(p_data.get("ping", 0))
-	if is_me:
-		var peer: ENetMultiplayerPeer = multiplayer.multiplayer_peer as ENetMultiplayerPeer
-		if peer and peer.get_host():
-			var is_srv: bool = multiplayer.has_multiplayer_peer() and multiplayer.is_server()
-			var p = peer.get_peer(1) if not is_srv else null
-			if p:
-				var local_ping: int = int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
-				if local_ping > 0:
-					ping_val = local_ping
+	if is_me and GameStats:
+		ping_val = GameStats.get_my_ping()
 	var ping_lbl := Label.new()
 	ping_lbl.text = "%d ms" % ping_val if ping_val > 0 else "0 ms"
 	ping_lbl.custom_minimum_size = Vector2(45, 0)
