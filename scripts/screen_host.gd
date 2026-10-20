@@ -50,20 +50,34 @@ func _ready() -> void:
 	mode_option.add_item(tr("HOST_MODE_4V4"), 3)
 	add_child(_make_row(tr("HOST_MODE"), mode_option))
 
-	ff_checkbox = CheckBox.new()
-	ff_checkbox.text = tr("HOST_FF")
-	ff_checkbox.button_pressed = false
-	add_child(ff_checkbox)
+	var chk_box := HBoxContainer.new()
+	chk_box.add_theme_constant_override("separation", 8)
+	add_child(chk_box)
 
 	online_checkbox = CheckBox.new()
 	online_checkbox.text = tr("HOST_PUBLISH_ONLINE")
 	online_checkbox.button_pressed = true
-	add_child(online_checkbox)
+	online_checkbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chk_box.add_child(online_checkbox)
+
+	ff_checkbox = CheckBox.new()
+	ff_checkbox.text = tr("HOST_FF")
+	ff_checkbox.button_pressed = false
+	ff_checkbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chk_box.add_child(ff_checkbox)
+
+	var btn_box := HBoxContainer.new()
+	btn_box.add_theme_constant_override("separation", 8)
+	add_child(btn_box)
+
+	var b_back := _make_back_button()
+	b_back.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	btn_box.add_child(b_back)
 
 	var b_create := _make_button(tr("HOST_BTN_CREATE"), true)
+	b_create.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b_create.pressed.connect(_on_create_pressed)
-	add_child(b_create)
-	add_child(_make_back_button())
+	btn_box.add_child(b_create)
 
 func _scan_maps() -> void:
 	available_maps.clear()

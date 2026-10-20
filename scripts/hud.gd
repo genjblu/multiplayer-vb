@@ -442,12 +442,14 @@ func _build_settings_menu() -> void:
 	GameSettings.ensure_loaded()
 	settings_menu = PanelContainer.new()
 	settings_menu.theme = UITheme.build()
-	settings_menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	settings_menu.custom_minimum_size = Vector2(680, 520)
-	settings_menu.offset_left = -340
-	settings_menu.offset_top = -260
-	settings_menu.offset_right = 340
-	settings_menu.offset_bottom = 260
+	var is_mob := _is_mobile()
+	var w: float = 460.0 if is_mob else 680.0
+	var h: float = 320.0 if is_mob else 500.0
+	settings_menu.custom_minimum_size = Vector2(w, h)
+	settings_menu.offset_left = -w / 2.0
+	settings_menu.offset_top = -h / 2.0
+	settings_menu.offset_right = w / 2.0
+	settings_menu.offset_bottom = h / 2.0
 	settings_menu.visible = false
 	settings_menu.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(settings_menu)

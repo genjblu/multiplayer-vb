@@ -56,7 +56,7 @@ static var playit_tunnel_address: String = ""
 static func ensure_loaded() -> void:
 	if not is_loaded:
 		var is_mob: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
-		ui_scale = 1.35 if is_mob else 1.0
+		ui_scale = 1.0
 		load_from_disk()
 
 static func set_language(lang_code: String) -> void:
@@ -148,6 +148,9 @@ static func load_from_disk() -> void:
 	fsr_sharpness = float(cfg.get_value("video", "fsr_sharpness", fsr_sharpness))
 	render_scale = float(cfg.get_value("video", "render_scale", render_scale))
 	ui_scale = float(cfg.get_value("video", "ui_scale", ui_scale))
+	var is_mob: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
+	if is_mob and ui_scale > 1.05:
+		ui_scale = 1.0
 	base_fov = float(cfg.get_value("video", "base_fov", base_fov))
 	shadow_quality = int(cfg.get_value("video", "shadow_quality", shadow_quality))
 	msaa = int(cfg.get_value("video", "msaa", msaa))

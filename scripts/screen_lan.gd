@@ -15,7 +15,8 @@ var btn_tab_lan: Button
 var online_servers_list: Array = []
 
 func _ready() -> void:
-	custom_minimum_size = Vector2(540, 420)
+	var is_mob := OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
+	custom_minimum_size = Vector2(380 if is_mob else 500, 260 if is_mob else 380)
 
 	add_child(_make_label("Поиск серверов", "HeadingLabel"))
 
@@ -42,7 +43,7 @@ func _ready() -> void:
 	add_child(status_lbl)
 
 	scroll = ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(0, 220)
+	scroll.custom_minimum_size = Vector2(0, 140 if is_mob else 200)
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED

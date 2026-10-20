@@ -264,13 +264,23 @@ func _open_main_menu_settings() -> void:
 	settings_dialog.add_child(bg)
 
 	# 2. Центральная карточка настроек
+	var is_mob := OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
+
+	var scroll_root := ScrollContainer.new()
+	scroll_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll_root.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll_root.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	settings_dialog.add_child(scroll_root)
+
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	settings_dialog.add_child(center)
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_root.add_child(center)
 
 	var panel := PanelContainer.new()
 	panel.theme = UITheme.build()
-	panel.custom_minimum_size = Vector2(720, 540)
+	panel.custom_minimum_size = Vector2(460 if is_mob else 680, 320 if is_mob else 480)
 	center.add_child(panel)
 
 	var main_vbox := VBoxContainer.new()

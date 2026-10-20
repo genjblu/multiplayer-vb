@@ -22,21 +22,60 @@ static func _box(color: Color, border: Color = Color.TRANSPARENT, border_width: 
 	sb.content_margin_bottom = 10
 	return sb
 
+static func _is_mobile() -> bool:
+	return OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
+
 static func build() -> Theme:
 	var t := Theme.new()
-	t.default_font_size = 20
+	var is_mob := _is_mobile()
+	t.default_font_size = 15 if is_mob else 17
 
 	# Панель-карточка
 	var panel := _box(PANEL_COLOR, BORDER_COLOR, 1)
-	panel.set_corner_radius_all(12)
-	panel.set_content_margin_all(32)
+	panel.set_corner_radius_all(10)
+	if is_mob:
+		panel.content_margin_left = 18
+		panel.content_margin_right = 18
+		panel.content_margin_top = 12
+		panel.content_margin_bottom = 12
+	else:
+		panel.content_margin_left = 26
+		panel.content_margin_right = 26
+		panel.content_margin_top = 20
+		panel.content_margin_bottom = 20
 	t.set_stylebox("panel", "PanelContainer", panel)
 
 	# Обычные кнопки
-	t.set_stylebox("normal", "Button", _box(Color("252a32")))
-	t.set_stylebox("hover", "Button", _box(Color("2f3540")))
-	t.set_stylebox("pressed", "Button", _box(Color("1f232a")))
-	t.set_stylebox("disabled", "Button", _box(Color("1b1e24")))
+	var btn_v_margin: int = 6 if is_mob else 8
+	var btn_h_margin: int = 12 if is_mob else 16
+	var btn_normal := _box(Color("252a32"))
+	btn_normal.content_margin_top = btn_v_margin
+	btn_normal.content_margin_bottom = btn_v_margin
+	btn_normal.content_margin_left = btn_h_margin
+	btn_normal.content_margin_right = btn_h_margin
+	t.set_stylebox("normal", "Button", btn_normal)
+
+	var btn_hover := _box(Color("2f3540"))
+	btn_hover.content_margin_top = btn_v_margin
+	btn_hover.content_margin_bottom = btn_v_margin
+	btn_hover.content_margin_left = btn_h_margin
+	btn_hover.content_margin_right = btn_h_margin
+	t.set_stylebox("hover", "Button", btn_hover)
+
+	var btn_pressed := _box(Color("1f232a"))
+	btn_pressed.content_margin_top = btn_v_margin
+	btn_pressed.content_margin_bottom = btn_v_margin
+	btn_pressed.content_margin_left = btn_h_margin
+	btn_pressed.content_margin_right = btn_h_margin
+	t.set_stylebox("pressed", "Button", btn_pressed)
+
+	var btn_disabled := _box(Color("1b1e24"))
+	btn_disabled.content_margin_top = btn_v_margin
+	btn_disabled.content_margin_bottom = btn_v_margin
+	btn_disabled.content_margin_left = btn_h_margin
+	btn_disabled.content_margin_right = btn_h_margin
+	t.set_stylebox("disabled", "Button", btn_disabled)
+
 	var focus := _box(Color.TRANSPARENT, ACCENT_COLOR, 2)
 	focus.draw_center = false
 	t.set_stylebox("focus", "Button", focus)
@@ -47,30 +86,54 @@ static func build() -> Theme:
 
 	# Акцентные кнопки
 	t.set_type_variation("AccentButton", "Button")
-	t.set_stylebox("normal", "AccentButton", _box(ACCENT_COLOR))
-	t.set_stylebox("hover", "AccentButton", _box(ACCENT_COLOR.lightened(0.15)))
-	t.set_stylebox("pressed", "AccentButton", _box(ACCENT_COLOR.darkened(0.15)))
+	var btn_acc_norm := _box(ACCENT_COLOR)
+	btn_acc_norm.content_margin_top = btn_v_margin
+	btn_acc_norm.content_margin_bottom = btn_v_margin
+	btn_acc_norm.content_margin_left = btn_h_margin
+	btn_acc_norm.content_margin_right = btn_h_margin
+	t.set_stylebox("normal", "AccentButton", btn_acc_norm)
+
+	var btn_acc_hov := _box(ACCENT_COLOR.lightened(0.15))
+	btn_acc_hov.content_margin_top = btn_v_margin
+	btn_acc_hov.content_margin_bottom = btn_v_margin
+	btn_acc_hov.content_margin_left = btn_h_margin
+	btn_acc_hov.content_margin_right = btn_h_margin
+	t.set_stylebox("hover", "AccentButton", btn_acc_hov)
+
+	var btn_acc_prs := _box(ACCENT_COLOR.darkened(0.15))
+	btn_acc_prs.content_margin_top = btn_v_margin
+	btn_acc_prs.content_margin_bottom = btn_v_margin
+	btn_acc_prs.content_margin_left = btn_h_margin
+	btn_acc_prs.content_margin_right = btn_h_margin
+	t.set_stylebox("pressed", "AccentButton", btn_acc_prs)
+
 	t.set_stylebox("disabled", "AccentButton", _box(Color("3a3f48")))
 	t.set_color("font_color", "AccentButton", BG_COLOR)
 	t.set_color("font_hover_color", "AccentButton", BG_COLOR)
 	t.set_color("font_pressed_color", "AccentButton", BG_COLOR)
 
 	# Поля ввода
-	t.set_stylebox("normal", "LineEdit", _box(FIELD_COLOR, BORDER_COLOR, 1))
-	t.set_stylebox("focus", "LineEdit", _box(FIELD_COLOR, ACCENT_COLOR, 1))
+	var line_edit_box := _box(FIELD_COLOR, BORDER_COLOR, 1)
+	line_edit_box.content_margin_top = 6 if is_mob else 8
+	line_edit_box.content_margin_bottom = 6 if is_mob else 8
+	t.set_stylebox("normal", "LineEdit", line_edit_box)
+	var line_edit_focus := _box(FIELD_COLOR, ACCENT_COLOR, 1)
+	line_edit_focus.content_margin_top = 6 if is_mob else 8
+	line_edit_focus.content_margin_bottom = 6 if is_mob else 8
+	t.set_stylebox("focus", "LineEdit", line_edit_focus)
 	t.set_color("font_color", "LineEdit", TEXT_COLOR)
 	t.set_color("caret_color", "LineEdit", ACCENT_COLOR)
 	t.set_color("font_placeholder_color", "LineEdit", MUTED_COLOR)
 
 	# Подписи
 	t.set_type_variation("TitleLabel", "Label")
-	t.set_font_size("font_size", "TitleLabel", 40)
+	t.set_font_size("font_size", "TitleLabel", 22 if is_mob else 30)
 	t.set_color("font_color", "TitleLabel", TEXT_COLOR)
 	t.set_type_variation("HeadingLabel", "Label")
-	t.set_font_size("font_size", "HeadingLabel", 28)
+	t.set_font_size("font_size", "HeadingLabel", 18 if is_mob else 22)
 	t.set_color("font_color", "HeadingLabel", ACCENT_COLOR)
 	t.set_type_variation("HintLabel", "Label")
-	t.set_font_size("font_size", "HintLabel", 16)
+	t.set_font_size("font_size", "HintLabel", 12 if is_mob else 14)
 	t.set_color("font_color", "HintLabel", MUTED_COLOR)
 
 	# Разделитель
