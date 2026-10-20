@@ -55,7 +55,12 @@ func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
 	# Чужие копии игрока не должны реагировать на касания
-	if player == null or not player.is_multiplayer_authority():
+	var is_local := true
+	if player and player.has_method("is_local_player"):
+		is_local = player.is_local_player()
+	elif player and multiplayer.has_multiplayer_peer():
+		is_local = player.is_multiplayer_authority()
+	if player == null or not is_local:
 		return
 
 	if event is InputEventScreenTouch:

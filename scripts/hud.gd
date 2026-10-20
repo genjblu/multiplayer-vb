@@ -70,9 +70,13 @@ var is_potato_mode: bool = false
 var saved_settings: Dictionary = {}
 
 func _ready() -> void:
-	player = owner if owner is CharacterBody3D else get_parent()
+	var is_local := true
+	if player and player.has_method("is_local_player"):
+		is_local = player.is_local_player()
+	elif player and multiplayer.has_multiplayer_peer():
+		is_local = player.is_multiplayer_authority()
 
-	if not player or not player.is_multiplayer_authority():
+	if not player or not is_local:
 		queue_free()
 		return
 
@@ -288,7 +292,13 @@ func _input(event: InputEvent) -> void:
 			_rebinding_button = null
 			return
 
-	if not player or not player.is_multiplayer_authority():
+	var is_local := true
+	if player and player.has_method("is_local_player"):
+		is_local = player.is_local_player()
+	elif player and multiplayer.has_multiplayer_peer():
+		is_local = player.is_multiplayer_authority()
+
+	if not player or not is_local:
 		return
 
 	if event.is_action_pressed("weapon_wheel") and not is_paused:

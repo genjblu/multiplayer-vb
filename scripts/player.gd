@@ -230,8 +230,15 @@ func _init() -> void:
 
 func _enter_tree() -> void:
 	var peer_id: int = name.to_int()
-	set_multiplayer_authority(peer_id)
-	$MultiplayerSynchronizer.set_multiplayer_authority(peer_id)
+	if peer_id > 0:
+		set_multiplayer_authority(peer_id)
+		if has_node("MultiplayerSynchronizer"):
+			$MultiplayerSynchronizer.set_multiplayer_authority(peer_id)
+
+func is_local_player() -> bool:
+	if not multiplayer.has_multiplayer_peer():
+		return true
+	return is_multiplayer_authority()
 
 func _ready() -> void:
 	if scope_overlay:
@@ -255,7 +262,7 @@ func _ready() -> void:
 	else:
 		default_capsule_height = standing_height
 
-	if not is_multiplayer_authority():
+	if not is_local_player():
 		camera.clear_current()
 		touch_ui.hide()
 		return
@@ -266,10 +273,10 @@ func _ready() -> void:
 	# Своё 3D-тело скрываем для себя в виде от первого лица (чтобы голова не перекрывала камеру)
 	var soldier = get_node_or_null("SoldierModel")
 	if soldier:
-		soldier.visible = not is_multiplayer_authority()
+		soldier.visible = not is_local_player()
 	var body_mesh = get_node_or_null("MeshInstance3D")
 	if body_mesh:
-		body_mesh.visible = not is_multiplayer_authority()
+		body_mesh.visible = not is_local_player()
 
 	GameSettings.apply_to_player(self)
 	health_changed.emit(health)
@@ -392,10 +399,10 @@ func _sync_weapon_ammo_3d(current: int, reserve: int) -> void:
 		if current_view.has_method("set_ammo_display"):
 			current_view.call("set_ammo_display", current, reserve)
 		if current_view.has_method("set_ammo_3d_visible"):
-			current_view.call("set_ammo_3d_visible", show_ammo_on_weapon and is_multiplayer_authority())
+			current_view.call("set_ammo_3d_visible", show_ammo_on_weapon and is_local_player())
 	elif is_instance_valid(current_weapon_node):
 		var lbl: Label3D = current_weapon_node.get_node_or_null("BoxAmmoLabel3D") as Label3D
-		if show_ammo_on_weapon and is_multiplayer_authority():
+		if show_ammo_on_weapon and is_local_player():
 			if lbl == null:
 				lbl = Label3D.new()
 				lbl.name = "BoxAmmoLabel3D"
@@ -419,7 +426,7 @@ func cycle_weapon() -> void:
 	_switch_weapon(weapons[idx])
 	
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_multiplayer_authority():
+	if not is_local_player():
 		return
 
 	# На телефоне игнорируем мышиные события, которые Godot эмулирует из касаний
@@ -445,7 +452,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		print("touch ", event.index, " ", event.pressed, " ", event.position, " mobile=", is_mobile)
 		
-	if not is_multiplayer_authority() or not is_mobile:
+	if not is_local_player() or not is_mobile:
 		return
 
 	if event is InputEventScreenTouch:
@@ -507,7 +514,7 @@ func _is_over_joystick(pos: Vector2) -> bool:
 	var n: Node = touch_ui.get_node_or_null("TouchOverlay/JoystickBase")
 	return n != null and _node_rect(n).has_point(pos)
 func touch_action(action: String, pressed: bool) -> void:
-	if not is_multiplayer_authority():
+	if not is_local_player():
 		return
 	match action:
 		"fire":
@@ -556,7 +563,7 @@ func _physics_process(delta: float) -> void:
 	# Замедление снайпера в зуме
 	if is_ads and current_weapon == WeaponType.SNIPER:
 		target_speed *= SCOPED_SPEED_PENALTY
-	if not is_multiplayer_authority():
+	if not is_local_player():
 		var prev_pos := global_position
 		# Если дистанция слишком велика (возрождение, телепортация), моментальный перенос без рывка
 		if global_position.distance_squared_to(sync_position) > 64.0:
@@ -717,7 +724,7 @@ func _physics_process(delta: float) -> void:
 	camera.fov = lerp(camera.fov, target_fov, delta * 15.0)
 
 	# Логика оптического оверлея и скрытия винтовки
-	if current_weapon == WeaponType.SNIPER and is_multiplayer_authority():
+	if current_weapon == WeaponType.SNIPER and is_local_player():
 		if scope_overlay:
 			scope_overlay.visible = is_ads
 		if current_view:
@@ -725,7 +732,7 @@ func _physics_process(delta: float) -> void:
 		elif current_weapon_node:
 			current_weapon_node.visible = not is_ads
 	else:
-		if scope_overlay and is_multiplayer_authority():
+		if scope_overlay and is_local_player():
 			scope_overlay.visible = false
 		if current_view:
 			current_view.visible = true
@@ -1070,7 +1077,7 @@ func reload() -> void:
 
 @rpc("any_peer", "call_local", "reliable")
 func take_damage(amount: int, attacker_id: int, weapon_name: String = "", is_headshot: bool = false) -> void:
-	if not is_multiplayer_authority():
+	if not is_local_player():
 		return
 
 	if Time.get_ticks_msec() / 1000.0 < invulnerable_until:
@@ -1079,7 +1086,7 @@ func take_damage(amount: int, attacker_id: int, weapon_name: String = "", is_hea
 	# Проверка огня по своим (Friendly Fire)
 	var net_manager = get_node_or_null("/root/NetworkManager")
 	var is_ff: bool = net_manager.friendly_fire if net_manager else false
-	var my_id: int = multiplayer.get_unique_id()
+	var my_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
 	if not is_ff and attacker_id != 0 and attacker_id != my_id:
 		if GameStats.are_allies(attacker_id, my_id):
 			return # Союзник не получает урон
@@ -1198,7 +1205,7 @@ func rpc_on_fired() -> void:
 				muzzle_flash.visible = false
 		)
 	# Процедурный толчок оружия/головы для удалённого наблюдателя
-	if not is_multiplayer_authority() and is_instance_valid(current_view):
+	if not is_local_player() and is_instance_valid(current_view):
 		var recoil_offset := Vector3(0, 0.015, 0.04)
 		current_view.position += recoil_offset
 		var tw := create_tween()
@@ -1340,7 +1347,7 @@ func _apply_hands_material_recursive(node: Node, mat: Material) -> void:
 func _update_viewmodel_hands_visibility() -> void:
 	if not is_instance_valid(current_view):
 		return
-	var is_local: bool = is_multiplayer_authority()
+	var is_local: bool = is_local_player()
 	_apply_hands_visibility_recursive(current_view, is_local)
 
 func _apply_hands_visibility_recursive(node: Node, hands_visible: bool) -> void:
@@ -1352,7 +1359,7 @@ func _apply_hands_visibility_recursive(node: Node, hands_visible: bool) -> void:
 		_apply_hands_visibility_recursive(child, hands_visible)
 			
 func _physics_process_target_info() -> void:
-	if not is_multiplayer_authority() or not weapon_ray:
+	if not is_local_player() or not weapon_ray:
 		return
 	if target_info_label == null and camera:
 		target_info_label = Label3D.new()
@@ -1370,7 +1377,8 @@ func _physics_process_target_info() -> void:
 				var target_peer_id: int = collider.name.to_int()
 				if GameStats.players.has(target_peer_id):
 					var p_data = GameStats.players[target_peer_id]
-					var is_ally: bool = GameStats.are_allies(multiplayer.get_unique_id(), target_peer_id)
+					var my_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+					var is_ally: bool = GameStats.are_allies(my_id, target_peer_id)
 					target_info_label.text = p_data.get("name", "")
 					target_info_label.modulate = Color(0.3, 1.0, 0.4) if is_ally else Color(1.0, 0.3, 0.3)
 					target_info_label.visible = true
