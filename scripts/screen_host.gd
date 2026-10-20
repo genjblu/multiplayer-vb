@@ -14,6 +14,7 @@ var available_maps: Array[MapData] = []
 const MAP_PATHS: Array[String] = [
 	"res://maps/default_arena.tres",
 	"res://maps/Industrial.tres",
+	"res://maps/polygon.tres",
 ]
 func _ready() -> void:
 	add_child(_make_label(tr("HOST_TITLE"), "HeadingLabel"))

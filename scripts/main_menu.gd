@@ -71,6 +71,7 @@ func _build_ui() -> void:
 					settings_dialog.show()
 			)
 
+	screen_main.training_requested.connect(_on_training_requested)
 	screen_host.host_requested.connect(_on_host_requested)
 	screen_join.join_requested.connect(_on_join_requested)
 	screen_lan.join_requested.connect(_on_join_requested)
@@ -79,6 +80,24 @@ func _build_ui() -> void:
 
 	menu.show_screen("main")
 	screen_main.nick_edit.text = GameStats.local_nick
+
+func _on_training_requested() -> void:
+	GameStats.set_nick(screen_main.get_nick())
+	var net_manager = get_node_or_null("/root/NetworkManager")
+	if net_manager:
+		net_manager.disconnect_peer()
+		net_manager.current_map_id = "polygon"
+		net_manager.current_mode = "ffa"
+
+	var map_to_load: MapData = null
+	var map_path := "res://maps/polygon.tres"
+	if ResourceLoader.exists(map_path):
+		map_to_load = load(map_path) as MapData
+
+	var loader := LoadingScreen.new()
+	loader.map_data = map_to_load
+	get_tree().root.add_child(loader)
+	get_tree().change_scene_to_file("res://scenes/polygon.tscn")
 
 func _on_host_requested(port: int, room_name: String, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false, publish_online: bool = true, custom_ip: String = "") -> void:
 	GameStats.set_nick(screen_main.get_nick())

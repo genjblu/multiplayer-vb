@@ -19,9 +19,12 @@ const TRANSLATIONS: Dictionary = {
 		"HOST_DEFAULT_ROOM_FALLBACK": "Комната",
 		"MAP_DEFAULT_ARENA": "Арена",
 		"MAP_DEFAULT_DESC": "Стандартная карта",
+		"MAP_POLYGON": "Полигон",
+		"MAP_POLYGON_DESC": "Закрытый полигон для тренировки стрельбы по мишеням, оружия и паркура.",
 		
 		# Главное меню
 		"MENU_NICK": "Ник",
+		"MENU_TRAINING": "🎯 Полигон (Тренировка)",
 		"MENU_HOST": "Создать сервер",
 		"MENU_JOIN": "Подключиться по IP",
 		"MENU_LAN": "Список серверов",
@@ -97,9 +100,12 @@ const TRANSLATIONS: Dictionary = {
 		"HOST_DEFAULT_ROOM_FALLBACK": "Room",
 		"MAP_DEFAULT_ARENA": "Arena",
 		"MAP_DEFAULT_DESC": "Default Map",
+		"MAP_POLYGON": "Firing Range",
+		"MAP_POLYGON_DESC": "Indoor training ground with target dummies, all weapons, and parkour course.",
 		
 		# Main Menu
 		"MENU_NICK": "Nickname",
+		"MENU_TRAINING": "🎯 Firing Range (Training)",
 		"MENU_HOST": "Host Game",
 		"MENU_JOIN": "Direct Connect",
 		"MENU_LAN": "Server Browser",

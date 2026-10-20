@@ -1,6 +1,8 @@
 class_name ScreenMain
 extends MenuScreen
 
+signal training_requested
+
 var nick_edit: LineEdit
 
 func _ready() -> void:
@@ -9,7 +11,11 @@ func _ready() -> void:
 	nick_edit.max_length = 16
 	add_child(_make_row(tr("MENU_NICK"), nick_edit))
 
-	var b_host := _make_button(tr("MENU_HOST"), true)
+	var b_training := _make_button(tr("MENU_TRAINING"), true)
+	b_training.pressed.connect(func(): training_requested.emit())
+	add_child(b_training)
+
+	var b_host := _make_button(tr("MENU_HOST"))
 	b_host.pressed.connect(func(): navigate.emit("host"))
 	add_child(b_host)
 

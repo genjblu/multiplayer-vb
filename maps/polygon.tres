@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MapData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/map_data.gd" id="1_map"]
+
+[resource]
+script = ExtResource("1_map")
+id = "polygon"
+display_name = "MAP_POLYGON"
+description = "MAP_POLYGON_DESC"
+scene_path = "res://scenes/polygon.tscn"
+supported_modes = ["ffa", "2v2", "3v3v3", "4v4"]

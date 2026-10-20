@@ -261,7 +261,8 @@ func _ready() -> void:
 		return
 
 	camera.make_current()
-	GameStats.register_name.rpc_id(1, GameStats.local_nick)
+	if multiplayer.has_multiplayer_peer():
+		GameStats.register_name.rpc_id(1, GameStats.local_nick)
 	# Своё 3D-тело скрываем для себя в виде от первого лица (чтобы голова не перекрывала камеру)
 	var soldier = get_node_or_null("SoldierModel")
 	if soldier:
@@ -372,6 +373,19 @@ func _switch_weapon(type: WeaponType) -> void:
 
 	ammo_changed.emit(current_ammo, reserve_ammo)
 	weapon_changed.emit(stats["name"])
+
+func refill_ammo() -> void:
+	for w in weapon_stats.keys():
+		var stats = weapon_stats[w]
+		ammo_state[w] = {"mag": stats["max_ammo"], "reserve": stats["reserve"] * 2}
+	var cur_stats = weapon_stats[current_weapon]
+	current_ammo = cur_stats["max_ammo"]
+	reserve_ammo = cur_stats["reserve"] * 2
+	ammo_changed.emit(current_ammo, reserve_ammo)
+
+func switch_weapon_by_index(idx: int) -> void:
+	if idx >= 0 and idx < WeaponType.size():
+		_switch_weapon(idx as WeaponType)
 
 func _sync_weapon_ammo_3d(current: int, reserve: int) -> void:
 	if is_instance_valid(current_view):
@@ -969,9 +983,13 @@ func shoot() -> void:
 						var t: float = clampf((dist - falloff_start) / maxf(range_m - falloff_start, 0.01), 0.0, 1.0)
 						factor = lerpf(1.0, min_factor, t)
 					damage_per_target[collider] = damage_per_target.get(collider, 0.0) + float(stats["damage"]) * factor
+		var sender_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
 		for target in damage_per_target.keys():
 			var total: int = maxi(int(round(damage_per_target[target])), 1)
-			target.take_damage.rpc_id(target.get_multiplayer_authority(), total, multiplayer.get_unique_id(), str(stats.get("name", "Дробовик")), false)
+			if multiplayer.has_multiplayer_peer() and target.is_in_group("players"):
+				target.take_damage.rpc_id(target.get_multiplayer_authority(), total, sender_id, str(stats.get("name", "Дробовик")), false)
+			else:
+				target.take_damage(total, sender_id, str(stats.get("name", "Дробовик")), false)
 			hit_any = true
 		weapon_ray.target_position = Vector3(0, 0, -50)
 	else:
@@ -1001,7 +1019,11 @@ func shoot() -> void:
 						dmg *= 0.75 # Ноги (86 урона — цель выживает)
 
 				var w_name: String = str(stats.get("name", ""))
-				collider.take_damage.rpc_id(collider.get_multiplayer_authority(), int(round(dmg)), multiplayer.get_unique_id(), w_name, is_headshot)
+				var sender_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+				if multiplayer.has_multiplayer_peer() and collider.is_in_group("players"):
+					collider.take_damage.rpc_id(collider.get_multiplayer_authority(), int(round(dmg)), sender_id, w_name, is_headshot)
+				else:
+					collider.take_damage(int(round(dmg)), sender_id, w_name, is_headshot)
 				hit_any = true
 				last_shot_headshot = is_headshot
 		weapon_ray.target_position = Vector3(0, 0, -50)

@@ -1,0 +1,80 @@
+[gd_scene format=3 uid="uid://c6targetdummy01"]
+
+[ext_resource type="Script" path="res://scripts/target_dummy.gd" id="1_dummy"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_Base"]
+albedo_color = Color(0.2, 0.22, 0.25, 1)
+metallic = 0.8
+roughness = 0.4
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_base"]
+material = SubResource("Mat_Base")
+top_radius = 0.35
+bottom_radius = 0.4
+height = 0.1
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_post"]
+material = SubResource("Mat_Base")
+top_radius = 0.04
+bottom_radius = 0.04
+height = 0.6
+
+[sub_resource type="StandardMaterial3D" id="Mat_Body"]
+albedo_color = Color(0.85, 0.85, 0.88, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="Mat_Bullseye"]
+albedo_color = Color(0.85, 0.15, 0.12, 1)
+roughness = 0.4
+
+[sub_resource type="BoxMesh" id="BoxMesh_body"]
+material = SubResource("Mat_Body")
+size = Vector3(0.48, 0.75, 0.05)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ring"]
+material = SubResource("Mat_Bullseye")
+top_radius = 0.12
+bottom_radius = 0.12
+height = 0.06
+
+[sub_resource type="BoxMesh" id="BoxMesh_head"]
+material = SubResource("Mat_Bullseye")
+size = Vector3(0.24, 0.28, 0.05)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_target"]
+size = Vector3(0.55, 1.7, 0.2)
+
+[node name="TargetDummy" type="StaticBody3D"]
+script = ExtResource("1_dummy")
+
+[node name="Base" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+mesh = SubResource("CylinderMesh_base")
+
+[node name="Post" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+mesh = SubResource("CylinderMesh_post")
+
+[node name="Pivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.45, 0)
+
+[node name="Plate" type="Node3D" parent="Pivot"]
+
+[node name="BodyMesh" type="MeshInstance3D" parent="Pivot/Plate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+mesh = SubResource("BoxMesh_body")
+
+[node name="CenterRing" type="MeshInstance3D" parent="Pivot/Plate"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.55, 0.01)
+mesh = SubResource("CylinderMesh_ring")
+
+[node name="HeadMesh" type="MeshInstance3D" parent="Pivot/Plate"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("BoxMesh_head")
+
+[node name="HeadMarker" type="Marker3D" parent="Pivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 0)
+shape = SubResource("BoxShape3D_target")
