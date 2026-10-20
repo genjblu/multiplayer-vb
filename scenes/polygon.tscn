@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://bpoly01firingrange"]
+[gd_scene format=3 uid="uid://cxqeiop8idq0k"]
 
 [ext_resource type="Script" path="res://scripts/polygon.gd" id="1_poly"]
 [ext_resource type="PackedScene" uid="uid://c6targetdummy01" path="res://scenes/target_dummy.tscn" id="2_dummy"]

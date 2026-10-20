@@ -85,19 +85,33 @@ func _on_training_requested() -> void:
 	GameStats.set_nick(screen_main.get_nick())
 	var net_manager = get_node_or_null("/root/NetworkManager")
 	if net_manager:
-		net_manager.disconnect_peer()
+		if multiplayer.has_multiplayer_peer():
+			multiplayer.multiplayer_peer.close()
+			multiplayer.multiplayer_peer = null
+		if net_manager.peer:
+			net_manager.peer.close()
+			net_manager.peer = null
+		net_manager.is_match_running = false
+		net_manager.joined_as_late = false
 		net_manager.current_map_id = "polygon"
 		net_manager.current_mode = "ffa"
+		LanDiscovery.stop_broadcast()
+		if OnlineMatchmaking:
+			OnlineMatchmaking.unregister_server()
 
 	var map_to_load: MapData = null
 	var map_path := "res://maps/polygon.tres"
 	if ResourceLoader.exists(map_path):
 		map_to_load = load(map_path) as MapData
 
-	var loader := LoadingScreen.new()
-	loader.map_data = map_to_load
-	get_tree().root.add_child(loader)
-	get_tree().change_scene_to_file("res://scenes/polygon.tscn")
+	var tree := get_tree()
+	if not tree:
+		tree = Engine.get_main_loop() as SceneTree
+	if tree and tree.root:
+		var loader := LoadingScreen.new()
+		loader.map_data = map_to_load
+		tree.root.add_child(loader)
+		tree.change_scene_to_file("res://scenes/polygon.tscn")
 
 func _on_host_requested(port: int, room_name: String, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false, publish_online: bool = true, custom_ip: String = "") -> void:
 	GameStats.set_nick(screen_main.get_nick())
@@ -213,10 +227,14 @@ func _on_launch_match() -> void:
 			if map_to_load and not map_to_load.scene_path.is_empty():
 				target_scene = map_to_load.scene_path
 
-	var loader := LoadingScreen.new()
-	loader.map_data = map_to_load
-	get_tree().root.add_child(loader)
-	get_tree().change_scene_to_file(target_scene)
+	var tree := get_tree()
+	if not tree:
+		tree = Engine.get_main_loop() as SceneTree
+	if tree and tree.root:
+		var loader := LoadingScreen.new()
+		loader.map_data = map_to_load
+		tree.root.add_child(loader)
+		tree.change_scene_to_file(target_scene)
 
 func _on_connection_failed() -> void:
 	if menu:

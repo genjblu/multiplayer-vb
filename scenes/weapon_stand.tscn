@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://c7weaponstand01"]
+[gd_scene format=3 uid="uid://bv8impcvgosea"]
 
 [ext_resource type="Script" path="res://scripts/weapon_stand.gd" id="1_stand"]
 
