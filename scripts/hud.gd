@@ -69,7 +69,20 @@ var current_res_list: Array[Vector2i] = []
 var is_potato_mode: bool = false
 var saved_settings: Dictionary = {}
 
+func _find_player() -> CharacterBody3D:
+	if owner is CharacterBody3D:
+		return owner as CharacterBody3D
+	var p: Node = get_parent()
+	while p:
+		if p is CharacterBody3D:
+			return p as CharacterBody3D
+		p = p.get_parent()
+	return null
+
 func _ready() -> void:
+	if player == null:
+		player = _find_player()
+
 	var is_local := true
 	if player and player.has_method("is_local_player"):
 		is_local = player.is_local_player()
@@ -291,6 +304,9 @@ func _input(event: InputEvent) -> void:
 			_rebinding_action = ""
 			_rebinding_button = null
 			return
+
+	if player == null:
+		player = _find_player()
 
 	var is_local := true
 	if player and player.has_method("is_local_player"):

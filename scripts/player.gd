@@ -241,7 +241,10 @@ func is_local_player() -> bool:
 	return is_multiplayer_authority()
 
 func _ready() -> void:
+	if scope_overlay == null:
+		scope_overlay = get_node_or_null("TouchUI/TouchOverlay/HUDContainer/ScopeOverlay") as Control
 	if scope_overlay:
+		scope_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		_make_click_through(scope_overlay)
 	# Цвет должен обновляться ДЛЯ ВСЕХ игроков (и своих, и чужих) ДО всяких return!
 	if not GameStats.stats_changed.is_connected(_update_body_color):
@@ -664,7 +667,8 @@ func _physics_process(delta: float) -> void:
 		return
 
 	if global_position.y < -10.0:
-		GameStats.report_death.rpc_id(1, 0, "", false)
+		if multiplayer.has_multiplayer_peer():
+			GameStats.report_death.rpc_id(1, 0, "", false)
 		die()
 		return
 
@@ -933,7 +937,10 @@ func shoot() -> void:
 
 	current_ammo -= 1
 	_view_call("play_fire")
-	rpc_on_fired.rpc()
+	if multiplayer.has_multiplayer_peer():
+		rpc_on_fired.rpc()
+	else:
+		rpc_on_fired()
 	_add_fire_bloom()
 	ammo_changed.emit(current_ammo, reserve_ammo)
 
@@ -1104,7 +1111,8 @@ func take_damage(amount: int, attacker_id: int, weapon_name: String = "", is_hea
 	damage_taken.emit(amount, attacker_dir)
 
 	if health <= 0:
-		GameStats.report_death.rpc_id(1, attacker_id, weapon_name, is_headshot)
+		if multiplayer.has_multiplayer_peer():
+			GameStats.report_death.rpc_id(1, attacker_id, weapon_name, is_headshot)
 		die()
 
 func die() -> void:
@@ -1184,7 +1192,10 @@ func _setup_audio_players() -> void:
 		sounds_node.add_child(footstep_sound_3d)
 
 func _view_call(method: String) -> void:
-	rpc_play_view_anim.rpc(method)
+	if multiplayer.has_multiplayer_peer():
+		rpc_play_view_anim.rpc(method)
+	else:
+		rpc_play_view_anim(method)
 
 @rpc("call_local", "reliable")
 func rpc_play_view_anim(method: String) -> void:

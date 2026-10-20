@@ -69,7 +69,18 @@ func _ready() -> void:
 			animation_player.play("idle")
 
 func play_reload() -> void:
-	_request(&"reload")
+	if animation_player and animation_player.has_animation(&"reload"):
+		_request(&"reload")
+	else:
+		_procedural_reload()
+
+func _procedural_reload() -> void:
+	var tw := create_tween()
+	var orig_pos := position
+	var dip_pos := orig_pos + Vector3(0.0, -0.12, 0.05)
+	tw.tween_property(self, "position", dip_pos, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_interval(0.3)
+	tw.tween_property(self, "position", orig_pos, 0.25).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
 
 func set_ammo_display(current: int, reserve: int) -> void:
 	if ammo_label_3d:
@@ -139,10 +150,20 @@ func can_fire() -> bool:
 	return not (animation_player.is_playing() and animation_player.current_animation == "draw")
 
 func play_fire() -> void:
-	_request(&"fire")
+	if animation_player and animation_player.has_animation(&"fire"):
+		_request(&"fire")
+	else:
+		_procedural_kick()
 	if muzzle_smoke and not muzzle_smoke.emitting:
 		muzzle_smoke.restart()
-		
+
+func _procedural_kick() -> void:
+	var tw := create_tween()
+	var orig_pos := position
+	var kick_offset := Vector3(0.0, 0.02, 0.06)
+	tw.tween_property(self, "position", orig_pos + kick_offset, 0.04).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(self, "position", orig_pos, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
+
 func _setup_smoke() -> void:
 	if muzzle_smoke == null:
 		return
