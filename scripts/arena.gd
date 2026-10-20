@@ -2,7 +2,7 @@ extends Node3D
 
 @export var player_scene: PackedScene = preload("res://scenes/player.tscn")
 @onready var spawn_points: Node3D = $SpawnPoints
-@onready var player_spawner: MultiplayerSpawner = $PlayerSpawner
+@onready var player_spawner: MultiplayerSpawner = get_node_or_null("PlayerSpawner")
 
 var team_dialog_canvas: CanvasLayer = null
 
@@ -12,7 +12,8 @@ func _ready() -> void:
 		if cam:
 			cam.make_current()
 
-	player_spawner.add_spawnable_scene("res://scenes/player.tscn")
+	if player_spawner:
+		player_spawner.add_spawnable_scene("res://scenes/player.tscn")
 
 	if NetworkManager:
 		NetworkManager.player_disconnected.connect(_remove_player)
