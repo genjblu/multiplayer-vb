@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://d378amenu29b"]
+[gd_scene format=3 uid="uid://d378amenu3ab"]
 
 [ext_resource type="Script" uid="uid://cbgscript001" path="res://scripts/menu_background.gd" id="1_bg"]
 [ext_resource type="Script" uid="uid://cbgscript002" path="res://scripts/menu_camera.gd" id="2_cam"]
