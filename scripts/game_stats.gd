@@ -65,7 +65,7 @@ func _send_client_ping() -> void:
 	var enet := multiplayer.multiplayer_peer as ENetMultiplayerPeer
 	if enet and enet.get_host():
 		var p = enet.get_peer(1)
-		if p:
+		if p and p.get_state() == ENetPacketPeer.STATE_CONNECTED:
 			var my_ping: int = int(p.get_statistic(ENetPacketPeer.PEER_ROUND_TRIP_TIME))
 			if my_ping > 0:
 				report_ping.rpc_id(1, my_ping)
