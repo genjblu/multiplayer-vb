@@ -13,7 +13,6 @@ config_version=5
 config/name="multiplayer-vb"
 run/main_scene="res://scenes/main_menu.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
-config/icon="res://icon.svg"
 
 [autoload]
 
@@ -22,8 +21,8 @@ GameStats="*res://scripts/game_stats.gd"
 LanDiscovery="*res://scripts/lan_discovery.gd"
 BulletDecals="*res://scripts/bullet_decals.gd"
 LocalizationData="*uid://escx3jmpe60v"
-_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 OnlineMatchmaking="*res://scripts/online_matchmaking.gd"
+_mcp_game_helper="*res://addons/godot_ai/runtime/game_helper.gd"
 
 [display]
 
@@ -84,8 +83,10 @@ reload={
 [physics]
 
 3d/physics_engine="Jolt Physics"
+3d/physics_engine.web="GodotPhysics3D"
 
 [rendering]
 
+renderer/rendering_method.web="gl_compatibility"
 rendering_device/driver.windows="d3d12"
 textures/vram_compression/import_etc2_astc=true
