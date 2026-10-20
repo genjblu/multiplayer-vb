@@ -122,7 +122,7 @@ func _on_training_requested() -> void:
 		tree.root.add_child(loader)
 		tree.change_scene_to_file("res://scenes/polygon.tscn")
 
-func _on_host_requested(port: int, room_name: String, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false, publish_online: bool = true, custom_ip: String = "") -> void:
+func _on_host_requested(port: int, room_name: String, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false, publish_online: bool = true, custom_ip: String = "", is_private: bool = false) -> void:
 	GameStats.set_nick(screen_main.get_nick())
 	if port <= 0:
 		menu.set_status("Статус: Укажите корректный порт!", true)
@@ -140,13 +140,21 @@ func _on_host_requested(port: int, room_name: String, map_id: String = "default_
 				if res:
 					map_title = res.display_name
 			LanDiscovery.start_broadcast(room_name, port, map_title, mode, ff, false)
-			if publish_online and OnlineMatchmaking:
-				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff, custom_ip, map_id)
+			if (publish_online or is_private) and OnlineMatchmaking:
+				if not OnlineMatchmaking.register_result.is_connected(_on_online_registered):
+					OnlineMatchmaking.register_result.connect(_on_online_registered)
+				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff, custom_ip, map_id, is_private)
 
-			screen_lobby.setup_lobby(map_title, mode, ff, true)
+			screen_lobby.setup_lobby(map_title, mode, ff, true, OnlineMatchmaking.current_room_code if OnlineMatchmaking else "")
 			menu.show_screen("lobby")
 		else:
 			menu.set_status("Статус: Ошибка создания сервера!", true)
+
+func _on_online_registered(success: bool, _server_id: String, room_code: String) -> void:
+	if success and screen_lobby and not room_code.is_empty():
+		screen_lobby.code_panel.visible = true
+		screen_lobby.current_room_code = room_code
+		screen_lobby.code_label.text = "%s %s" % [tr("LOBBY_CODE_HEADER"), room_code]
 
 func _on_join_requested(ip: String, port: int) -> void:
 	GameStats.set_nick(screen_main.get_nick())

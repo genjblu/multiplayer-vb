@@ -10,6 +10,10 @@ var mode_label: Label
 var ff_label: Label
 var start_button: Button
 var team_buttons_box: Container
+var code_panel: PanelContainer
+var code_label: Label
+var copy_btn: Button
+var current_room_code: String = ""
 
 func _ready() -> void:
 	# Растягиваем экран по родителю
@@ -79,6 +83,24 @@ func _ready() -> void:
 	info_vbox.add_child(ff_label)
 	right_vbox.add_child(info_panel)
 
+	# Блок с кодом комнаты (для приглашения друзей)
+	code_panel = PanelContainer.new()
+	code_panel.visible = false
+	var code_hbox := HBoxContainer.new()
+	code_hbox.add_theme_constant_override("separation", 8)
+	code_panel.add_child(code_hbox)
+
+	code_label = Label.new()
+	code_label.theme_type_variation = "SubheadingLabel"
+	code_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	code_hbox.add_child(code_label)
+
+	copy_btn = _make_button(tr("BTN_COPY_CODE"))
+	copy_btn.custom_minimum_size = Vector2(90, 32)
+	copy_btn.pressed.connect(_on_copy_code_pressed)
+	code_hbox.add_child(copy_btn)
+	right_vbox.add_child(code_panel)
+
 	# Выбор команды / цвета
 	var choose_lbl := Label.new()
 	choose_lbl.text = "Выберите сторону / цвет:"
@@ -102,7 +124,7 @@ func _ready() -> void:
 	if GameStats:
 		GameStats.stats_changed.connect(refresh_lobby)
 
-func setup_lobby(map_name: String, mode: String, ff: bool, is_host: bool) -> void:
+func setup_lobby(map_name: String, mode: String, ff: bool, is_host: bool, room_code: String = "") -> void:
 	map_label.text = "Карта: " + map_name
 	var mode_titles := {
 		"ffa": "Каждый за себя (FFA)",
@@ -113,9 +135,26 @@ func setup_lobby(map_name: String, mode: String, ff: bool, is_host: bool) -> voi
 	mode_label.text = "Режим: " + mode_titles.get(mode, mode)
 	ff_label.text = "Огонь по своим: " + ("ВКЛ" if ff else "ВЫКЛ")
 
+	current_room_code = room_code
+	if not current_room_code.is_empty():
+		code_panel.visible = true
+		code_label.text = "%s %s" % [tr("LOBBY_CODE_HEADER"), current_room_code]
+		copy_btn.text = tr("BTN_COPY_CODE")
+	else:
+		code_panel.visible = false
+
 	start_button.visible = is_host
 	_build_team_buttons(mode)
 	refresh_lobby()
+
+func _on_copy_code_pressed() -> void:
+	if not current_room_code.is_empty():
+		DisplayServer.clipboard_set(current_room_code)
+		copy_btn.text = tr("CODE_COPIED")
+		get_tree().create_timer(1.8).timeout.connect(func():
+			if is_instance_valid(copy_btn):
+				copy_btn.text = tr("BTN_COPY_CODE")
+		)
 
 func _build_team_buttons(mode: String) -> void:
 	for c in team_buttons_box.get_children():

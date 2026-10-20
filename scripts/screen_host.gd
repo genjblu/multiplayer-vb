@@ -1,11 +1,12 @@
 class_name ScreenHost
 extends MenuScreen
 
-signal host_requested(port: int, room_name: String, map_id: String, mode: String, friendly_fire: bool, publish_online: bool, custom_ip: String)
+signal host_requested(port: int, room_name: String, map_id: String, mode: String, friendly_fire: bool, publish_online: bool, custom_ip: String, is_private: bool)
 
 var room_edit: LineEdit
 var port_edit: LineEdit
 var tunnel_edit: LineEdit
+var lobby_type_option: OptionButton
 var map_option: OptionButton
 var mode_option: OptionButton
 var ff_checkbox: CheckBox
@@ -23,6 +24,18 @@ func _ready() -> void:
 	room_edit.text = tr("HOST_DEFAULT_ROOM")
 	room_edit.max_length = 32
 	add_child(_make_row(tr("HOST_ROOM_NAME"), room_edit))
+
+	lobby_type_option = OptionButton.new()
+	lobby_type_option.add_item(tr("LOBBY_TYPE_PUBLIC"), 0)
+	lobby_type_option.add_item(tr("LOBBY_TYPE_PRIVATE"), 1)
+	lobby_type_option.item_selected.connect(func(idx: int):
+		if idx == 1: # Private by code
+			online_checkbox.button_pressed = true
+			online_checkbox.disabled = true
+		else:
+			online_checkbox.disabled = false
+	)
+	add_child(_make_row(tr("LOBBY_TYPE"), lobby_type_option))
 
 	port_edit = LineEdit.new()
 	port_edit.text = "7777"
@@ -114,8 +127,9 @@ func _on_create_pressed() -> void:
 	var modes := ["ffa", "2v2", "3v3v3", "4v4"]
 	var selected_mode: String = modes[mode_option.selected] if mode_option.selected < modes.size() else "ffa"
 	var ff: bool = ff_checkbox.button_pressed
-	var pub_online: bool = online_checkbox.button_pressed
+	var is_priv: bool = (lobby_type_option.selected == 1)
+	var pub_online: bool = online_checkbox.button_pressed or is_priv
 	var custom_ip: String = tunnel_edit.text.strip_edges()
 	GameSettings.playit_tunnel_address = custom_ip
 	GameSettings.save_to_disk()
-	host_requested.emit(port, room, selected_map_id, selected_mode, ff, pub_online, custom_ip)
+	host_requested.emit(port, room, selected_map_id, selected_mode, ff, pub_online, custom_ip, is_priv)

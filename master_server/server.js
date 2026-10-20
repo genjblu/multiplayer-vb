@@ -40,29 +40,49 @@ setInterval(() => {
 
 // --- REST API for Godot & Web ---
 
-// 1. Get all active servers
+// 1. Get all active public servers
 app.get('/api/servers', (req, res) => {
-    const list = Array.from(servers.values()).map(s => ({
-        id: s.id,
-        name: s.name,
-        host_name: s.host_name,
-        ip: s.ip,
-        port: s.port,
-        map: s.map,
-        map_id: s.map_id || (s.map === 'MAP_INDUSTRIAL' || s.map === 'Industrial' ? 'Industrial' : 'default_arena'),
-        mode: s.mode,
-        players: s.players,
-        max_players: s.max_players,
-        in_game: s.in_game,
-        friendly_fire: s.friendly_fire,
-        uptime_seconds: Math.floor((Date.now() - s.created_at) / 1000)
-    }));
+    const list = Array.from(servers.values())
+        .filter(s => !s.is_private)
+        .map(s => ({
+            id: s.id,
+            name: s.name,
+            host_name: s.host_name,
+            ip: s.ip,
+            port: s.port,
+            map: s.map,
+            map_id: s.map_id || (s.map === 'MAP_INDUSTRIAL' || s.map === 'Industrial' ? 'Industrial' : 'default_arena'),
+            mode: s.mode,
+            players: s.players,
+            max_players: s.max_players,
+            in_game: s.in_game,
+            friendly_fire: s.friendly_fire,
+            room_code: s.room_code,
+            uptime_seconds: Math.floor((Date.now() - s.created_at) / 1000)
+        }));
     res.json({ servers: list, count: list.length });
 });
 
+// Helper to generate a unique 4-digit room code
+function generateRoomCode() {
+    let code = '';
+    for (let attempts = 0; attempts < 100; attempts++) {
+        code = Math.floor(1000 + Math.random() * 9000).toString();
+        let exists = false;
+        for (const s of servers.values()) {
+            if (s.room_code === code) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) return code;
+    }
+    return Math.floor(10000 + Math.random() * 90000).toString();
+}
+
 // 2. Register a new server (called by Godot host)
 app.post('/api/servers/register', (req, res) => {
-    const { name, host_name, port, map, map_id, mode, players, max_players, friendly_fire, custom_ip } = req.body;
+    const { name, host_name, port, map, map_id, mode, players, max_players, friendly_fire, custom_ip, is_private, room_code } = req.body;
     
     // Auto-detect public IP or accept explicit custom_ip
     let detectedIp = custom_ip && custom_ip.trim() !== '' ? custom_ip.trim() : getClientIp(req);
@@ -78,9 +98,12 @@ app.post('/api/servers/register', (req, res) => {
     }
 
     const serverId = `${detectedIp}:${serverPort}`;
+    const finalRoomCode = (room_code && room_code.trim() !== '') ? room_code.trim().toUpperCase() : generateRoomCode();
 
     const serverData = {
         id: serverId,
+        room_code: finalRoomCode,
+        is_private: Boolean(is_private),
         name: (name || 'Игровой сервер').substring(0, 32),
         host_name: (host_name || 'Хост').substring(0, 16),
         ip: detectedIp,
@@ -97,8 +120,41 @@ app.post('/api/servers/register', (req, res) => {
     };
 
     servers.set(serverId, serverData);
-    console.log(`[MasterServer] Registered: ${serverData.name} at ${serverId}`);
-    res.json({ success: true, server_id: serverId, public_ip: detectedIp });
+    console.log(`[MasterServer] Registered: ${serverData.name} (Code: ${finalRoomCode}, Private: ${serverData.is_private}) at ${serverId}`);
+    res.json({ success: true, server_id: serverId, room_code: finalRoomCode, public_ip: detectedIp });
+});
+
+// 2.5 Lookup room by code (for private or direct join)
+app.get('/api/rooms/:code', (req, res) => {
+    const searchCode = (req.params.code || '').trim().toUpperCase();
+    if (!searchCode) {
+        return res.status(400).json({ success: false, error: 'Код комнаты не указан' });
+    }
+
+    for (const s of servers.values()) {
+        if (s.room_code && s.room_code.toUpperCase() === searchCode) {
+            return res.json({
+                success: true,
+                server: {
+                    id: s.id,
+                    room_code: s.room_code,
+                    name: s.name,
+                    host_name: s.host_name,
+                    ip: s.ip,
+                    port: s.port,
+                    map: s.map,
+                    map_id: s.map_id,
+                    mode: s.mode,
+                    players: s.players,
+                    max_players: s.max_players,
+                    in_game: s.in_game,
+                    friendly_fire: s.friendly_fire
+                }
+            });
+        }
+    }
+
+    res.status(404).json({ success: false, error: 'Комната с таким кодом не найдена или неактивна' });
 });
 
 // 3. Heartbeat (called by Godot host every 5-10s)

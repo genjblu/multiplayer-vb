@@ -1,14 +1,17 @@
 extends Node
 
 signal online_servers_received(servers: Array)
-signal register_result(success: bool, server_id: String)
+signal register_result(success: bool, server_id: String, room_code: String)
+signal room_lookup_result(success: bool, server_data: Dictionary, error_msg: String)
 
 var http_fetch: HTTPRequest
 var http_register: HTTPRequest
 var http_heartbeat: HTTPRequest
 var http_unregister: HTTPRequest
+var http_lookup: HTTPRequest
 
 var current_server_id: String = ""
+var current_room_code: String = ""
 var is_registered: bool = false
 var heartbeat_timer: float = 0.0
 const HEARTBEAT_INTERVAL: float = 8.0
@@ -33,6 +36,10 @@ func _ready() -> void:
 
 	http_unregister = HTTPRequest.new()
 	add_child(http_unregister)
+
+	http_lookup = HTTPRequest.new()
+	add_child(http_lookup)
+	http_lookup.request_completed.connect(_on_lookup_completed)
 
 var last_register_params: Dictionary = {}
 
@@ -74,9 +81,10 @@ func _on_fetch_completed(result: int, response_code: int, headers: PackedStringA
 		online_servers_received.emit([])
 
 # 2. Register server with Master Server
-func register_server(room_name: String, port: int, map_name: String, mode: String, ff: bool, custom_ip: String = "", map_id: String = "") -> void:
+func register_server(room_name: String, port: int, map_name: String, mode: String, ff: bool, custom_ip: String = "", map_id: String = "", is_private: bool = false, room_code: String = "") -> void:
 	is_registered = false
 	current_server_id = ""
+	current_room_code = ""
 
 	if map_id.is_empty() and NetworkManager:
 		map_id = NetworkManager.current_map_id
@@ -88,7 +96,9 @@ func register_server(room_name: String, port: int, map_name: String, mode: Strin
 		"mode": mode,
 		"ff": ff,
 		"custom_ip": custom_ip,
-		"map_id": map_id
+		"map_id": map_id,
+		"is_private": is_private,
+		"room_code": room_code
 	}
 
 	var url := "%s/api/servers/register" % get_api_base_url()
@@ -103,7 +113,9 @@ func register_server(room_name: String, port: int, map_name: String, mode: Strin
 		"players": GameStats.players.size() if GameStats.players.size() > 0 else 1,
 		"max_players": 16,
 		"friendly_fire": ff,
-		"custom_ip": custom_ip
+		"custom_ip": custom_ip,
+		"is_private": is_private,
+		"room_code": room_code
 	}
 	var body := JSON.stringify(data)
 	http_register.request(url, headers, HTTPClient.METHOD_POST, body)
@@ -113,12 +125,42 @@ func _on_register_completed(result: int, response_code: int, headers: PackedStri
 		var json = JSON.parse_string(body.get_string_from_utf8())
 		if json is Dictionary and json.get("success", false):
 			current_server_id = json.get("server_id", "")
+			current_room_code = json.get("room_code", "")
 			is_registered = true
 			heartbeat_timer = 0.0
-			register_result.emit(true, current_server_id)
-			print("[OnlineMatchmaking] Registered with Master Server ID: ", current_server_id)
+			register_result.emit(true, current_server_id, current_room_code)
+			print("[OnlineMatchmaking] Registered with Master Server ID: ", current_server_id, " Code: ", current_room_code)
 			return
-	register_result.emit(false, "")
+	register_result.emit(false, "", "")
+
+# 2.5 Lookup room by code
+func lookup_room(code: String) -> void:
+	var clean_code := code.strip_edges().to_upper()
+	if clean_code.is_empty():
+		room_lookup_result.emit(false, {}, tr("ERR_ENTER_ROOM_CODE"))
+		return
+
+	if http_lookup.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
+		http_lookup.cancel_request()
+
+	var url := "%s/api/rooms/%s" % [get_api_base_url(), clean_code.uri_encode()]
+	var headers := ["User-Agent: GodotFPSClient/1.0"]
+	http_lookup.request(url, headers, HTTPClient.METHOD_GET)
+
+func _on_lookup_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	if result != HTTPRequest.RESULT_SUCCESS:
+		room_lookup_result.emit(false, {}, tr("LATE_JOIN_FAILED"))
+		return
+
+	var json_str := body.get_string_from_utf8()
+	var json = JSON.parse_string(json_str)
+	if response_code == 200 and json is Dictionary and json.get("success", false):
+		room_lookup_result.emit(true, json.get("server", {}), "")
+	else:
+		var err_msg: String = tr("ERR_ROOM_NOT_FOUND")
+		if json is Dictionary and json.has("error"):
+			err_msg = json["error"]
+		room_lookup_result.emit(false, {}, err_msg)
 
 # 3. Heartbeat
 func update_room_info(players_count: int, in_game: bool) -> void:
