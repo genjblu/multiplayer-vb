@@ -25,10 +25,29 @@ func _ready() -> void:
 		_spawn_local_offline_player()
 	# 2. Если зашли через мультиплеер хостом
 	elif is_server:
-		_spawn_player(1)
+		ready_peers[1] = true
+		if GameStats.players.size() <= 1:
+			_spawn_player(1)
+		else:
+			get_tree().create_timer(3.5).timeout.connect(func():
+				if is_instance_valid(self):
+					_spawn_all_pending_players()
+			)
 	# 3. Если зашли клиентом
 	elif has_peer:
 		_notify_ready_to_server.rpc_id(1)
+
+var ready_peers: Dictionary = {}
+
+func _spawn_all_pending_players() -> void:
+	if not multiplayer.is_server():
+		return
+	if not has_node("1"):
+		_spawn_player(1)
+	for pid in ready_peers.keys():
+		var id := int(pid)
+		if id > 1 and not has_node(str(id)):
+			_spawn_player(id)
 
 	# Подключаем сигналы со всех мишеней
 	_connect_targets()
@@ -77,7 +96,8 @@ func _notify_ready_to_server() -> void:
 	var peer_id := multiplayer.get_remote_sender_id()
 	if peer_id == 0:
 		peer_id = multiplayer.get_unique_id()
-	_spawn_player(peer_id)
+	ready_peers[peer_id] = true
+	_spawn_all_pending_players()
 
 func _spawn_player(peer_id: int) -> void:
 	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():

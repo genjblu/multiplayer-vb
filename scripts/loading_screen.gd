@@ -120,14 +120,14 @@ func _process(delta: float) -> void:
 		return
 
 	var net_manager = get_node_or_null("/root/NetworkManager")
-	var has_peer: bool = multiplayer.has_multiplayer_peer()
+	var has_peer: bool = multiplayer.has_multiplayer_peer() and multiplayer.multiplayer_peer != null
 	var is_server: bool = has_peer and multiplayer.is_server()
 	var is_offline: bool = not has_peer and (net_manager == null or not net_manager.joined_as_late)
 	var is_client_connected: bool = false
 	if is_offline:
 		is_client_connected = true
-	elif net_manager and net_manager.peer:
-		is_client_connected = (net_manager.peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED)
+	elif has_peer:
+		is_client_connected = (multiplayer.multiplayer_peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED)
 	elif net_manager and net_manager.joined_as_late:
 		is_client_connected = true # При Late-Join клиент открывает карту, а подключение выполняет сцена арены
 

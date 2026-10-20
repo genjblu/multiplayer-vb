@@ -721,6 +721,7 @@ func _physics_process(delta: float) -> void:
 		sync_position = global_position
 		sync_rotation = Vector3(head.rotation.x, rotation.y, float(current_weapon))
 		sync_flags = (int(is_crouching) << 0) | (int(is_sprinting) << 1) | (int(is_sliding) << 2) | (int(is_ads) << 3) | (int(is_on_floor()) << 4) | (int(is_wall_running) << 5) | (int(wall_run_side < 0) << 6) | (int(is_mantling) << 7)
+		_send_rpc_transform_sync(delta)
 		return
 
 	if is_mobile:
@@ -934,6 +935,25 @@ func _physics_process(delta: float) -> void:
 	sync_position = global_position
 	sync_rotation = Vector3(head.rotation.x, rotation.y, float(current_weapon))
 	sync_flags = (int(is_crouching) << 0) | (int(is_sprinting) << 1) | (int(is_sliding) << 2) | (int(is_ads) << 3) | (int(is_on_floor()) << 4) | (int(is_wall_running) << 5) | (int(wall_run_side < 0) << 6) | (int(is_mantling) << 7)
+	_send_rpc_transform_sync(delta)
+
+var _net_sync_timer: float = 0.0
+
+func _send_rpc_transform_sync(delta: float) -> void:
+	if not multiplayer.has_multiplayer_peer():
+		return
+	_net_sync_timer += delta
+	if _net_sync_timer >= 0.05:
+		_net_sync_timer = 0.0
+		_rpc_sync_transform.rpc(global_position, sync_rotation, sync_flags)
+
+@rpc("any_peer", "unreliable_ordered", "call_remote")
+func _rpc_sync_transform(pos: Vector3, rot: Vector3, flags: int) -> void:
+	if is_local_player():
+		return
+	sync_position = pos
+	sync_rotation = rot
+	sync_flags = flags
 
 func shoot() -> void:
 	if is_instance_valid(current_view) and current_view.has_method("can_fire") and not current_view.can_fire():

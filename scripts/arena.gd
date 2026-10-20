@@ -27,12 +27,33 @@ func _ready() -> void:
 		return
 
 	# 2. Если игра началась штатно из лобби:
-	if is_server:
-		# Хост спавнит себя
+	if not has_peer:
 		_spawn_player(1)
+	elif is_server:
+		ready_peers[1] = true
+		if GameStats.players.size() <= 1:
+			_spawn_player(1)
+		else:
+			# Запасной таймер на случай задержки сети у клиентов
+			get_tree().create_timer(3.5).timeout.connect(func():
+				if is_instance_valid(self):
+					_spawn_all_pending_players()
+			)
 	elif has_peer:
 		# Клиент рапортует хосту, что сцена загружена
 		_notify_ready_to_server.rpc_id(1)
+
+var ready_peers: Dictionary = {}
+
+func _spawn_all_pending_players() -> void:
+	if not multiplayer.is_server():
+		return
+	if not has_node("1"):
+		_spawn_player(1)
+	for pid in ready_peers.keys():
+		var id := int(pid)
+		if id > 1 and not has_node(str(id)):
+			_spawn_player(id)
 
 func _handle_late_join_flow() -> void:
 	if not multiplayer.has_multiplayer_peer():
@@ -146,7 +167,9 @@ func _notify_ready_to_server() -> void:
 	var peer_id := multiplayer.get_remote_sender_id()
 	if peer_id == 0:
 		peer_id = multiplayer.get_unique_id()
-	_spawn_player(peer_id)
+	print("[Arena] Peer ready in scene: ", peer_id)
+	ready_peers[peer_id] = true
+	_spawn_all_pending_players()
 
 func _show_late_join_team_selection() -> void:
 	if team_dialog_canvas and is_instance_valid(team_dialog_canvas):
