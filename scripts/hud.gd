@@ -36,10 +36,12 @@ var debug_label: Label
 var weapon_button: Button
 
 const MOBILE_HUD_CFG_PATH: String = "user://mobile_hud.cfg"
+var top_bar_ctrl: Control = null
 var mobile_controls_layer: Control = null
 var mobile_btn_nodes: Dictionary = {} # id -> Control
 var mobile_btn_defaults: Dictionary = {} # id -> { "offset": Vector2, "scale": float }
 var hud_editor_panel: Control = null
+var hud_editor_top_box: Control = null
 var is_editing_hud: bool = false
 var selected_hud_btn_id: String = ""
 var hud_scale_slider: HSlider = null
@@ -230,6 +232,7 @@ func _build_hud_elements() -> void:
 
 	# Верхняя панель служебных кнопок для телефона (строго по центру сверху)
 	var top_bar = HBoxContainer.new()
+	top_bar_ctrl = top_bar
 	top_bar.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	top_bar.alignment = BoxContainer.ALIGNMENT_CENTER
 	top_bar.offset_left = -120
@@ -308,6 +311,62 @@ func _input(event: InputEvent) -> void:
 			_rebinding_action = ""
 			_rebinding_button = null
 			return
+
+	if is_editing_hud:
+		var pos := Vector2.ZERO
+		var pressed := false
+		var is_drag := false
+		var valid_input := false
+
+		if event is InputEventScreenTouch:
+			pos = event.position
+			pressed = event.pressed
+			valid_input = true
+		elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			pos = event.position
+			pressed = event.pressed
+			valid_input = true
+		elif event is InputEventScreenDrag or (event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
+			pos = event.position
+			is_drag = true
+			valid_input = true
+
+		if valid_input:
+			# Если клик/касание внутри верхней панели редактора — даём кнопкам обработать его
+			if hud_editor_top_box and hud_editor_top_box.get_global_rect().has_point(pos):
+				return
+
+			if not is_drag:
+				if pressed:
+					for id in mobile_btn_nodes.keys():
+						var ctrl: Control = mobile_btn_nodes[id]
+						if ctrl.get_global_rect().has_point(pos):
+							selected_hud_btn_id = id
+							_dragging_btn_id = id
+							_drag_offset = ctrl.global_position - pos
+							if hud_scale_slider and mobile_btn_defaults.has(id):
+								var base_sz: Vector2 = mobile_btn_defaults[id]["size"]
+								hud_scale_slider.set_value_no_signal(ctrl.size.x / base_sz.x)
+							_update_mobile_buttons_visual()
+							get_viewport().set_input_as_handled()
+							return
+					_dragging_btn_id = ""
+				else:
+					_dragging_btn_id = ""
+			elif _dragging_btn_id != "" and mobile_btn_nodes.has(_dragging_btn_id):
+				var ctrl: Control = mobile_btn_nodes[_dragging_btn_id]
+				var btn_size: Vector2 = ctrl.custom_minimum_size
+				var vp_size: Vector2 = get_viewport().get_visible_rect().size
+				var new_global: Vector2 = pos + _drag_offset
+				new_global.x = clampf(new_global.x, 0.0, maxf(vp_size.x - btn_size.x, 0.0))
+				new_global.y = clampf(new_global.y, 0.0, maxf(vp_size.y - btn_size.y, 0.0))
+				var br_offset: Vector2 = new_global - vp_size
+				ctrl.offset_left = br_offset.x
+				ctrl.offset_top = br_offset.y
+				ctrl.offset_right = br_offset.x + btn_size.x
+				ctrl.offset_bottom = br_offset.y + btn_size.y
+				get_viewport().set_input_as_handled()
+				return
 
 	if player == null:
 		player = _find_player()
@@ -418,6 +477,7 @@ func _build_pause_menu() -> void:
 		if settings_menu:
 			if pause_menu:
 				pause_menu.hide()
+			_update_settings_menu_size()
 			settings_menu.show()
 			settings_menu.mouse_filter = Control.MOUSE_FILTER_STOP
 			move_child(settings_menu, get_child_count() - 1)
@@ -442,6 +502,20 @@ func _build_pause_menu() -> void:
 	add_child(pause_menu)
 	_build_settings_menu()
 
+func _update_settings_menu_size() -> void:
+	if not settings_menu:
+		return
+	var center := settings_menu.get_node_or_null("CenterContainer")
+	if center and center.get_child_count() > 0:
+		var panel := center.get_child(0) as Control
+		if panel:
+			var vp := get_viewport()
+			var vp_size: Vector2 = vp.get_visible_rect().size if vp else Vector2(1280, 720)
+			var is_mob := _is_mobile()
+			var w: float = minf(vp_size.x - 40.0, 560.0 if is_mob else 720.0)
+			var h: float = maxf(vp_size.y - 44.0, 320.0)
+			panel.custom_minimum_size = Vector2(w, h)
+
 func _build_settings_menu() -> void:
 	GameSettings.ensure_loaded()
 	settings_menu = Control.new()
@@ -457,6 +531,7 @@ func _build_settings_menu() -> void:
 	settings_menu.add_child(bg)
 
 	var center := CenterContainer.new()
+	center.name = "CenterContainer"
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_PASS
 	settings_menu.add_child(center)
@@ -466,8 +541,8 @@ func _build_settings_menu() -> void:
 	var is_mob := _is_mobile()
 	var vp := get_viewport()
 	var vp_size: Vector2 = vp.get_visible_rect().size if vp else Vector2(1280, 720)
-	var w: float = minf(vp_size.x - 30.0, 460.0 if is_mob else 680.0)
-	var h: float = minf(vp_size.y - 30.0, 320.0 if is_mob else 500.0)
+	var w: float = minf(vp_size.x - 40.0, 560.0 if is_mob else 720.0)
+	var h: float = maxf(vp_size.y - 44.0, 320.0)
 	panel.custom_minimum_size = Vector2(w, h)
 	center.add_child(panel)
 
@@ -1385,39 +1460,55 @@ func _update_mobile_buttons_visual() -> void:
 
 func _build_hud_layout_editor() -> void:
 	hud_editor_panel = Control.new()
-	hud_editor_panel.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	hud_editor_panel.process_mode = Node.PROCESS_MODE_ALWAYS
 	hud_editor_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud_editor_panel.visible = false
-	hud_editor_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	hud_editor_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(hud_editor_panel)
 
 	var top_box := PanelContainer.new()
-	top_box.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
-	top_box.offset_left = 40
-	top_box.offset_top = 15
-	top_box.offset_right = -40
-	top_box.offset_bottom = 115
+	hud_editor_top_box = top_box
+	top_box.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	top_box.offset_left = 30
+	top_box.offset_top = 10
+	top_box.offset_right = -30
+	top_box.offset_bottom = 96
+	top_box.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var sb_top := StyleBoxFlat.new()
+	sb_top.bg_color = Color(0.08, 0.1, 0.14, 0.94)
+	sb_top.border_color = UITheme.ACCENT_COLOR
+	sb_top.set_border_width_all(2)
+	sb_top.set_corner_radius_all(10)
+	sb_top.content_margin_top = 6
+	sb_top.content_margin_bottom = 6
+	sb_top.content_margin_left = 14
+	sb_top.content_margin_right = 14
+	top_box.add_theme_stylebox_override("panel", sb_top)
 	hud_editor_panel.add_child(top_box)
 
 	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
 	top_box.add_child(vbox)
 
 	var info := Label.new()
 	info.text = "Перетаскивай кнопки пальцем. Выбери кнопку для изменения размера:"
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	info.add_theme_font_size_override("font_size", 13)
 	vbox.add_child(info)
 
 	var hbox := HBoxContainer.new()
 	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_theme_constant_override("separation", 16)
+	hbox.add_theme_constant_override("separation", 14)
 	vbox.add_child(hbox)
 
 	var lbl_sz := Label.new()
 	lbl_sz.text = "Размер:"
+	lbl_sz.add_theme_font_size_override("font_size", 13)
 	hbox.add_child(lbl_sz)
 
 	hud_scale_slider = HSlider.new()
-	hud_scale_slider.custom_minimum_size = Vector2(200, 32)
+	hud_scale_slider.custom_minimum_size = Vector2(160, 32)
 	hud_scale_slider.min_value = 0.5
 	hud_scale_slider.max_value = 2.0
 	hud_scale_slider.step = 0.05
@@ -1430,78 +1521,42 @@ func _build_hud_layout_editor() -> void:
 
 	var btn_reset := Button.new()
 	btn_reset.text = "Сброс"
+	btn_reset.custom_minimum_size = Vector2(90, 36)
 	btn_reset.pressed.connect(_reset_mobile_hud_layout)
 	hbox.add_child(btn_reset)
 
 	var btn_save := Button.new()
 	btn_save.text = "Сохранить и выйти"
+	btn_save.theme_type_variation = "AccentButton"
+	btn_save.custom_minimum_size = Vector2(170, 36)
 	btn_save.pressed.connect(func():
 		_save_mobile_hud_layout()
 		_close_hud_editor()
 	)
 	hbox.add_child(btn_save)
 
-	hud_editor_panel.gui_input.connect(_on_hud_editor_input)
-
 func _open_hud_editor() -> void:
 	is_editing_hud = true
 	if pause_menu: pause_menu.hide()
 	if settings_menu: settings_menu.hide()
+	if top_bar_ctrl: top_bar_ctrl.visible = false
 	if mobile_controls_layer: mobile_controls_layer.visible = true
 	hud_editor_panel.show()
+	move_child(hud_editor_panel, get_child_count() - 1)
+	_update_mobile_buttons_visual()
 
 func _close_hud_editor() -> void:
 	is_editing_hud = false
 	_dragging_btn_id = ""
+	selected_hud_btn_id = ""
 	hud_editor_panel.hide()
-	if pause_menu: pause_menu.show()
-	if settings_menu: settings_menu.show()
-
-func _on_hud_editor_input(event: InputEvent) -> void:
-	if not is_editing_hud:
-		return
-	var pos: Vector2 = Vector2.ZERO
-	var pressed: bool = false
-	var is_drag: bool = false
-
-	if event is InputEventScreenTouch:
-		pos = event.position
-		pressed = event.pressed
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
-		pos = event.position
-		pressed = event.pressed
-	elif event is InputEventScreenDrag or (event is InputEventMouseMotion and Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)):
-		pos = event.position
-		is_drag = true
-	else:
-		return
-
-	if not is_drag:
-		if pressed:
-			for id in mobile_btn_nodes.keys():
-				var ctrl: Control = mobile_btn_nodes[id]
-				if ctrl.get_global_rect().has_point(pos):
-					selected_hud_btn_id = id
-					_dragging_btn_id = id
-					_drag_offset = ctrl.global_position - pos
-					if hud_scale_slider:
-						var base_sz: Vector2 = mobile_btn_defaults[id]["size"]
-						hud_scale_slider.set_value_no_signal(ctrl.size.x / base_sz.x)
-					break
-		else:
-			_dragging_btn_id = ""
-	elif _dragging_btn_id != "" and mobile_btn_nodes.has(_dragging_btn_id):
-		var ctrl: Control = mobile_btn_nodes[_dragging_btn_id]
-		var btn_size: Vector2 = ctrl.custom_minimum_size
-		var vp_size: Vector2 = get_viewport().get_visible_rect().size
-		var new_global: Vector2 = pos + _drag_offset
-		new_global.x = clampf(new_global.x, 0.0, maxf(vp_size.x - btn_size.x, 0.0))
-		new_global.y = clampf(new_global.y, 0.0, maxf(vp_size.y - btn_size.y, 0.0))
-		var br_offset: Vector2 = new_global - vp_size
-		ctrl.offset_left = br_offset.x
-		ctrl.offset_top = br_offset.y
-		ctrl.offset_right = br_offset.x + btn_size.x
-		ctrl.offset_bottom = br_offset.y + btn_size.y
+	if top_bar_ctrl and _is_mobile(): top_bar_ctrl.visible = true
+	_update_mobile_buttons_visual()
+	if settings_menu:
+		_update_settings_menu_size()
+		settings_menu.show()
+		settings_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+		move_child(settings_menu, get_child_count() - 1)
 
 func _set_mobile_btn_scale(id: String, sc: float) -> void:
 	var ctrl: Control = mobile_btn_nodes[id]

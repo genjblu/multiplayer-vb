@@ -458,6 +458,10 @@ func _input(event: InputEvent) -> void:
 	if not is_local_player() or not is_mobile:
 		return
 
+	if touch_ui:
+		if ("is_paused" in touch_ui and touch_ui.is_paused) or ("is_editing_hud" in touch_ui and touch_ui.is_editing_hud):
+			return
+
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			var act: String = _button_action_at(event.position)
@@ -527,6 +531,9 @@ func _is_over_joystick(pos: Vector2) -> bool:
 func touch_action(action: String, pressed: bool, pos: Vector2 = Vector2.ZERO) -> void:
 	if not is_local_player():
 		return
+	if touch_ui:
+		if ("is_paused" in touch_ui and touch_ui.is_paused) or ("is_editing_hud" in touch_ui and touch_ui.is_editing_hud):
+			return
 	match action:
 		"fire":
 			touch_fire = pressed
