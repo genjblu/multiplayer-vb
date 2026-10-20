@@ -21,6 +21,10 @@ var scoreboard: Scoreboard
 var kill_feed: KillFeed
 var weapon_wheel: WeaponWheel
 var _wheel_press_time: float = 0.0
+var _wheel_touch_active: bool = false
+var _wheel_touch_origin: Vector2 = Vector2.ZERO
+var _wheel_touch_has_moved: bool = false
+var _wheel_touch_time: float = 0.0
 var hit_sound_player: AudioStreamPlayer
 var damage_indicator: DamageIndicatorView
 
@@ -332,7 +336,7 @@ func _input(event: InputEvent) -> void:
 		if weapon_wheel and weapon_wheel.is_open:
 			# Если был короткий тап (< 0.2 сек) и мышь не двигали — переключаем на следующее оружие (Quick Switch)
 			if duration < 0.2 and not weapon_wheel.has_mouse_moved:
-				weapon_wheel.close()
+				weapon_wheel.close_without_select()
 				if player and player.has_method("cycle_weapon"):
 					player.cycle_weapon()
 			else:
@@ -440,23 +444,39 @@ func _build_pause_menu() -> void:
 
 func _build_settings_menu() -> void:
 	GameSettings.ensure_loaded()
-	settings_menu = PanelContainer.new()
-	settings_menu.theme = UITheme.build()
-	var is_mob := _is_mobile()
-	var w: float = 460.0 if is_mob else 680.0
-	var h: float = 320.0 if is_mob else 500.0
-	settings_menu.custom_minimum_size = Vector2(w, h)
-	settings_menu.offset_left = -w / 2.0
-	settings_menu.offset_top = -h / 2.0
-	settings_menu.offset_right = w / 2.0
-	settings_menu.offset_bottom = h / 2.0
+	settings_menu = Control.new()
+	settings_menu.name = "SettingsMenu"
+	settings_menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	settings_menu.visible = false
 	settings_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var bg := ColorRect.new()
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.65)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	settings_menu.add_child(bg)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_PASS
+	settings_menu.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.theme = UITheme.build()
+	var is_mob := _is_mobile()
+	var vp_size := get_viewport_rect().size
+	if vp_size == Vector2.ZERO:
+		vp_size = Vector2(1280, 720)
+	var w: float = minf(vp_size.x - 30.0, 460.0 if is_mob else 680.0)
+	var h: float = minf(vp_size.y - 30.0, 320.0 if is_mob else 500.0)
+	panel.custom_minimum_size = Vector2(w, h)
+	center.add_child(panel)
+
 	add_child(settings_menu)
 
 	var main_vbox := VBoxContainer.new()
 	main_vbox.add_theme_constant_override("separation", 12)
-	settings_menu.add_child(main_vbox)
+	panel.add_child(main_vbox)
 
 	var title := Label.new()
 	title.text = "Настройки"
@@ -1582,3 +1602,45 @@ func toggle_weapon_wheel() -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 			if crosshair_view:
 				crosshair_view.visible = false
+
+func is_weapon_wheel_open() -> bool:
+	return weapon_wheel != null and weapon_wheel.is_open
+
+func handle_weapon_wheel_touch(pressed: bool, pos: Vector2 = Vector2.ZERO) -> void:
+	if pressed:
+		_wheel_touch_active = true
+		_wheel_touch_origin = pos
+		_wheel_touch_has_moved = false
+		_wheel_touch_time = Time.get_ticks_msec() / 1000.0
+		if weapon_wheel:
+			weapon_wheel.open(pos)
+			if crosshair_view:
+				crosshair_view.visible = false
+	else:
+		if not _wheel_touch_active:
+			return
+		_wheel_touch_active = false
+		var duration: float = (Time.get_ticks_msec() / 1000.0) - _wheel_touch_time
+		if weapon_wheel and weapon_wheel.is_open:
+			if not _wheel_touch_has_moved and duration < 0.25:
+				# Быстрый одиночный тап — переключаем на следующее оружие без зависания
+				weapon_wheel.close_without_select()
+				if player and player.has_method("cycle_weapon"):
+					player.cycle_weapon()
+			else:
+				# Удержание со свайпом — экипируем оружие из подсвеченного сектора
+				weapon_wheel.close()
+
+		if not is_paused and not _is_mobile():
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		if crosshair_view:
+			crosshair_view.visible = true
+
+func handle_weapon_wheel_drag(pos: Vector2) -> void:
+	if not _wheel_touch_active or not weapon_wheel or not weapon_wheel.is_open:
+		return
+	var delta := pos - _wheel_touch_origin
+	if delta.length() > 18.0:
+		_wheel_touch_has_moved = true
+		weapon_wheel.update_selection_from_vector(delta)
+

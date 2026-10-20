@@ -463,7 +463,9 @@ func _input(event: InputEvent) -> void:
 			var act: String = _button_action_at(event.position)
 			if act != "":
 				button_touches[event.index] = act
-				touch_action(act, true)
+				touch_action(act, true, event.position)
+				return
+			if touch_ui and touch_ui.has_method("is_weapon_wheel_open") and touch_ui.is_weapon_wheel_open():
 				return
 			var screen_w: float = get_viewport().get_visible_rect().size.x
 			if touch_look_index == -1 \
@@ -472,14 +474,20 @@ func _input(event: InputEvent) -> void:
 				touch_look_index = event.index
 		else:
 			if button_touches.has(event.index):
-				touch_action(button_touches[event.index], false)
+				var act: String = button_touches[event.index]
+				touch_action(act, false, event.position)
 				button_touches.erase(event.index)
 			elif event.index == touch_look_index:
 				touch_look_index = -1
 
 	elif event is InputEventScreenDrag:
+		var act: String = button_touches.get(event.index, "")
+		if act == "cycle_weapon":
+			if touch_ui and touch_ui.has_method("handle_weapon_wheel_drag"):
+				touch_ui.handle_weapon_wheel_drag(event.position)
+			return
 		# Вращаем камеру, если тянет палец обзора ИЛИ палец, зажимающий кнопку стрельбы (Aim While Firing)
-		var is_fire_finger: bool = button_touches.get(event.index, "") == "fire"
+		var is_fire_finger: bool = act == "fire"
 		if event.index == touch_look_index or is_fire_finger:
 			_rotate_camera(event.relative * touch_sensitivity)
 
@@ -516,7 +524,7 @@ func _button_action_at(pos: Vector2) -> String:
 func _is_over_joystick(pos: Vector2) -> bool:
 	var n: Node = touch_ui.get_node_or_null("TouchOverlay/JoystickBase")
 	return n != null and _node_rect(n).has_point(pos)
-func touch_action(action: String, pressed: bool) -> void:
+func touch_action(action: String, pressed: bool, pos: Vector2 = Vector2.ZERO) -> void:
 	if not is_local_player():
 		return
 	match action:
@@ -546,11 +554,10 @@ func touch_action(action: String, pressed: bool) -> void:
 			if pressed and not is_cycling_bolt:
 				touch_ads = not touch_ads
 		"cycle_weapon":
-			if pressed:
-				if touch_ui and touch_ui.has_method("toggle_weapon_wheel"):
-					touch_ui.toggle_weapon_wheel()
-				else:
-					cycle_weapon()
+			if touch_ui and touch_ui.has_method("handle_weapon_wheel_touch"):
+				touch_ui.handle_weapon_wheel_touch(pressed, pos)
+			elif pressed:
+				cycle_weapon()
 		"weapon_1":
 			if pressed: _switch_weapon(WeaponType.PISTOL)
 		"weapon_2":

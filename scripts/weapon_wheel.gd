@@ -33,7 +33,7 @@ func _init() -> void:
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
-func open() -> void:
+func open(custom_center: Vector2 = Vector2.ZERO) -> void:
 	if is_open:
 		return
 	is_open = true
@@ -45,7 +45,14 @@ func open() -> void:
 		var cur_w: int = int(player.current_weapon)
 		selected_index = SLOT_WEAPON_MAP.find(cur_w)
 
-	center_pos = size * 0.5
+	var vp_size := get_viewport_rect().size
+	if vp_size == Vector2.ZERO:
+		vp_size = size
+	if custom_center != Vector2.ZERO:
+		center_pos.x = clampf(custom_center.x, WHEEL_RADIUS + 20.0, maxf(vp_size.x - WHEEL_RADIUS - 20.0, WHEEL_RADIUS + 20.0))
+		center_pos.y = clampf(custom_center.y, WHEEL_RADIUS + 20.0, maxf(vp_size.y - WHEEL_RADIUS - 20.0, WHEEL_RADIUS + 20.0))
+	else:
+		center_pos = vp_size * 0.5
 	queue_redraw()
 
 func close() -> void:
@@ -56,22 +63,21 @@ func close() -> void:
 	if selected_index >= 0 and selected_index < SLOT_WEAPON_MAP.size():
 		var target_weapon: int = SLOT_WEAPON_MAP[selected_index]
 		weapon_selected.emit(target_weapon)
+	center_pos = Vector2.ZERO
 	queue_redraw()
 
-func _gui_input(event: InputEvent) -> void:
+func close_without_select() -> void:
 	if not is_open:
 		return
-	if event is InputEventMouseMotion:
-		has_mouse_moved = true
-		_update_selection_from_point(event.position)
-	elif event is InputEventScreenDrag or event is InputEventScreenTouch:
-		has_mouse_moved = true
-		_update_selection_from_point(event.position)
+	is_open = false
+	visible = false
+	center_pos = Vector2.ZERO
+	queue_redraw()
 
-func _update_selection_from_point(pt: Vector2) -> void:
-	var delta_vec := pt - center_pos
-	if delta_vec.length() < INNER_RADIUS * 0.5:
+func update_selection_from_vector(delta_vec: Vector2) -> void:
+	if delta_vec.length() < 18.0:
 		return
+	has_mouse_moved = true
 
 	# Угол в радианах (-PI..PI), 0 = вправо, PI/2 = вниз
 	# Сдвигаем на +PI/2, чтобы 0 был строго сверху
@@ -83,14 +89,37 @@ func _update_selection_from_point(pt: Vector2) -> void:
 	var sector_size := TAU / float(NUM_SLOTS)
 	# Сдвиг на полсектора, чтобы нулевой сектор был симметрично центрирован наверху [-45..+45]
 	var adjusted := fmod(angle + sector_size * 0.5, TAU)
-	selected_index = int(floor(adjusted / sector_size)) % NUM_SLOTS
-	queue_redraw()
+	var new_idx := int(floor(adjusted / sector_size)) % NUM_SLOTS
+	if new_idx != selected_index:
+		selected_index = new_idx
+		queue_redraw()
+
+func update_selection_from_point(pt: Vector2) -> void:
+	var c := center_pos if center_pos != Vector2.ZERO else (size * 0.5)
+	update_selection_from_vector(pt - c)
+
+func _gui_input(event: InputEvent) -> void:
+	if not is_open:
+		return
+	if event is InputEventMouseMotion:
+		update_selection_from_point(event.position)
+	elif event is InputEventScreenDrag:
+		update_selection_from_point(event.position)
+	elif event is InputEventScreenTouch:
+		if event.pressed:
+			update_selection_from_point(event.position)
+		else:
+			close()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if not event.pressed:
+			close()
 
 func _draw() -> void:
 	if not is_open:
 		return
 
-	center_pos = size * 0.5
+	if center_pos == Vector2.ZERO:
+		center_pos = size * 0.5
 
 	# 1. Тёмный полупрозрачный фон всей страницы для фокуса
 	draw_rect(Rect2(Vector2.ZERO, size), Color(0.04, 0.05, 0.07, 0.55))
@@ -166,6 +195,13 @@ func _draw() -> void:
 	# Центральный круг-ступица
 	draw_circle(center_pos, INNER_RADIUS - 4.0, Color(0.08, 0.1, 0.13, 0.95))
 	draw_arc(center_pos, INNER_RADIUS - 4.0, 0, TAU, 32, UITheme.BORDER_COLOR, 2.0)
+
+	# Указатель направления от центра к выбранному сектору
+	if selected_index >= 0 and selected_index < NUM_SLOTS:
+		var dir_angle: float = (float(selected_index) * sector_size) - (PI * 0.5)
+		var p_start := center_pos + Vector2(cos(dir_angle), sin(dir_angle)) * (INNER_RADIUS + 4.0)
+		var p_end := center_pos + Vector2(cos(dir_angle), sin(dir_angle)) * (WHEEL_RADIUS - 16.0)
+		draw_line(p_start, p_end, accent_col, 3.5, true)
 	
 	# Подсказка по центру
 	var center_font: Font = ThemeDB.fallback_font
