@@ -157,6 +157,65 @@ app.get('/api/rooms/:code', (req, res) => {
     res.status(404).json({ success: false, error: 'Комната с таким кодом не найдена или неактивна' });
 });
 
+// 2.7 WebRTC Signaling mailbox
+const signalMailboxes = new Map();
+
+// Post a signal message (offer, answer, candidate, join_request)
+app.post('/api/rooms/:code/signal', (req, res) => {
+    const code = (req.params.code || '').trim().toUpperCase();
+    const { sender_id, target_id, type, data } = req.body;
+    if (!code || !sender_id || !type) {
+        return res.status(400).json({ success: false, error: 'Invalid signal payload' });
+    }
+
+    if (!signalMailboxes.has(code)) {
+        signalMailboxes.set(code, []);
+    }
+
+    const box = signalMailboxes.get(code);
+    box.push({
+        id: Math.random().toString(36).substring(2, 9),
+        sender_id: String(sender_id),
+        target_id: target_id ? String(target_id) : 'all',
+        type,
+        data,
+        timestamp: Date.now()
+    });
+
+    if (box.length > 100) box.shift();
+    res.json({ success: true });
+});
+
+// Poll signal messages for a specific peer in a room
+app.get('/api/rooms/:code/signal', (req, res) => {
+    const code = (req.params.code || '').trim().toUpperCase();
+    const peerId = String(req.query.peer_id || '');
+    if (!code || !peerId) {
+        return res.status(400).json({ success: false, error: 'peer_id required' });
+    }
+
+    if (!signalMailboxes.has(code)) {
+        return res.json({ success: true, messages: [] });
+    }
+
+    const box = signalMailboxes.get(code);
+    const messages = [];
+    const remaining = [];
+    const now = Date.now();
+
+    for (const msg of box) {
+        if (now - msg.timestamp > 45000) continue; // expired
+        if (msg.sender_id !== peerId && (msg.target_id === peerId || msg.target_id === 'all')) {
+            messages.push(msg);
+            if (msg.target_id === peerId) continue;
+        }
+        remaining.push(msg);
+    }
+
+    signalMailboxes.set(code, remaining);
+    res.json({ success: true, messages });
+});
+
 // 3. Heartbeat (called by Godot host every 5-10s)
 app.post('/api/servers/heartbeat', (req, res) => {
     const { server_id, players, in_game, map, mode } = req.body;

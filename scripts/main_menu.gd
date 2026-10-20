@@ -83,6 +83,7 @@ func _build_ui() -> void:
 	screen_main.training_requested.connect(_on_training_requested)
 	screen_host.host_requested.connect(_on_host_requested)
 	screen_join.join_requested.connect(_on_join_requested)
+	screen_join.join_by_code_requested.connect(_on_join_by_code_requested)
 	screen_lan.join_requested.connect(_on_join_requested)
 	screen_lobby.leave_requested.connect(_on_leave_lobby)
 	screen_lobby.start_game_requested.connect(_on_start_game_from_lobby)
@@ -130,21 +131,36 @@ func _on_host_requested(port: int, room_name: String, map_id: String = "default_
 
 	menu.set_status("Статус: Запуск лобби...")
 	var net_manager = get_node_or_null("/root/NetworkManager")
-	if net_manager:
+	if not net_manager:
+		return
+
+	var map_title := "Арена"
+	var map_path := "res://maps/%s.tres" % map_id
+	if ResourceLoader.exists(map_path):
+		var res = load(map_path) as MapData
+		if res:
+			map_title = res.display_name
+
+	if is_private:
+		# Приватная комната по коду работает через WebRTC P2P (пробивка NAT, прямое подключение без белого IP)
+		var gen_code := str(randi_range(1000, 9999))
+		var err: Error = net_manager.host_game_webrtc(gen_code, map_id, mode, ff)
+		if err == OK:
+			if OnlineMatchmaking:
+				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff, custom_ip, map_id, true, gen_code)
+			screen_lobby.setup_lobby(map_title, mode, ff, true, gen_code)
+			menu.show_screen("lobby")
+		else:
+			menu.set_status("Ошибка создания WebRTC лобби!", true)
+	else:
+		# Обычное / LAN лобби (ENet)
 		var err: Error = net_manager.host_game(port, map_id, mode, ff)
 		if err == OK:
-			var map_title := "Арена"
-			var map_path := "res://maps/%s.tres" % map_id
-			if ResourceLoader.exists(map_path):
-				var res = load(map_path) as MapData
-				if res:
-					map_title = res.display_name
 			LanDiscovery.start_broadcast(room_name, port, map_title, mode, ff, false)
-			if (publish_online or is_private) and OnlineMatchmaking:
+			if publish_online and OnlineMatchmaking:
 				if not OnlineMatchmaking.register_result.is_connected(_on_online_registered):
 					OnlineMatchmaking.register_result.connect(_on_online_registered)
-				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff, custom_ip, map_id, is_private)
-
+				OnlineMatchmaking.register_server(room_name, port, map_title, mode, ff, custom_ip, map_id, false)
 			screen_lobby.setup_lobby(map_title, mode, ff, true, OnlineMatchmaking.current_room_code if OnlineMatchmaking else "")
 			menu.show_screen("lobby")
 		else:
@@ -155,6 +171,15 @@ func _on_online_registered(success: bool, _server_id: String, room_code: String)
 		screen_lobby.code_panel.visible = true
 		screen_lobby.current_room_code = room_code
 		screen_lobby.code_label.text = "%s %s" % [tr("LOBBY_CODE_HEADER"), room_code]
+
+func _on_join_by_code_requested(code: String) -> void:
+	GameStats.set_nick(screen_main.get_nick())
+	menu.set_status("Подключение к комнате %s (WebRTC)..." % code)
+	var net_manager = get_node_or_null("/root/NetworkManager")
+	if net_manager:
+		var err: Error = net_manager.join_game_webrtc(code)
+		if err != OK:
+			menu.set_status("Ошибка WebRTC подключения!", true)
 
 func _on_join_requested(ip: String, port: int) -> void:
 	GameStats.set_nick(screen_main.get_nick())

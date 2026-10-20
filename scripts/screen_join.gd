@@ -2,6 +2,7 @@ class_name ScreenJoin
 extends MenuScreen
 
 signal join_requested(ip: String, port: int)
+signal join_by_code_requested(code: String)
 
 var code_edit: LineEdit
 var ip_edit: LineEdit
@@ -60,14 +61,13 @@ func _ready() -> void:
 		OnlineMatchmaking.room_lookup_result.connect(_on_room_lookup_result)
 
 func _on_join_by_code_pressed() -> void:
-	var code := code_edit.text.strip_edges()
+	var code := code_edit.text.strip_edges().to_upper()
 	if code.is_empty():
 		status_requested.emit(tr("ERR_ENTER_ROOM_CODE"), true)
 		return
 
-	status_requested.emit("Поиск комнаты %s..." % code, false)
-	if OnlineMatchmaking:
-		OnlineMatchmaking.lookup_room(code)
+	status_requested.emit("Подключение по коду %s..." % code, false)
+	join_by_code_requested.emit(code)
 
 func _on_room_lookup_result(success: bool, server_data: Dictionary, error_msg: String) -> void:
 	if not success:

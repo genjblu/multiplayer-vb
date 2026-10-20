@@ -20,7 +20,14 @@ var joined_as_late: bool = false
 var pending_ip: String = ""
 var pending_port: int = DEFAULT_PORT
 
+var webrtc: WebRTCManager = null
+var is_webrtc: bool = false
+
 func _ready() -> void:
+	webrtc = WebRTCManager.new()
+	webrtc.name = "WebRTCManager"
+	add_child(webrtc)
+
 	multiplayer.peer_connected.connect(_on_peer_connected)
 	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
@@ -32,12 +39,40 @@ func _notification(what: int) -> void:
 		disconnect_peer()
 
 func _reset_peer() -> void:
+	if webrtc:
+		webrtc.stop()
+	is_webrtc = false
+
 	if multiplayer.has_multiplayer_peer():
 		multiplayer.multiplayer_peer.close()
 		multiplayer.multiplayer_peer = null
 	if peer:
 		peer.close()
 		peer = null
+
+func host_game_webrtc(room_code: String, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false) -> Error:
+	_reset_peer()
+	is_webrtc = true
+	current_map_id = map_id
+	current_mode = mode
+	friendly_fire = ff
+
+	var err := webrtc.start_host(room_code)
+	if err != OK:
+		is_webrtc = false
+		return err
+
+	GameStats.register_name(GameStats.local_nick)
+	return OK
+
+func join_game_webrtc(room_code: String) -> Error:
+	_reset_peer()
+	is_webrtc = true
+	var err := webrtc.start_client(room_code)
+	if err != OK:
+		is_webrtc = false
+		return err
+	return OK
 
 func host_game(port: int = DEFAULT_PORT, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false) -> Error:
 	_reset_peer()
