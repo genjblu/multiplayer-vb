@@ -62,6 +62,7 @@ func host_game_webrtc(room_code: String, map_id: String = "default_arena", mode:
 		is_webrtc = false
 		return err
 
+	multiplayer.multiplayer_peer = webrtc.rtc_peer
 	GameStats.register_name(GameStats.local_nick)
 	return OK
 
@@ -72,6 +73,8 @@ func join_game_webrtc(room_code: String) -> Error:
 	if err != OK:
 		is_webrtc = false
 		return err
+
+	multiplayer.multiplayer_peer = webrtc.rtc_peer
 	return OK
 
 func host_game(port: int = DEFAULT_PORT, map_id: String = "default_arena", mode: String = "ffa", ff: bool = false) -> Error:
@@ -125,6 +128,9 @@ func _on_peer_connected(id: int) -> void:
 		LanDiscovery.update_room_info(GameStats.players.size(), is_match_running)
 		if OnlineMatchmaking:
 			OnlineMatchmaking.update_room_info(GameStats.players.size(), is_match_running)
+	else:
+		if id == 1:
+			_on_connected_to_server()
 		
 func _on_peer_disconnected(id: int) -> void:
 	player_disconnected.emit(id)

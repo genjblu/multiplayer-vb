@@ -2,6 +2,7 @@ class_name ScreenLan
 extends MenuScreen
 
 signal join_requested(ip: String, port: int)
+signal join_by_code_requested(code: String)
 signal server_found(server_info: Dictionary)
 
 var list_container: VBoxContainer
@@ -163,7 +164,8 @@ func _render_online_servers() -> void:
 		var players: int = int(d.get("players", 1))
 		var max_p: int = int(d.get("max_players", 16))
 
-		_add_server_card(ip, port, room, host, map_name, mode, ff, in_game, players, max_p)
+		var room_code: String = str(d.get("room_code", ""))
+		_add_server_card(ip, port, room, host, map_name, mode, ff, in_game, players, max_p, room_code)
 
 func _render_lan_servers() -> void:
 	var servers = LanDiscovery.discovered_servers.values()
@@ -186,9 +188,9 @@ func _render_lan_servers() -> void:
 		var players: int = int(d.get("players", 1))
 		var max_p: int = int(d.get("max_players", 16))
 
-		_add_server_card(ip, port, room, host, map_name, mode, ff, in_game, players, max_p)
+		_add_server_card(ip, port, room, host, map_name, mode, ff, in_game, players, max_p, "")
 
-func _add_server_card(ip: String, port: int, room: String, host: String, map_name: String, mode: String, ff: bool, in_game: bool, players: int, max_p: int) -> void:
+func _add_server_card(ip: String, port: int, room: String, host: String, map_name: String, mode: String, ff: bool, in_game: bool, players: int, max_p: int, room_code: String = "") -> void:
 	var panel := PanelContainer.new()
 	panel.custom_minimum_size = Vector2(0, 56)
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -241,7 +243,10 @@ func _add_server_card(ip: String, port: int, room: String, host: String, map_nam
 	btn_join.text = "Войти"
 	btn_join.custom_minimum_size = Vector2(80, 36)
 	btn_join.pressed.connect(func():
-		join_requested.emit(ip, port)
+		if not room_code.is_empty():
+			join_by_code_requested.emit(room_code)
+		else:
+			join_requested.emit(ip, port)
 	)
 	row.add_child(btn_join)
 
