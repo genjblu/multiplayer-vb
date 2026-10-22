@@ -121,7 +121,7 @@ size = Vector3(1.65, 0.22, 0.5)
 
 [sub_resource type="BoxMesh" id="BoxMesh_cowl"]
 material = SubResource("StandardMaterial3D_dash")
-size = Vector3(0.46, 0.15, 0.28)
+size = Vector3(0.46, 0.06, 0.22)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dial"]
 albedo_color = Color(0.05, 0.06, 0.08, 1)
@@ -399,23 +399,23 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, -0.15)
 mesh = SubResource("BoxMesh_console")
 
 [node name="GaugesCowl" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911793]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 1.05, -0.58)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.98, -0.58)
 mesh = SubResource("BoxMesh_cowl")
 
 [node name="SpeedoDial" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911794]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.46, 1.04, -0.47)
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.46, 0.98, -0.47)
 mesh = SubResource("CylinderMesh_dial")
 
 [node name="SpeedoNeedle" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911795]
-transform = Transform3D(0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 0, 0, 1, -0.46, 1.05, -0.46)
+transform = Transform3D(0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 0, 0, 1, -0.46, 0.99, -0.46)
 mesh = SubResource("BoxMesh_needle")
 
 [node name="TachoDial" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911796]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.34, 1.04, -0.47)
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.34, 0.98, -0.47)
 mesh = SubResource("CylinderMesh_dial")
 
 [node name="TachoNeedle" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911797]
-transform = Transform3D(0.866025, -0.5, 0, 0.5, 0.866025, 0, 0, 0, 1, -0.34, 1.05, -0.46)
+transform = Transform3D(0.866025, -0.5, 0, 0.5, 0.866025, 0, 0, 0, 1, -0.34, 0.99, -0.46)
 mesh = SubResource("BoxMesh_needle")
 
 [node name="GPSPhoneBody" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911798]
@@ -435,19 +435,20 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.012)
 mesh = SubResource("BoxMesh_mirror")
 
 [node name="DriverLegL" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911802]
-transform = Transform3D(0.996195, 0, -0.0871557, 0.022554, 0.965926, 0.257834, 0.0841857, -0.258819, 0.96225, -0.48, 0.52, -0.18)
+transform = Transform3D(0.996195, 0, -0.0871557, 0.022554, 0.965926, 0.257834, 0.0841857, -0.258819, 0.96225, -0.48, 0.78, -0.18)
 mesh = SubResource("BoxMesh_leg")
 
 [node name="DriverLegR" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911803]
-transform = Transform3D(0.996195, 0, 0.0871557, -0.022554, 0.965926, 0.257834, -0.0841857, -0.258819, 0.96225, -0.32, 0.52, -0.18)
+transform = Transform3D(0.996195, 0, 0.0871557, -0.022554, 0.965926, 0.257834, -0.0841857, -0.258819, 0.96225, -0.32, 0.78, -0.18)
 mesh = SubResource("BoxMesh_leg")
 
 [node name="SteeringColumn" type="Node3D" parent="CockpitInterior" unique_id=1991911804]
-transform = Transform3D(1, 0, 0, 0, 0.939693, -0.34202, 0, 0.34202, 0.939693, -0.4, 0.95, -0.34)
+transform = Transform3D(1, 0, 0, 0, 0.939693, -0.34202, 0, 0.34202, 0.939693, -0.4, 1.05, -0.36)
 
 [node name="SteeringWheelPivot" type="Node3D" parent="CockpitInterior/SteeringColumn" unique_id=1991911805]
 
 [node name="WheelRim" type="MeshInstance3D" parent="CockpitInterior/SteeringColumn/SteeringWheelPivot" unique_id=1991911806]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
 mesh = SubResource("TorusMesh_wheel")
 
 [node name="WheelHub" type="MeshInstance3D" parent="CockpitInterior/SteeringColumn/SteeringWheelPivot" unique_id=1991911807]
@@ -566,7 +567,7 @@ mesh = SubResource("CylinderMesh_54tl6")
 [node name="Seats" type="Node3D" parent="." unique_id=254924376]
 
 [node name="Seat_0" type="Node3D" parent="Seats" unique_id=984111476]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.55, -0.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.82, -0.1)
 
 [node name="Cushion_0" type="MeshInstance3D" parent="Seats/Seat_0"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
@@ -581,7 +582,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
 mesh = SubResource("BoxMesh_seat_headrest")
 
 [node name="Seat_1" type="Node3D" parent="Seats" unique_id=831209386]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.55, -0.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.82, -0.1)
 
 [node name="Cushion_1" type="MeshInstance3D" parent="Seats/Seat_1"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
@@ -596,7 +597,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
 mesh = SubResource("BoxMesh_seat_headrest")
 
 [node name="Seat_2" type="Node3D" parent="Seats" unique_id=1438885535]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.55, 0.75)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.82, 0.75)
 
 [node name="Cushion_2" type="MeshInstance3D" parent="Seats/Seat_2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
@@ -611,7 +612,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
 mesh = SubResource("BoxMesh_seat_headrest")
 
 [node name="Seat_3" type="Node3D" parent="Seats" unique_id=461723435]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.55, 0.75)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.82, 0.75)
 
 [node name="Cushion_3" type="MeshInstance3D" parent="Seats/Seat_3"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
@@ -637,7 +638,7 @@ margin = 0.2
 current = true
 
 [node name="CockpitCamera" type="Camera3D" parent="." unique_id=1551045514]
-transform = Transform3D(1, 0, 0, 0, 0.99863, 0.052336, 0, -0.052336, 0.99863, -0.4, 1.18, -0.05)
+transform = Transform3D(1, 0, 0, 0, 0.99863, 0.052336, 0, -0.052336, 0.99863, -0.4, 1.34, -0.08)
 fov = 82.0
 
 [node name="Audio" type="Node3D" parent="." unique_id=263375004]

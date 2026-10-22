@@ -410,43 +410,48 @@ func _build_vehicle_hud() -> void:
 	if is_mobile:
 		_build_mobile_driving_controls(root)
 
-	# 3. Кнопка меню (паузы) в верхнем левом углу
-	var pause_btn := Button.new()
-	pause_btn.name = "PauseButton"
-	pause_btn.text = "⏸ Меню"
-	pause_btn.theme = UITheme.build()
-	pause_btn.custom_minimum_size = Vector2(105, 42)
-	pause_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	pause_btn.offset_left = 20
-	pause_btn.offset_top = 20
-	pause_btn.offset_right = 125
-	pause_btn.offset_bottom = 62
-	pause_btn.pressed.connect(_toggle_pause)
-	root.add_child(pause_btn)
+		# Кнопка меню (паузы) в верхнем левом углу ТОЛЬКО на мобильных устройствах
+		var pause_btn := Button.new()
+		pause_btn.name = "PauseButton"
+		pause_btn.text = "⏸ Меню"
+		pause_btn.theme = UITheme.build()
+		pause_btn.custom_minimum_size = Vector2(105, 42)
+		pause_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+		pause_btn.offset_left = 20
+		pause_btn.offset_top = 20
+		pause_btn.offset_right = 125
+		pause_btn.offset_bottom = 62
+		pause_btn.pressed.connect(_toggle_pause)
+		root.add_child(pause_btn)
 
-	# 4. Переключатель вида камеры в верхнем правом углу
-	cam_btn = TextureButton.new()
-	cam_btn.name = "CamToggleBtn"
-	cam_btn.texture_normal = load("res://gui/cam_toggle.svg")
-	cam_btn.ignore_texture_size = true
-	cam_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	cam_btn.custom_minimum_size = Vector2(50, 50)
-	cam_btn.size = Vector2(50, 50)
-	cam_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-	cam_btn.offset_left = -70
-	cam_btn.offset_top = 20
-	cam_btn.offset_right = -20
-	cam_btn.offset_bottom = 70
-	cam_btn.pressed.connect(func(): if local_car: local_car.toggle_camera_mode())
-	root.add_child(cam_btn)
+		# Переключатель вида камеры в верхнем правом углу ТОЛЬКО на мобильных устройствах
+		cam_btn = TextureButton.new()
+		cam_btn.name = "CamToggleBtn"
+		cam_btn.texture_normal = load("res://gui/cam_toggle.svg")
+		cam_btn.ignore_texture_size = true
+		cam_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+		cam_btn.custom_minimum_size = Vector2(50, 50)
+		cam_btn.size = Vector2(50, 50)
+		cam_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+		cam_btn.offset_left = -70
+		cam_btn.offset_top = 20
+		cam_btn.offset_right = -20
+		cam_btn.offset_bottom = 70
+		cam_btn.pressed.connect(func(): if local_car: local_car.toggle_camera_mode())
+		root.add_child(cam_btn)
 
-	# 5. Меню паузы
+	# Меню паузы и настроек
 	_build_pause_menu(root)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_toggle_pause()
 		get_viewport().set_input_as_handled()
+	elif event is InputEventKey and event.pressed and not event.echo:
+		if event.keycode == KEY_C or event.keycode == KEY_V:
+			if local_car:
+				local_car.toggle_camera_mode()
+				get_viewport().set_input_as_handled()
 
 func _toggle_pause() -> void:
 	is_paused = not is_paused
@@ -480,37 +485,84 @@ func _build_pause_menu(root: Control) -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_PASS
 	pause_menu.add_child(center)
 
-	var panel := PanelContainer.new()
-	panel.theme = UITheme.build()
-	panel.custom_minimum_size = Vector2(340, 260)
-	center.add_child(panel)
+	# --- 1. ПАНЕЛЬ ПАУЗЫ ---
+	var panel_pause := PanelContainer.new()
+	panel_pause.theme = UITheme.build()
+	panel_pause.custom_minimum_size = Vector2(360, 280)
+	center.add_child(panel_pause)
 
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
-	panel.add_child(vbox)
+	var vbox_pause := VBoxContainer.new()
+	vbox_pause.add_theme_constant_override("separation", 12)
+	panel_pause.add_child(vbox_pause)
 
 	var title := Label.new()
 	title.text = "ПАУЗА"
 	title.theme_type_variation = "HeadingLabel"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.modulate = Color(1.0, 0.85, 0.2)
-	vbox.add_child(title)
+	vbox_pause.add_child(title)
 
-	vbox.add_child(HSeparator.new())
+	vbox_pause.add_child(HSeparator.new())
 
 	var btn_resume := Button.new()
 	btn_resume.text = "Продолжить"
 	btn_resume.custom_minimum_size = Vector2(0, 42)
 	btn_resume.pressed.connect(_toggle_pause)
-	vbox.add_child(btn_resume)
+	vbox_pause.add_child(btn_resume)
 
 	var btn_cam := Button.new()
-	btn_cam.text = "Сменить вид камеры"
+	btn_cam.text = "Сменить вид камеры (C / V)"
 	btn_cam.custom_minimum_size = Vector2(0, 38)
 	btn_cam.pressed.connect(func():
 		if local_car: local_car.toggle_camera_mode()
 	)
-	vbox.add_child(btn_cam)
+	vbox_pause.add_child(btn_cam)
+
+	# --- 2. ПАНЕЛЬ НАСТРОЕК ---
+	var panel_settings := PanelContainer.new()
+	panel_settings.theme = UITheme.build()
+	panel_settings.custom_minimum_size = Vector2(400, 340)
+	panel_settings.visible = false
+	center.add_child(panel_settings)
+
+	var vbox_settings := VBoxContainer.new()
+	vbox_settings.add_theme_constant_override("separation", 10)
+	panel_settings.add_child(vbox_settings)
+
+	var title_set := Label.new()
+	title_set.text = "НАСТРОЙКИ"
+	title_set.theme_type_variation = "HeadingLabel"
+	title_set.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title_set.modulate = Color(0.2, 0.85, 1.0)
+	vbox_settings.add_child(title_set)
+	vbox_settings.add_child(HSeparator.new())
+
+	# Громкость звука
+	var vol_lbl := Label.new()
+	vol_lbl.text = "Общая громкость:"
+	vbox_settings.add_child(vol_lbl)
+	var slider_vol := HSlider.new()
+	slider_vol.min_value = 0.0
+	slider_vol.max_value = 1.0
+	slider_vol.step = 0.05
+	slider_vol.value = GameSettings.master_volume
+	slider_vol.value_changed.connect(func(v: float):
+		GameSettings.master_volume = v
+		var bus_idx := AudioServer.get_bus_index("Master")
+		if bus_idx >= 0:
+			AudioServer.set_bus_volume_db(bus_idx, linear_to_db(maxf(v, 0.001)))
+	)
+	vbox_settings.add_child(slider_vol)
+
+	# Полноэкранный режим
+	var chk_fs := CheckButton.new()
+	chk_fs.text = "Полноэкранный режим"
+	chk_fs.button_pressed = (DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN)
+	chk_fs.toggled.connect(func(pressed: bool):
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN if pressed else DisplayServer.WINDOW_MODE_WINDOWED)
+		GameSettings.fullscreen = pressed
+	)
+	vbox_settings.add_child(chk_fs)
 
 	var is_mobile := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or DisplayServer.is_touchscreen_available()
 	if is_mobile:
@@ -533,7 +585,27 @@ func _build_pause_menu(root: Control) -> void:
 				if cur_br: cur_br.queue_free()
 				_setup_mobile_steering(hud_root)
 		)
-		vbox.add_child(btn_steering)
+		vbox_settings.add_child(btn_steering)
+
+	var btn_settings_back := Button.new()
+	btn_settings_back.text = "Назад"
+	btn_settings_back.custom_minimum_size = Vector2(0, 40)
+	btn_settings_back.pressed.connect(func():
+		GameSettings.save_to_disk()
+		panel_settings.hide()
+		panel_pause.show()
+	)
+	vbox_settings.add_child(btn_settings_back)
+
+	# Кнопка перехода в настройки из паузы
+	var btn_settings := Button.new()
+	btn_settings.text = "Настройки"
+	btn_settings.custom_minimum_size = Vector2(0, 38)
+	btn_settings.pressed.connect(func():
+		panel_pause.hide()
+		panel_settings.show()
+	)
+	vbox_pause.add_child(btn_settings)
 
 	var btn_quit := Button.new()
 	btn_quit.text = "Выход в главное меню"
@@ -549,7 +621,7 @@ func _build_pause_menu(root: Control) -> void:
 		else:
 			get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
 	)
-	vbox.add_child(btn_quit)
+	vbox_pause.add_child(btn_quit)
 
 func _setup_mobile_steering(root: Control) -> void:
 	var use_buttons: bool = (GameSettings.vehicle_touch_steering == 1)
