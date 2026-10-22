@@ -396,8 +396,7 @@ func _open_main_menu_settings() -> void:
 	chk_crouch_mode.toggled.connect(func(pressed): GameSettings.crouch_toggle_mode = pressed)
 	vbox_input.add_child(chk_crouch_mode)
 
-	var is_mob: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
-	if is_mob:
+	if is_mob or DisplayServer.is_touchscreen_available():
 		var lbl_steer := Label.new()
 		lbl_steer.text = "Управление машиной:"
 		vbox_input.add_child(lbl_steer)
