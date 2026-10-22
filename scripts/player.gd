@@ -1147,6 +1147,8 @@ func take_damage(amount: int, attacker_id: int, weapon_name: String = "", is_hea
 	if Time.get_ticks_msec() / 1000.0 < invulnerable_until:
 		return
 
+	var my_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+
 	# Защита от нанесения урона самому себе из своего оружия
 	if attacker_id != 0 and attacker_id == my_id:
 		return
@@ -1154,7 +1156,6 @@ func take_damage(amount: int, attacker_id: int, weapon_name: String = "", is_hea
 	# Проверка огня по своим (Friendly Fire)
 	var net_manager = get_node_or_null("/root/NetworkManager")
 	var is_ff: bool = net_manager.friendly_fire if net_manager else false
-	var my_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
 	if not is_ff and attacker_id != 0 and attacker_id != my_id:
 		if GameStats.are_allies(attacker_id, my_id):
 			return # Союзник не получает урон
