@@ -276,6 +276,10 @@ func _build_hud_elements() -> void:
 	_create_mobile_icon_button("reload", "res://gui/reload.svg", Vector2(-330, -245), Vector2(72, 72))
 	_create_mobile_icon_button("cycle_weapon", "res://gui/change_weapon.svg", Vector2(-180, -405), Vector2(72, 72))
 
+	if player and player.has_method("is_fist_fight_mode") and player.is_fist_fight_mode():
+		if mobile_btn_nodes.has("cycle_weapon"):
+			mobile_btn_nodes["cycle_weapon"].visible = false
+
 	_load_mobile_hud_layout()
 	_build_hud_layout_editor()
 
@@ -1273,7 +1277,12 @@ func _on_health_changed(new_health: int) -> void:
 
 func _on_ammo_changed(current: int, reserve: int) -> void:
 	if ammo_label:
-		ammo_label.text = "Патроны: %d / %d" % [current, reserve]
+		if player and player.has_method("is_fist_fight_mode") and player.is_fist_fight_mode():
+			ammo_label.text = "БОЙ (КУЛАКИ)"
+		elif player and "current_weapon" in player and int(player.current_weapon) == 4:
+			ammo_label.text = "БОЙ (КУЛАКИ)"
+		else:
+			ammo_label.text = "Патроны: %d / %d" % [current, reserve]
 
 func _on_weapon_changed(weapon_name: String) -> void:
 	if weapon_button:

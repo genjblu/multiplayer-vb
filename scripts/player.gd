@@ -8,7 +8,7 @@ signal weapon_changed(weapon_name: String)
 
 const SoundFX = preload("res://scripts/sound_effects.gd")
 
-enum WeaponType { PISTOL, ASSAULT, SHOTGUN, SNIPER }
+enum WeaponType { PISTOL, ASSAULT, SHOTGUN, SNIPER, FISTS }
 
 @export var max_health: int = 100
 @export var base_speed: float = 5.0
@@ -50,9 +50,15 @@ enum WeaponType { PISTOL, ASSAULT, SHOTGUN, SNIPER }
 @export var look_zone_start: float = 0.4
 @export var scope_overlay: Control # Ссылка на ноду ScopeOverlay из HUD
 
-const DEFAULT_WEAPON_PATHS: Array[String] = ["res://weapons/pistol.tres", "res://weapons/assault.tres", "res://weapons/shotgun.tres", "res://weapons/sniper.tres"]
+const DEFAULT_WEAPON_PATHS: Array[String] = [
+	"res://weapons/pistol.tres",
+	"res://weapons/assault.tres",
+	"res://weapons/shotgun.tres",
+	"res://weapons/sniper.tres",
+	"res://weapons/fists.tres"
+]
 const SCOPED_SPEED_PENALTY: float = 0.42 # Замедление до 42% скорости при зуме
-# Порядок такой же, как в enum WeaponType: пистолет, автомат, дробовик, снайперка
+# Порядок такой же, как в enum WeaponType: пистолет, автомат, дробовик, снайперка, кулаки
 @export var weapon_data: Array[WeaponData] = []
 var weapon_holder: Node3D = null
 var current_view: Node3D = null
@@ -106,8 +112,42 @@ var weapon_stats = {
 		"mesh_size": Vector3(0.08, 0.08, 1.1),
 		"hip_pos": Vector3(0.22, -0.22, -0.5),
 		"ads_pos": Vector3(0, -0.13, -0.4)
+	},
+	WeaponType.FISTS: {
+		"name": "Кулаки",
+		"damage": 22,
+		"heavy_damage": 55,
+		"max_ammo": 0,
+		"reserve": 0,
+		"recoil": 0.0,
+		"ads_fov": 70.0,
+		"mesh_size": Vector3(0.1, 0.1, 0.1),
+		"hip_pos": Vector3.ZERO,
+		"ads_pos": Vector3.ZERO,
+		"fire_rate": 0.28,
+		"view_scene": preload("res://scenes/weapons/fists.tscn")
 	}
 }
+
+# --- Механики Кулачного Боя (Блок, Удары, Увороты) ---
+var is_blocking: bool = false
+var punch_hand_right: bool = false
+var is_charging_punch: bool = false
+var punch_charge_start: float = 0.0
+var next_punch_time: float = 0.0
+
+var can_dodge: bool = true
+var dodge_cooldown_timer: float = 0.0
+const DODGE_COOLDOWN: float = 0.9
+var is_dodging: bool = false
+var dodge_timer: float = 0.0
+const DODGE_DURATION: float = 0.22
+var dodge_camera_tilt: float = 0.0
+var touch_dodge: bool = false
+
+var _last_pressed_key: String = ""
+var _last_key_press_time: float = 0.0
+
 
 var next_shot_time: float = 0.0
 @export var spawn_protection_time: float = 2.0
@@ -259,7 +299,10 @@ func _ready() -> void:
 	_setup_weapon_holder()
 	_setup_audio_players()
 	_reset_all_ammo()
-	_switch_weapon(WeaponType.ASSAULT)
+	if is_fist_fight_mode():
+		_switch_weapon(WeaponType.FISTS)
+	else:
+		_switch_weapon(WeaponType.ASSAULT)
 	health = max_health
 	collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if collision_shape and collision_shape.shape is CapsuleShape3D:
@@ -315,9 +358,21 @@ func _ready() -> void:
 	
 	
 
+func is_fist_fight_mode() -> bool:
+	var net_manager = get_node_or_null("/root/NetworkManager")
+	if net_manager and net_manager.current_mode == "fist_fight":
+		return true
+	var cur_scene = get_tree().current_scene
+	if cur_scene and ("figting" in cur_scene.name.to_lower() or "fist" in cur_scene.name.to_lower()):
+		return true
+	return false
+
 var current_weapon_node: Node3D = null
 
 func _switch_weapon(type: WeaponType) -> void:
+	if is_fist_fight_mode():
+		type = WeaponType.FISTS
+
 	# Запоминаем патроны прежнего оружия
 	if _weapon_initialized:
 		ammo_state[current_weapon] = {"mag": current_ammo, "reserve": reserve_ammo}
@@ -360,6 +415,8 @@ func _switch_weapon(type: WeaponType) -> void:
 			current_weapon_node = weapon_shotgun
 		WeaponType.SNIPER:
 			current_weapon_node = weapon_sniper
+		WeaponType.FISTS:
+			current_weapon_node = null
 
 	var view_scene: PackedScene = stats.get("view_scene", null)
 	if view_scene != null:
@@ -371,27 +428,37 @@ func _switch_weapon(type: WeaponType) -> void:
 				current_view.position = stats.get("hip_pos", Vector3(0.2, -0.2, -0.4))
 				current_view.rotation = Vector3.ZERO
 			current_weapon_node = current_view
-			if current_view.has_method("setup_ammo_3d_params"):
-				var a_off: Vector3 = stats.get("ammo_3d_offset", Vector3(-0.06, 0.05, -0.18))
-				var a_rot: Vector3 = stats.get("ammo_3d_rotation_deg", Vector3.ZERO)
-				var a_font: int = stats.get("ammo_3d_font_size", 96)
-				var a_scale: float = stats.get("ammo_3d_scale", 0.0005)
-				current_view.call("setup_ammo_3d_params", a_off, a_rot, a_font, a_scale)
-			_sync_weapon_ammo_3d(current_ammo, reserve_ammo)
-			_setup_robot_viewmodel_hands(current_view)
-			_update_viewmodel_hands_visibility()
+			if current_weapon == WeaponType.FISTS:
+				var peer_id: int = name.to_int()
+				var team_col: Color = GameStats.get_player_color(peer_id) if GameStats else Color(1.0, 0.55, 0.1)
+				if current_view.has_method("set_team_color"):
+					current_view.set_team_color(team_col)
+			else:
+				if current_view.has_method("setup_ammo_3d_params"):
+					var a_off: Vector3 = stats.get("ammo_3d_offset", Vector3(-0.06, 0.05, -0.18))
+					var a_rot: Vector3 = stats.get("ammo_3d_rotation_deg", Vector3.ZERO)
+					var a_font: int = stats.get("ammo_3d_font_size", 96)
+					var a_scale: float = stats.get("ammo_3d_scale", 0.0005)
+					current_view.call("setup_ammo_3d_params", a_off, a_rot, a_font, a_scale)
+				_sync_weapon_ammo_3d(current_ammo, reserve_ammo)
+				_setup_robot_viewmodel_hands(current_view)
+				_update_viewmodel_hands_visibility()
 		else:
-			# Для удалённых игроков оружие крепится прямо к правой руке 3D-модели робота (SoldierModel)
-			var soldier: SoldierModel = get_node_or_null("SoldierModel") as SoldierModel
-			var mount: Node3D = soldier.get_weapon_mount() if (soldier and soldier.has_method("get_weapon_mount")) else null
-			if mount != null:
-				mount.add_child(current_view)
-				current_view.position = Vector3.ZERO
-				current_view.rotation = Vector3.ZERO
-			elif weapon_holder != null:
-				weapon_holder.add_child(current_view)
-			current_weapon_node = current_view
-			_update_viewmodel_hands_visibility()
+			# Для удалённых игроков огнестрельное оружие крепится к правой руке (SoldierModel),
+			# а кулаки анимируются самим SoldierModel напрямую
+			if current_weapon == WeaponType.FISTS:
+				current_view.visible = false
+			else:
+				var soldier: SoldierModel = get_node_or_null("SoldierModel") as SoldierModel
+				var mount: Node3D = soldier.get_weapon_mount() if (soldier and soldier.has_method("get_weapon_mount")) else null
+				if mount != null:
+					mount.add_child(current_view)
+					current_view.position = Vector3.ZERO
+					current_view.rotation = Vector3.ZERO
+				elif weapon_holder != null:
+					weapon_holder.add_child(current_view)
+				current_weapon_node = current_view
+				_update_viewmodel_hands_visibility()
 	elif current_weapon_node:
 		# Старый способ: узел-заглушка (запасной вариант)
 		current_weapon_node.visible = true
@@ -441,6 +508,8 @@ func _sync_weapon_ammo_3d(current: int, reserve: int) -> void:
 			lbl.visible = false
 
 func cycle_weapon() -> void:
+	if is_fist_fight_mode() or current_weapon == WeaponType.FISTS:
+		return
 	if is_reloading:
 		return
 	var weapons = [WeaponType.PISTOL, WeaponType.ASSAULT, WeaponType.SHOTGUN, WeaponType.SNIPER]
@@ -454,6 +523,28 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# На телефоне игнорируем мышиные события, которые Godot эмулирует из касаний
 	if is_mobile and event is InputEventMouse:
+		return
+
+	if current_weapon == WeaponType.FISTS:
+		if event.is_action_pressed("fire") and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or is_mobile):
+			if not is_blocking and not is_dodging:
+				is_charging_punch = true
+				punch_charge_start = Time.get_ticks_msec() / 1000.0
+		elif event.is_action_released("fire") and is_charging_punch:
+			var now_t: float = Time.get_ticks_msec() / 1000.0
+			var charge_dur: float = now_t - punch_charge_start
+			var is_heavy: bool = (charge_dur >= 0.38)
+			is_charging_punch = false
+			if current_view and current_view.has_method("set_charging"):
+				current_view.set_charging(false)
+			_execute_punch(is_heavy)
+
+		if event.is_action_pressed("dodge") or (event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_ALT or event.keycode == KEY_Q or event.keycode == KEY_E)):
+			try_dodge()
+
+		if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			var current_sens: float = mouse_sensitivity * (ads_mouse_multiplier if is_ads else 1.0)
+			_rotate_camera(event.relative * current_sens)
 		return
 
 	if event.is_action_pressed("fire") and not is_reloading and (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or is_mobile):
@@ -535,6 +626,8 @@ func _button_action_at(pos: Vector2) -> String:
 	for act_name in mobile_hud_buttons.keys():
 		var ctrl: Control = mobile_hud_buttons[act_name]
 		if is_instance_valid(ctrl) and ctrl.visible and ctrl.get_global_rect().has_point(pos):
+			if current_weapon == WeaponType.FISTS and act_name == "reload":
+				return "dodge"
 			return act_name
 	var overlay: Node = touch_ui.get_node_or_null("TouchOverlay")
 	if overlay == null:
@@ -542,7 +635,10 @@ func _button_action_at(pos: Vector2) -> String:
 	for btn_name in touch_buttons:
 		var n: Node = overlay.get_node_or_null(btn_name)
 		if n and n.visible and _node_rect(n).has_point(pos):
-			return touch_buttons[btn_name]
+			var b_act: String = touch_buttons[btn_name]
+			if current_weapon == WeaponType.FISTS and b_act == "reload":
+				return "dodge"
+			return b_act
 	return ""
 
 func _is_over_joystick(pos: Vector2) -> bool:
@@ -557,11 +653,30 @@ func touch_action(action: String, pressed: bool, pos: Vector2 = Vector2.ZERO) ->
 	match action:
 		"fire":
 			touch_fire = pressed
-			if pressed and not is_reloading and current_weapon != WeaponType.ASSAULT:
+			if current_weapon == WeaponType.FISTS:
+				if pressed:
+					if not is_blocking and not is_dodging:
+						is_charging_punch = true
+						punch_charge_start = Time.get_ticks_msec() / 1000.0
+				elif is_charging_punch:
+					var now_t: float = Time.get_ticks_msec() / 1000.0
+					var charge_dur: float = now_t - punch_charge_start
+					var is_heavy: bool = (charge_dur >= 0.38)
+					is_charging_punch = false
+					if current_view and current_view.has_method("set_charging"):
+						current_view.set_charging(false)
+					_execute_punch(is_heavy)
+			elif pressed and not is_reloading and current_weapon != WeaponType.ASSAULT:
 				shoot()
 		"reload":
-			if pressed and not is_reloading and current_ammo < max_ammo and reserve_ammo > 0:
+			if current_weapon == WeaponType.FISTS:
+				if pressed:
+					try_dodge()
+			elif pressed and not is_reloading and current_ammo < max_ammo and reserve_ammo > 0:
 				reload()
+		"dodge":
+			if pressed:
+				try_dodge()
 		"jump":
 			if pressed:
 				touch_jump_req = true
@@ -684,20 +799,26 @@ func _physics_process(delta: float) -> void:
 		if body_m:
 			body_m.position.y += bob_offset
 
-		# 4. Процедурная анимация low-poly бойца (шаги, колени, присед, подкат, наклон торса, паркур)
+		# 4. Процедурная анимация low-poly бойца (шаги, колени, присед, подкат, наклон торса, паркур, бокс)
 		var soldier = get_node_or_null("SoldierModel")
 		if soldier and soldier.has_method("update_animation"):
-			soldier.update_animation(delta, rem_speed, rem_on_floor, rem_sprint, rem_crouch, rem_slide, head.rotation.x, rem_wall_run, rem_wall_side, rem_mantle)
+			var is_fists: bool = (current_weapon == WeaponType.FISTS)
+			var blocking: bool = rem_ads if is_fists else false
+			soldier.update_animation(delta, rem_speed, rem_on_floor, rem_sprint, rem_crouch, rem_slide, head.rotation.x, rem_wall_run, rem_wall_side, rem_mantle, is_fists, blocking)
 
 		# 5. Оружие от 3-го лица для удалённого наблюдателя
 		if is_instance_valid(current_view):
-			current_view.visible = true
-			_update_viewmodel_hands_visibility()
-			var mount: Node3D = soldier.get_weapon_mount() if (soldier and soldier.has_method("get_weapon_mount")) else null
-			if mount != null and current_view.get_parent() != mount:
-				current_view.reparent(mount)
-				current_view.position = Vector3.ZERO
-				current_view.rotation = Vector3.ZERO
+			var is_fists: bool = (current_weapon == WeaponType.FISTS)
+			if is_fists:
+				current_view.visible = false
+			else:
+				current_view.visible = true
+				_update_viewmodel_hands_visibility()
+				var mount: Node3D = soldier.get_weapon_mount() if (soldier and soldier.has_method("get_weapon_mount")) else null
+				if mount != null and current_view.get_parent() != mount:
+					current_view.reparent(mount)
+					current_view.position = Vector3.ZERO
+					current_view.rotation = Vector3.ZERO
 
 		return
 
@@ -751,6 +872,9 @@ func _physics_process(delta: float) -> void:
 		var can_mouse_act: bool = (Input.mouse_mode == Input.MOUSE_MODE_CAPTURED)
 		is_ads = ((Input.is_action_pressed("ads") and can_mouse_act) or touch_ads) and not is_cycling_bolt
 		is_firing = (Input.is_action_pressed("fire") and can_mouse_act) or touch_fire
+
+	_physics_process_fists(delta)
+
 	if current_weapon == WeaponType.ASSAULT and is_firing and not is_reloading:
 		fire_timer -= delta
 		if fire_timer <= 0.0:
@@ -843,9 +967,9 @@ func _physics_process(delta: float) -> void:
 
 	# На телефоне авто-спринт при наклоне джойстика вперёд до упора
 	var auto_mobile_sprint: bool = is_mobile and touch_move.y < -0.82
-	# Спринт возможен только если мы не приседаем
+	# Спринт возможен только если мы не приседаем, не прицеливаемся и не блокируем
 	is_sprinting = (Input.is_action_pressed("sprint") or touch_sprint or auto_mobile_sprint) \
-		and (on_flr or is_wall_running) and not is_ads and not is_sliding and not is_crouching
+		and (on_flr or is_wall_running) and not is_ads and not is_blocking and not is_sliding and not is_crouching
 
 	if is_sprinting and crouch_toggle_mode:
 		_crouch_toggled = false
@@ -867,7 +991,9 @@ func _physics_process(delta: float) -> void:
 		is_crouching = false
 
 	var current_speed = target_speed
-	if is_sprinting:
+	if is_blocking:
+		current_speed *= 0.7 # Замедление при блокировании
+	elif is_sprinting:
 		current_speed = sprint_speed
 	elif is_crouching:
 		current_speed = crouch_speed
@@ -901,6 +1027,10 @@ func _physics_process(delta: float) -> void:
 		velocity.z = forward.z * slide_speed
 		if slide_timer <= 0.0 or not is_on_floor():
 			is_sliding = false
+	elif is_dodging:
+		# Во время уворота горизонтальная скорость затухает плавно от импульса рывка
+		velocity.x = move_toward(velocity.x, 0.0, delta * 20.0)
+		velocity.z = move_toward(velocity.z, 0.0, delta * 20.0)
 	elif direction:
 		velocity.x = direction.x * current_speed * move_strength
 		velocity.z = direction.z * current_speed * move_strength
@@ -942,11 +1072,14 @@ func _physics_process(delta: float) -> void:
 	_update_spread(delta)
 	_physics_process_target_info()
 
-	# Наклон камеры (Camera Roll) при беге по стене
+	# Наклон камеры (Camera Roll) при беге по стене и уворотах
 	var target_cam_roll: float = 0.0
 	if is_wall_running:
 		target_cam_roll = deg_to_rad(wall_camera_tilt_deg) if wall_run_side > 0 else deg_to_rad(-wall_camera_tilt_deg)
+	elif is_dodging or absf(dodge_camera_tilt) > 0.001:
+		target_cam_roll = dodge_camera_tilt
 	camera.rotation.z = lerpf(camera.rotation.z, target_cam_roll, delta * 12.0)
+	dodge_camera_tilt = lerpf(dodge_camera_tilt, 0.0, delta * 8.0)
 
 	recoil_pitch = lerp(recoil_pitch, 0.0, delta * 10.0)
 	head.rotation.x = clamp(head.rotation.x + recoil_pitch, deg_to_rad(-89), deg_to_rad(89))
@@ -1147,6 +1280,9 @@ func take_damage(amount: int, attacker_id: int, weapon_name: String = "", is_hea
 	if Time.get_ticks_msec() / 1000.0 < invulnerable_until:
 		return
 
+	if is_dodging:
+		return
+
 	var my_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
 
 	# Защита от нанесения урона самому себе из своего оружия
@@ -1167,6 +1303,13 @@ func take_damage(amount: int, attacker_id: int, weapon_name: String = "", is_hea
 		if attacker_node is Node3D:
 			attacker_dir = (attacker_node.global_position - global_position).normalized()
 
+	if is_blocking:
+		amount = int(round(float(amount) * 0.35))
+		if footstep_sound_3d:
+			footstep_sound_3d.stream = SoundFX.get_punch_block()
+			footstep_sound_3d.pitch_scale = randf_range(0.95, 1.05)
+			footstep_sound_3d.play()
+
 	health -= amount
 	health = clamp(health, 0, max_health)
 	health_changed.emit(health)
@@ -1182,6 +1325,13 @@ func die() -> void:
 	reload_id += 1
 	reload_pending = false
 	is_reloading = false
+	is_charging_punch = false
+	is_blocking = false
+	is_dodging = false
+	if current_view and current_view.has_method("set_charging"):
+		current_view.set_charging(false)
+	if current_view and current_view.has_method("set_blocking"):
+		current_view.set_blocking(false)
 	health = max_health
 	_reset_all_ammo()
 	velocity = Vector3.ZERO
@@ -1189,6 +1339,8 @@ func die() -> void:
 	is_wall_running = false
 	is_mantling = false
 	can_double_jump = false
+	if is_fist_fight_mode():
+		_switch_weapon(WeaponType.FISTS)
 	if camera:
 		camera.rotation.z = 0.0
 	invulnerable_until = Time.get_ticks_msec() / 1000.0 + spawn_protection_time
@@ -1810,4 +1962,177 @@ func _perform_double_jump(dir: Vector3) -> void:
 		footstep_sound_3d.pitch_scale = randf_range(0.95, 1.05)
 		footstep_sound_3d.volume_db = 2.5
 		footstep_sound_3d.play()
+
+func _physics_process_fists(delta: float) -> void:
+	if current_weapon != WeaponType.FISTS:
+		return
+
+	if dodge_cooldown_timer > 0.0:
+		dodge_cooldown_timer -= delta
+		if dodge_cooldown_timer <= 0.0:
+			can_dodge = true
+
+	if is_dodging:
+		dodge_timer -= delta
+		if dodge_timer <= 0.0:
+			is_dodging = false
+
+	# Блок: активируется при удержании прицеливания (ads)
+	var want_block: bool = is_ads and not is_dodging
+	if want_block != is_blocking:
+		is_blocking = want_block
+		if current_view and current_view.has_method("set_blocking"):
+			current_view.set_blocking(is_blocking)
+		var soldier: SoldierModel = get_node_or_null("SoldierModel") as SoldierModel
+		if soldier and soldier.has_method("set_blocking"):
+			soldier.set_blocking(is_blocking)
+		if multiplayer.has_multiplayer_peer():
+			_rpc_fist_block.rpc(is_blocking)
+
+	if is_charging_punch and current_view and current_view.has_method("set_charging"):
+		var charge_dur: float = (Time.get_ticks_msec() / 1000.0) - punch_charge_start
+		current_view.set_charging(true, clampf(charge_dur / 0.45, 0.0, 1.0))
+
+func try_dodge() -> void:
+	if not can_dodge or is_dodging or not is_on_floor() or is_wall_running or is_mantling:
+		return
+
+	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	input_dir = (input_dir + touch_move).limit_length(1.0)
+
+	var dodge_dir: Vector3
+	if input_dir.length_squared() > 0.05:
+		dodge_dir = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	else:
+		dodge_dir = transform.basis * Vector3(0, 0, 1)
+
+	can_dodge = false
+	is_dodging = true
+	dodge_timer = DODGE_DURATION
+	dodge_cooldown_timer = DODGE_COOLDOWN
+
+	if absf(input_dir.x) > 0.1:
+		dodge_camera_tilt = deg_to_rad(-9.0 if input_dir.x > 0 else 9.0)
+	else:
+		dodge_camera_tilt = deg_to_rad(4.0)
+
+	velocity.x = dodge_dir.x * 14.5
+	velocity.z = dodge_dir.z * 14.5
+
+	if current_view and current_view.has_method("play_dodge"):
+		current_view.play_dodge(input_dir.x)
+
+	if footstep_sound_3d:
+		footstep_sound_3d.stream = SoundFX.get_dodge()
+		footstep_sound_3d.pitch_scale = randf_range(0.95, 1.05)
+		footstep_sound_3d.volume_db = 1.0
+		footstep_sound_3d.play()
+
+func _execute_punch(is_heavy: bool) -> void:
+	var now: float = Time.get_ticks_msec() / 1000.0
+	if now < next_punch_time:
+		return
+	var delay: float = 0.45 if is_heavy else 0.28
+	next_punch_time = now + delay
+
+	punch_hand_right = not punch_hand_right
+
+	if gunshot_sound_3d:
+		gunshot_sound_3d.stream = SoundFX.get_punch_swing()
+		gunshot_sound_3d.pitch_scale = randf_range(0.85, 0.95) if is_heavy else randf_range(1.05, 1.2)
+		gunshot_sound_3d.volume_db = 0.0 if is_heavy else -2.0
+		gunshot_sound_3d.play()
+
+	if is_instance_valid(current_view) and current_view.has_method("play_punch"):
+		current_view.play_punch(punch_hand_right, is_heavy)
+
+	var soldier: SoldierModel = get_node_or_null("SoldierModel") as SoldierModel
+	if soldier and soldier.has_method("play_punch"):
+		soldier.play_punch(punch_hand_right, is_heavy)
+
+	if multiplayer.has_multiplayer_peer():
+		_rpc_fist_punch.rpc(punch_hand_right, is_heavy)
+
+	var reach: float = 2.5 if is_heavy else 2.3
+	var ray_targets: Array[Vector3] = [
+		Vector3(0, 0, -reach),
+		Vector3(-0.35, 0, -reach),
+		Vector3(0.35, 0, -reach),
+		Vector3(0, 0.25, -reach),
+		Vector3(0, -0.25, -reach)
+	]
+
+	var hit_collider: Node = null
+	var hit_headshot: bool = false
+	var hit_point: Vector3 = Vector3.ZERO
+
+	for t_pos in ray_targets:
+		weapon_ray.target_position = t_pos
+		weapon_ray.force_raycast_update()
+		if weapon_ray.is_colliding():
+			var c = weapon_ray.get_collider()
+			if c and c != self and not is_ancestor_of(c) and c.has_method("take_damage"):
+				hit_collider = c
+				hit_point = weapon_ray.get_collision_point()
+				if c is Node3D:
+					var hit_h: float = hit_point.y - (c as Node3D).global_position.y
+					if hit_h >= 1.4:
+						hit_headshot = true
+				break
+
+	weapon_ray.target_position = Vector3(0, 0, -50)
+
+	if hit_collider:
+		var base_dmg: float = float(weapon_stats[WeaponType.FISTS]["heavy_damage" if is_heavy else "damage"])
+		var dmg: float = base_dmg * (1.5 if hit_headshot else 1.0)
+		var sender_id: int = multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+
+		var kb_dir: Vector3 = -camera.global_transform.basis.z
+		kb_dir.y = 0.22
+		kb_dir = kb_dir.normalized()
+		var kb_force: float = 9.5 if is_heavy else 4.8
+		var kb_impulse: Vector3 = kb_dir * kb_force
+
+		var is_target_player: bool = hit_collider.is_in_group("players") or hit_collider.has_method("is_local_player")
+		if multiplayer.has_multiplayer_peer() and is_target_player:
+			if hit_collider.has_method("apply_knockback"):
+				hit_collider.apply_knockback.rpc_id(hit_collider.get_multiplayer_authority(), kb_impulse)
+			hit_collider.take_damage.rpc_id(hit_collider.get_multiplayer_authority(), int(round(dmg)), sender_id, "Кулаки", hit_headshot)
+		else:
+			if hit_collider.has_method("apply_knockback"):
+				hit_collider.apply_knockback(kb_impulse)
+			hit_collider.take_damage(int(round(dmg)), sender_id, "Кулаки", hit_headshot)
+
+		hit_target.emit(hit_headshot)
+		if gunshot_sound_3d:
+			gunshot_sound_3d.stream = SoundFX.get_punch_hit(is_heavy)
+			gunshot_sound_3d.pitch_scale = randf_range(0.95, 1.05)
+			gunshot_sound_3d.volume_db = 3.0 if is_heavy else 1.0
+			gunshot_sound_3d.play()
+
+@rpc("any_peer", "unreliable", "call_remote")
+func _rpc_fist_punch(is_right: bool, is_heavy: bool) -> void:
+	if gunshot_sound_3d:
+		gunshot_sound_3d.stream = SoundFX.get_punch_swing()
+		gunshot_sound_3d.pitch_scale = randf_range(0.85, 0.95) if is_heavy else randf_range(1.05, 1.2)
+		gunshot_sound_3d.volume_db = 0.0 if is_heavy else -2.0
+		gunshot_sound_3d.play()
+	var soldier: SoldierModel = get_node_or_null("SoldierModel") as SoldierModel
+	if soldier and soldier.has_method("play_punch"):
+		soldier.play_punch(is_right, is_heavy)
+
+@rpc("any_peer", "unreliable", "call_remote")
+func _rpc_fist_block(blocking: bool) -> void:
+	is_blocking = blocking
+	var soldier: SoldierModel = get_node_or_null("SoldierModel") as SoldierModel
+	if soldier and soldier.has_method("set_blocking"):
+		soldier.set_blocking(blocking)
+
+@rpc("any_peer", "call_local", "reliable")
+func apply_knockback(impulse: Vector3) -> void:
+	if not is_local_player():
+		return
+	if is_blocking:
+		impulse *= 0.25
+	velocity += impulse
 		

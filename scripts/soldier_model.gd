@@ -17,6 +17,19 @@ var team_material: StandardMaterial3D = null
 var walk_phase: float = 0.0
 var current_crouch_blend: float = 0.0
 
+# Режим кулачного боя
+var is_fist_mode: bool = false
+var is_blocking: bool = false
+var punch_timer: float = 0.0
+var punch_is_right: bool = false
+var punch_is_heavy: bool = false
+
+func play_punch(is_right: bool, is_heavy: bool) -> void:
+	punch_is_right = is_right
+	punch_is_heavy = is_heavy
+	punch_timer = 0.32 if is_heavy else 0.20
+
+
 func _enter_tree() -> void:
 	_setup_nodes()
 
@@ -56,7 +69,7 @@ func _apply_team_material_recursive(node: Node) -> void:
 	for child in node.get_children():
 		_apply_team_material_recursive(child)
 
-func update_animation(delta: float, speed: float, on_floor: bool, sprinting: bool, crouching: bool, sliding: bool, aim_pitch: float = 0.0, wall_running: bool = false, wall_side: int = 0, mantling: bool = false) -> void:
+func update_animation(delta: float, speed: float, on_floor: bool, sprinting: bool, crouching: bool, sliding: bool, aim_pitch: float = 0.0, wall_running: bool = false, wall_side: int = 0, mantling: bool = false, is_fists: bool = false, blocking: bool = false) -> void:
 	_setup_nodes()
 
 	var target_crouch: float = 1.0 if (crouching or sliding) else 0.0
@@ -66,8 +79,11 @@ func update_animation(delta: float, speed: float, on_floor: bool, sprinting: boo
 	if torso:
 		torso.rotation.x = lerp_angle(torso.rotation.x, aim_pitch * 0.7, delta * 15.0)
 
-	# Базовое положение рук: хват оружия обеими руками перед грудью
-	_animate_weapon_arms(delta, sprinting, speed)
+	# Положение рук: хват оружия либо боксерская стойка / удары
+	if is_fists:
+		_animate_fist_arms(delta, sprinting, speed, blocking)
+	else:
+		_animate_weapon_arms(delta, sprinting, speed)
 
 	# Возврат крена таза в нормальное положение
 	if not wall_running and pelvis:
@@ -225,6 +241,76 @@ func _animate_weapon_arms(delta: float, sprinting: bool, speed: float) -> void:
 		forearm_left.rotation.x = lerp_angle(forearm_left.rotation.x, target_l_forearm.x, delta * 12.0)
 		forearm_left.rotation.y = lerp_angle(forearm_left.rotation.y, target_l_forearm.y, delta * 12.0)
 		forearm_left.rotation.z = lerp_angle(forearm_left.rotation.z, target_l_forearm.z, delta * 12.0)
+
+func _animate_fist_arms(delta: float, sprinting: bool, speed: float, blocking: bool) -> void:
+	if punch_timer > 0.0:
+		punch_timer -= delta
+		if punch_is_heavy:
+			var target_r_arm := Vector3(deg_to_rad(95.0), deg_to_rad(-10.0), deg_to_rad(-15.0))
+			var target_r_forearm := Vector3(deg_to_rad(10.0), deg_to_rad(5.0), deg_to_rad(0.0))
+			var target_l_arm := Vector3(deg_to_rad(55.0), deg_to_rad(-30.0), deg_to_rad(30.0))
+			var target_l_forearm := Vector3(deg_to_rad(70.0), deg_to_rad(15.0), deg_to_rad(-15.0))
+			_lerp_arms(delta * 22.0, target_r_arm, target_r_forearm, target_l_arm, target_l_forearm)
+			if torso:
+				torso.rotation.y = lerp_angle(torso.rotation.y, deg_to_rad(-20.0), delta * 20.0)
+		elif punch_is_right:
+			var target_r_arm := Vector3(deg_to_rad(85.0), deg_to_rad(-15.0), deg_to_rad(-20.0))
+			var target_r_forearm := Vector3(deg_to_rad(20.0), deg_to_rad(10.0), deg_to_rad(0.0))
+			var target_l_arm := Vector3(deg_to_rad(65.0), deg_to_rad(-25.0), deg_to_rad(35.0))
+			var target_l_forearm := Vector3(deg_to_rad(65.0), deg_to_rad(20.0), deg_to_rad(-15.0))
+			_lerp_arms(delta * 24.0, target_r_arm, target_r_forearm, target_l_arm, target_l_forearm)
+			if torso:
+				torso.rotation.y = lerp_angle(torso.rotation.y, deg_to_rad(-14.0), delta * 20.0)
+		else:
+			var target_l_arm := Vector3(deg_to_rad(85.0), deg_to_rad(15.0), deg_to_rad(20.0))
+			var target_l_forearm := Vector3(deg_to_rad(20.0), deg_to_rad(-10.0), deg_to_rad(0.0))
+			var target_r_arm := Vector3(deg_to_rad(65.0), deg_to_rad(25.0), deg_to_rad(-35.0))
+			var target_r_forearm := Vector3(deg_to_rad(65.0), deg_to_rad(-20.0), deg_to_rad(15.0))
+			_lerp_arms(delta * 24.0, target_r_arm, target_r_forearm, target_l_arm, target_l_forearm)
+			if torso:
+				torso.rotation.y = lerp_angle(torso.rotation.y, deg_to_rad(14.0), delta * 20.0)
+		return
+
+	if torso:
+		torso.rotation.y = lerp_angle(torso.rotation.y, 0.0, delta * 12.0)
+
+	if blocking:
+		var target_r_arm := Vector3(deg_to_rad(85.0), deg_to_rad(10.0), deg_to_rad(-35.0))
+		var target_r_forearm := Vector3(deg_to_rad(80.0), deg_to_rad(25.0), deg_to_rad(-10.0))
+		var target_l_arm := Vector3(deg_to_rad(85.0), deg_to_rad(-10.0), deg_to_rad(35.0))
+		var target_l_forearm := Vector3(deg_to_rad(80.0), deg_to_rad(-25.0), deg_to_rad(10.0))
+		_lerp_arms(delta * 14.0, target_r_arm, target_r_forearm, target_l_arm, target_l_forearm)
+		return
+
+	# Базовая стойка бокса
+	var target_r_arm := Vector3(deg_to_rad(60.0), deg_to_rad(20.0), deg_to_rad(-35.0))
+	var target_r_forearm := Vector3(deg_to_rad(60.0), deg_to_rad(15.0), deg_to_rad(-10.0))
+	var target_l_arm := Vector3(deg_to_rad(65.0), deg_to_rad(-20.0), deg_to_rad(35.0))
+	var target_l_forearm := Vector3(deg_to_rad(55.0), deg_to_rad(-15.0), deg_to_rad(10.0))
+
+	if sprinting and speed > 2.0:
+		target_r_arm.x = deg_to_rad(40.0)
+		target_l_arm.x = deg_to_rad(45.0)
+
+	_lerp_arms(delta * 12.0, target_r_arm, target_r_forearm, target_l_arm, target_l_forearm)
+
+func _lerp_arms(speed: float, r_arm: Vector3, r_forearm: Vector3, l_arm: Vector3, l_forearm: Vector3) -> void:
+	if arm_right_root:
+		arm_right_root.rotation.x = lerp_angle(arm_right_root.rotation.x, r_arm.x, speed)
+		arm_right_root.rotation.y = lerp_angle(arm_right_root.rotation.y, r_arm.y, speed)
+		arm_right_root.rotation.z = lerp_angle(arm_right_root.rotation.z, r_arm.z, speed)
+	if forearm_right:
+		forearm_right.rotation.x = lerp_angle(forearm_right.rotation.x, r_forearm.x, speed)
+		forearm_right.rotation.y = lerp_angle(forearm_right.rotation.y, r_forearm.y, speed)
+		forearm_right.rotation.z = lerp_angle(forearm_right.rotation.z, r_forearm.z, speed)
+	if arm_left_root:
+		arm_left_root.rotation.x = lerp_angle(arm_left_root.rotation.x, l_arm.x, speed)
+		arm_left_root.rotation.y = lerp_angle(arm_left_root.rotation.y, l_arm.y, speed)
+		arm_left_root.rotation.z = lerp_angle(arm_left_root.rotation.z, l_arm.z, speed)
+	if forearm_left:
+		forearm_left.rotation.x = lerp_angle(forearm_left.rotation.x, l_forearm.x, speed)
+		forearm_left.rotation.y = lerp_angle(forearm_left.rotation.y, l_forearm.y, speed)
+		forearm_left.rotation.z = lerp_angle(forearm_left.rotation.z, l_forearm.z, speed)
 
 var weapon_mount: Node3D = null
 

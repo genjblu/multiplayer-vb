@@ -200,7 +200,7 @@ func _show_late_join_team_selection() -> void:
 
 	var mode: String = NetworkManager.current_mode if NetworkManager else "ffa"
 
-	if mode == "ffa":
+	if mode == "ffa" or mode == "fist_fight":
 		title.text = tr("CHOOSE_COLOR")
 		var grid := GridContainer.new()
 		grid.columns = 3

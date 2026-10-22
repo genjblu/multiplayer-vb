@@ -11,6 +11,11 @@ static var _gun_shotgun: AudioStreamWAV = null
 static var _gun_sniper: AudioStream = null
 static var _double_jump: AudioStreamWAV = null
 static var _mantle: AudioStreamWAV = null
+static var _punch_swing: AudioStreamWAV = null
+static var _punch_hit: AudioStreamWAV = null
+static var _punch_heavy_hit: AudioStreamWAV = null
+static var _punch_block: AudioStreamWAV = null
+static var _dodge: AudioStreamWAV = null
 
 static func get_hitmarker(is_headshot: bool) -> AudioStream:
 	if is_headshot:
@@ -165,3 +170,70 @@ static func _generate_mantle() -> AudioStreamWAV:
 		var thud: float = sin(t * TAU * 115.0) * 0.5
 		return (rustle + thud) * env
 	)
+
+static func get_punch_swing() -> AudioStream:
+	if _punch_swing == null:
+		_punch_swing = _generate_punch_swing()
+	return _punch_swing
+
+static func get_punch_hit(is_heavy: bool = false) -> AudioStream:
+	if is_heavy:
+		if _punch_heavy_hit == null:
+			_punch_heavy_hit = _generate_punch_heavy_hit()
+		return _punch_heavy_hit
+	else:
+		if _punch_hit == null:
+			_punch_hit = _generate_punch_hit()
+		return _punch_hit
+
+static func get_punch_block() -> AudioStream:
+	if _punch_block == null:
+		_punch_block = _generate_punch_block()
+	return _punch_block
+
+static func get_dodge() -> AudioStream:
+	if _dodge == null:
+		_dodge = _generate_dodge()
+	return _dodge
+
+static func _generate_punch_swing() -> AudioStreamWAV:
+	return _create_wav(22050, 0.12, func(t: float, dur: float) -> float:
+		var env: float = sin((t / dur) * PI)
+		var whoosh: float = (randf() * 2.0 - 1.0) * env * 0.6
+		var pitch: float = 240.0 * (1.0 - t / dur)
+		var tone: float = sin(t * TAU * pitch) * 0.4 * env
+		return whoosh + tone
+	)
+
+static func _generate_punch_hit() -> AudioStreamWAV:
+	return _create_wav(22050, 0.16, func(t: float, dur: float) -> float:
+		var env: float = exp(-t * 28.0)
+		var slap: float = (randf() * 2.0 - 1.0) * exp(-t * 50.0) * 0.7
+		var thud: float = sin(t * TAU * 95.0) * 0.65
+		return (slap + thud) * env
+	)
+
+static func _generate_punch_heavy_hit() -> AudioStreamWAV:
+	return _create_wav(22050, 0.25, func(t: float, dur: float) -> float:
+		var env: float = exp(-t * 16.0)
+		var crack: float = (randf() * 2.0 - 1.0) * exp(-t * 40.0) * 0.8
+		var bass: float = sin(t * TAU * (70.0 * exp(-t * 8.0))) * 0.85
+		return (crack + bass) * env
+	)
+
+static func _generate_punch_block() -> AudioStreamWAV:
+	return _create_wav(22050, 0.14, func(t: float, dur: float) -> float:
+		var env: float = exp(-t * 32.0)
+		var clank: float = sin(t * TAU * 190.0) * 0.65
+		var noise: float = (randf() * 2.0 - 1.0) * exp(-t * 60.0) * 0.4
+		return (clank + noise) * env
+	)
+
+static func _generate_dodge() -> AudioStreamWAV:
+	return _create_wav(22050, 0.18, func(t: float, dur: float) -> float:
+		var env: float = sin((t / dur) * PI)
+		var air: float = (randf() * 2.0 - 1.0) * env * 0.7
+		var sweep: float = sin(t * TAU * (140.0 + 80.0 * sin(t / dur * PI))) * 0.35 * env
+		return air + sweep
+	)
+

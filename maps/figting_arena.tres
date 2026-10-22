@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MapData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/map_data.gd" id="1_map"]
+
+[resource]
+script = ExtResource("1_map")
+id = "figting_arena"
+display_name = "Бойцовская Арена"
+description = "Специальная неоновая кибер-арена для кулачных боев."
+scene_path = "res://scenes/figting_arena.tscn"
+supported_modes = ["fist_fight"]

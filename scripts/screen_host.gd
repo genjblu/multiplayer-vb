@@ -16,7 +16,10 @@ const MAP_PATHS: Array[String] = [
 	"res://maps/default_arena.tres",
 	"res://maps/Industrial.tres",
 	"res://maps/polygon.tres",
+	"res://maps/figting_arena.tres",
 ]
+var filtered_maps: Array[MapData] = []
+
 func _ready() -> void:
 	add_child(_make_label(tr("HOST_TITLE"), "HeadingLabel"))
 
@@ -52,8 +55,6 @@ func _ready() -> void:
 	_scan_maps()
 
 	map_option = OptionButton.new()
-	for i in range(available_maps.size()):
-		map_option.add_item(tr(available_maps[i].display_name), i)
 	add_child(_make_row(tr("HOST_MAP"), map_option))
 
 	mode_option = OptionButton.new()
@@ -61,7 +62,15 @@ func _ready() -> void:
 	mode_option.add_item(tr("HOST_MODE_2V2"), 1)
 	mode_option.add_item(tr("HOST_MODE_3V3V3"), 2)
 	mode_option.add_item(tr("HOST_MODE_4V4"), 3)
+	mode_option.add_item("🥊 Кулачный бой (Бокс)", 4)
+	mode_option.item_selected.connect(func(idx: int):
+		var modes := ["ffa", "2v2", "3v3v3", "4v4", "fist_fight"]
+		var m_str: String = modes[idx] if idx < modes.size() else "ffa"
+		_update_maps_for_mode(m_str)
+	)
 	add_child(_make_row(tr("HOST_MODE"), mode_option))
+
+	_update_maps_for_mode("ffa")
 
 	var chk_box := HBoxContainer.new()
 	chk_box.add_theme_constant_override("separation", 8)
@@ -109,6 +118,29 @@ func _scan_maps() -> void:
 		def_map.scene_path = "res://scenes/arena.tscn"
 		available_maps.append(def_map)
 
+func _update_maps_for_mode(mode: String) -> void:
+	filtered_maps.clear()
+	map_option.clear()
+	for m in available_maps:
+		if mode == "fist_fight":
+			# В режиме кулачного боя доступна только боевая арена
+			if m.supported_modes.has("fist_fight"):
+				filtered_maps.append(m)
+				map_option.add_item(tr(m.display_name), filtered_maps.size() - 1)
+		else:
+			# В обычных режимах арена кулачного боя скрыта
+			if not m.supported_modes.has("fist_fight"):
+				filtered_maps.append(m)
+				map_option.add_item(tr(m.display_name), filtered_maps.size() - 1)
+
+	if filtered_maps.is_empty():
+		for m in available_maps:
+			filtered_maps.append(m)
+			map_option.add_item(tr(m.display_name), filtered_maps.size() - 1)
+
+	if map_option.item_count > 0:
+		map_option.select(0)
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED and is_visible_in_tree() and tunnel_edit:
 		tunnel_edit.text = GameSettings.playit_tunnel_address
@@ -122,9 +154,9 @@ func _on_create_pressed() -> void:
 	if room.is_empty():
 		room = tr("HOST_DEFAULT_ROOM_FALLBACK")
 	var selected_map_id: String = "arena"
-	if map_option.selected >= 0 and map_option.selected < available_maps.size():
-		selected_map_id = available_maps[map_option.selected].id
-	var modes := ["ffa", "2v2", "3v3v3", "4v4"]
+	if map_option.selected >= 0 and map_option.selected < filtered_maps.size():
+		selected_map_id = filtered_maps[map_option.selected].id
+	var modes := ["ffa", "2v2", "3v3v3", "4v4", "fist_fight"]
 	var selected_mode: String = modes[mode_option.selected] if mode_option.selected < modes.size() else "ffa"
 	var ff: bool = ff_checkbox.button_pressed
 	var is_priv: bool = (lobby_type_option.selected == 1)
@@ -133,3 +165,4 @@ func _on_create_pressed() -> void:
 	GameSettings.playit_tunnel_address = custom_ip
 	GameSettings.save_to_disk()
 	host_requested.emit(port, room, selected_map_id, selected_mode, ff, pub_online, custom_ip, is_priv)
+

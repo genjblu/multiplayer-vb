@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="WeaponData" format=3 uid="uid://fistres777aa"]
+
+[ext_resource type="Script" path="res://scripts/weapon_data.gd" id="1_data"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/fists.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_data")
+display_name = "Кулаки"
+damage = 20
+max_ammo = 0
+reserve_ammo = 0
+recoil = 0.0
+fire_rate = 0.28
+reload_time = 0.0
+ads_fov = 70.0
+hip_pos = Vector3(0, 0, 0)
+ads_pos = Vector3(0, 0, 0)
+view_scene = ExtResource("2_scene")
+crosshair_style = 2
+crosshair_hide_in_ads = false
