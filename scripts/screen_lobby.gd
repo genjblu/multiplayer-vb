@@ -131,7 +131,8 @@ func setup_lobby(map_name: String, mode: String, ff: bool, is_host: bool, room_c
 		"2v2": "Команды 2v2",
 		"3v3v3": "Команды 3v3v3",
 		"4v4": "Команды 4v4",
-		"fist_fight": "🥊 Кулачный бой"
+		"fist_fight": "🥊 Кулачный бой",
+		"highway_fury": "🏎️ Дорога ярости"
 	}
 	mode_label.text = "Режим: " + mode_titles.get(mode, mode)
 	ff_label.text = "Огонь по своим: " + ("ВКЛ" if ff else "ВЫКЛ")
@@ -163,7 +164,7 @@ func _build_team_buttons(mode: String) -> void:
 	for c in team_buttons_box.get_children():
 		c.queue_free()
 
-	if mode == "ffa" or mode == "fist_fight":
+	if mode == "ffa" or mode == "fist_fight" or mode == "highway_fury":
 		var grid := GridContainer.new()
 		grid.columns = 3
 		grid.add_theme_constant_override("h_separation", 6)

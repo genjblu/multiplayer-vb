@@ -233,6 +233,7 @@ var _step_distance_accum: float = 0.0
 var _was_on_floor: bool = true
 var _fall_velocity: float = 0.0
 var remote_step_distance_accum: float = 0.0
+var is_in_vehicle: bool = false
 
 func _init() -> void:
 	if not InputMap.has_action("reload"):
@@ -717,6 +718,10 @@ func touch_action(action: String, pressed: bool, pos: Vector2 = Vector2.ZERO) ->
 			if pressed: _switch_weapon(WeaponType.SNIPER)
 
 func _physics_process(delta: float) -> void:
+	if is_in_vehicle:
+		velocity = Vector3.ZERO
+		return
+
 	var target_speed := base_speed
 
 	# Замедление снайпера в зуме

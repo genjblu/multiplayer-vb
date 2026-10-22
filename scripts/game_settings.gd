@@ -15,6 +15,7 @@ static var invert_y: bool = false
 static var crouch_toggle_mode: bool = false
 static var camera_shake: float = 1.0
 static var mobile_btn_opacity: float = 0.9
+static var vehicle_touch_steering: int = 0 # 0 = Поворотный руль, 1 = Кнопки влево/вправо
 
 # Графика
 static var fullscreen: bool = false
@@ -82,6 +83,7 @@ static func save_to_disk() -> void:
 	cfg.set_value("controls", "crouch_toggle_mode", crouch_toggle_mode)
 	cfg.set_value("controls", "camera_shake", camera_shake)
 	cfg.set_value("controls", "mobile_btn_opacity", mobile_btn_opacity)
+	cfg.set_value("controls", "vehicle_touch_steering", vehicle_touch_steering)
 
 	cfg.set_value("video", "fullscreen", fullscreen)
 	cfg.set_value("video", "vsync", vsync)
@@ -150,6 +152,7 @@ static func load_from_disk() -> void:
 	crouch_toggle_mode = bool(cfg.get_value("controls", "crouch_toggle_mode", crouch_toggle_mode))
 	camera_shake = float(cfg.get_value("controls", "camera_shake", camera_shake))
 	mobile_btn_opacity = float(cfg.get_value("controls", "mobile_btn_opacity", mobile_btn_opacity))
+	vehicle_touch_steering = int(cfg.get_value("controls", "vehicle_touch_steering", vehicle_touch_steering))
 
 	fullscreen = bool(cfg.get_value("video", "fullscreen", fullscreen))
 	vsync = bool(cfg.get_value("video", "vsync", vsync))

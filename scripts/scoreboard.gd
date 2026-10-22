@@ -61,7 +61,7 @@ func rebuild() -> void:
 
 	var mode: String = NetworkManager.current_mode if NetworkManager else "ffa"
 
-	if mode == "ffa" or mode == "fist_fight":
+	if mode == "ffa" or mode == "fist_fight" or mode == "highway_fury":
 		_build_ffa_table()
 	elif mode == "2v2":
 		_build_teams_2_table()

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <radialGradient id="hbBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3d1515" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#180707" stop-opacity="0.95"/>
+    </radialGradient>
+    <linearGradient id="hbRing" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4444"/>
+      <stop offset="100%" stop-color="#aa1111"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background disc -->
+  <circle cx="50" cy="50" r="46" fill="url(#hbBg)" stroke="#ff4444" stroke-width="2.5" stroke-opacity="0.6"/>
+  <circle cx="50" cy="50" r="41" fill="none" stroke="#220000" stroke-width="1.5"/>
+
+  <!-- Left brake shoe arc -->
+  <path d="M 23 30 A 30 30 0 0 0 23 70" fill="none" stroke="url(#hbRing)" stroke-width="5" stroke-linecap="round"/>
+  <!-- Right brake shoe arc -->
+  <path d="M 77 30 A 30 30 0 0 1 77 70" fill="none" stroke="url(#hbRing)" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Center circle -->
+  <circle cx="50" cy="50" r="20" fill="none" stroke="url(#hbRing)" stroke-width="4"/>
+
+  <!-- Exclamation mark / P -->
+  <text x="50" y="58" font-family="monospace, sans-serif" font-weight="900" font-size="24" fill="#ffffff" text-anchor="middle">P</text>
+</svg>

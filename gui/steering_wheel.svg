@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <radialGradient id="hubGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3a4454"/>
+      <stop offset="70%" stop-color="#1e2430"/>
+      <stop offset="100%" stop-color="#10141c"/>
+    </radialGradient>
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2c3340"/>
+      <stop offset="50%" stop-color="#181c24"/>
+      <stop offset="100%" stop-color="#0e1117"/>
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#ff7700"/>
+      <stop offset="100%" stop-color="#ffaa00"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Wheel Rim -->
+  <circle cx="100" cy="100" r="88" fill="none" stroke="url(#rimGrad)" stroke-width="22"/>
+  <circle cx="100" cy="100" r="99" fill="none" stroke="#4a5568" stroke-width="2" opacity="0.4"/>
+  <circle cx="100" cy="100" r="77" fill="none" stroke="#000000" stroke-width="3" opacity="0.6"/>
+
+  <!-- Top Center Alignment Stripe (Racing Style) -->
+  <path d="M 94 3 A 97 97 0 0 1 106 3 L 104 23 A 77 77 0 0 0 96 23 Z" fill="url(#accentGrad)"/>
+
+  <!-- Left & Right Grip Contours -->
+  <rect x="1" y="82" width="20" height="36" rx="6" fill="#111620" opacity="0.8"/>
+  <rect x="179" y="82" width="20" height="36" rx="6" fill="#111620" opacity="0.8"/>
+  <line x1="3" y1="92" x2="19" y2="92" stroke="#4a5568" stroke-width="2"/>
+  <line x1="3" y1="100" x2="19" y2="100" stroke="#4a5568" stroke-width="2"/>
+  <line x1="3" y1="108" x2="19" y2="108" stroke="#4a5568" stroke-width="2"/>
+  <line x1="181" y1="92" x2="197" y2="92" stroke="#4a5568" stroke-width="2"/>
+  <line x1="181" y1="100" x2="197" y2="100" stroke="#4a5568" stroke-width="2"/>
+  <line x1="181" y1="108" x2="197" y2="108" stroke="#4a5568" stroke-width="2"/>
+
+  <!-- Wheel Spokes (3-Spoke Sports Design) -->
+  <!-- Left Spoke -->
+  <path d="M 23 100 L 72 96 L 72 108 L 23 108 Z" fill="#242b38" stroke="#10141c" stroke-width="1.5"/>
+  <polygon points="35,100 65,98 65,106 35,106" fill="#141822"/>
+  <!-- Right Spoke -->
+  <path d="M 177 100 L 128 96 L 128 108 L 177 108 Z" fill="#242b38" stroke="#10141c" stroke-width="1.5"/>
+  <polygon points="165,100 135,98 135,106 165,106" fill="#141822"/>
+  <!-- Bottom Spoke -->
+  <path d="M 94 130 L 91 176 L 109 176 L 106 130 Z" fill="#242b38" stroke="#10141c" stroke-width="1.5"/>
+  <polygon points="96,140 94,168 106,168 104,140" fill="#141822"/>
+
+  <!-- Center Hub -->
+  <circle cx="100" cy="100" r="30" fill="url(#hubGrad)" stroke="#ff7700" stroke-width="3"/>
+  <circle cx="100" cy="100" r="24" fill="#141822" stroke="#2c3340" stroke-width="2"/>
+  <!-- Horn / Logo Icon in Center -->
+  <polygon points="100,86 112,106 88,106" fill="url(#accentGrad)"/>
+  <circle cx="100" cy="101" r="3" fill="#ffffff"/>
+</svg>

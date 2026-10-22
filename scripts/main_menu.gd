@@ -396,6 +396,21 @@ func _open_main_menu_settings() -> void:
 	chk_crouch_mode.toggled.connect(func(pressed): GameSettings.crouch_toggle_mode = pressed)
 	vbox_input.add_child(chk_crouch_mode)
 
+	var is_mob: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"] or DisplayServer.is_touchscreen_available()
+	if is_mob:
+		var lbl_steer := Label.new()
+		lbl_steer.text = "Управление машиной:"
+		vbox_input.add_child(lbl_steer)
+		var opt_steer := OptionButton.new()
+		opt_steer.add_item("🔄 Поворотный руль", 0)
+		opt_steer.add_item("◀ ▶ Кнопки влево / вправо", 1)
+		opt_steer.selected = GameSettings.vehicle_touch_steering
+		opt_steer.item_selected.connect(func(idx: int):
+			GameSettings.vehicle_touch_steering = idx
+			GameSettings.save_to_disk()
+		)
+		vbox_input.add_child(opt_steer)
+
 	# === ВКЛАДКА 2: ГРАФИКА ===
 	var scroll_video := ScrollContainer.new()
 	scroll_video.name = tr("TAB_VIDEO")

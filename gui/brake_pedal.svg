@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="brakeMetal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b4453"/>
+      <stop offset="50%" stop-color="#212732"/>
+      <stop offset="100%" stop-color="#12161f"/>
+    </linearGradient>
+    <linearGradient id="neonRed" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#ff3344"/>
+      <stop offset="100%" stop-color="#bb1122"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Wide Brake Pedal Base -->
+  <rect x="10" y="16" width="100" height="88" rx="14" fill="url(#brakeMetal)" stroke="#ff3344" stroke-width="3"/>
+  <rect x="14" y="20" width="92" height="80" rx="11" fill="none" stroke="#2a323d" stroke-width="2"/>
+
+  <!-- Grip Tread Grid -->
+  <rect x="22" y="32" width="22" height="14" rx="4" fill="#0d1117" stroke="#ff3344" stroke-width="1.5"/>
+  <rect x="49" y="32" width="22" height="14" rx="4" fill="#0d1117" stroke="#ff3344" stroke-width="1.5"/>
+  <rect x="76" y="32" width="22" height="14" rx="4" fill="#0d1117" stroke="#ff3344" stroke-width="1.5"/>
+
+  <rect x="22" y="53" width="22" height="14" rx="4" fill="#0d1117" stroke="#ff3344" stroke-width="1.5"/>
+  <rect x="49" y="53" width="22" height="14" rx="4" fill="#0d1117" stroke="#ff3344" stroke-width="1.5"/>
+  <rect x="76" y="53" width="22" height="14" rx="4" fill="#0d1117" stroke="#ff3344" stroke-width="1.5"/>
+
+  <rect x="22" y="74" width="22" height="14" rx="4" fill="#0d1117" stroke="#ff3344" stroke-width="1.5"/>
+  <rect x="49" y="74" width="22" height="14" rx="4" fill="#0d1117" stroke="#ff3344" stroke-width="1.5"/>
+  <rect x="76" y="74" width="22" height="14" rx="4" fill="#0d1117" stroke="#ff3344" stroke-width="1.5"/>
+</svg>

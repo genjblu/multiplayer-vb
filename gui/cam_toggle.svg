@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <radialGradient id="camBg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1f2a3d" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#0a101a" stop-opacity="0.95"/>
+    </radialGradient>
+    <linearGradient id="camAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background disc -->
+  <circle cx="50" cy="50" r="46" fill="url(#camBg)" stroke="#38bdf8" stroke-width="2.5" stroke-opacity="0.6"/>
+
+  <!-- Camera Body -->
+  <rect x="25" y="38" width="42" height="30" rx="6" fill="#1e293b" stroke="url(#camAccent)" stroke-width="3"/>
+  <path d="M 33 38 L 38 31 L 54 31 L 59 38 Z" fill="#1e293b" stroke="url(#camAccent)" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Lens -->
+  <circle cx="46" cy="53" r="9" fill="#0f172a" stroke="url(#camAccent)" stroke-width="3"/>
+  <circle cx="46" cy="53" r="4" fill="#38bdf8"/>
+
+  <!-- Switch / cycle arrows -->
+  <!-- Top-right curved arrow -->
+  <path d="M 70 30 A 32 32 0 0 1 82 50" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="82,44 87,54 77,53" fill="#38bdf8"/>
+
+  <!-- Bottom-left curved arrow -->
+  <path d="M 30 70 A 32 32 0 0 1 18 50" fill="none" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+  <polygon points="18,56 13,46 23,47" fill="#38bdf8"/>
+</svg>

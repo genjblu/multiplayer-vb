@@ -229,7 +229,7 @@ func _add_server_card(ip: String, port: int, room: String, host: String, map_nam
 	name_lbl.add_theme_font_size_override("font_size", 15)
 	info_box.add_child(name_lbl)
 
-	var mode_names = {"ffa": "FFA", "2v2": "2v2", "3v3v3": "3v3v3", "4v4": "4v4", "fist_fight": "Бокс"}
+	var mode_names = {"ffa": "FFA", "2v2": "2v2", "3v3v3": "3v3v3", "4v4": "4v4", "fist_fight": "Бокс", "highway_fury": "Дорога ярости"}
 	var sub_lbl := Label.new()
 	sub_lbl.text = "%s | %s | FF: %s | %d/%d" % [
 		map_name, mode_names.get(mode, mode), ("Вкл" if ff else "Выкл"), players, max_p

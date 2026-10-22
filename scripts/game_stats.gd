@@ -184,7 +184,7 @@ func register_name(nick: String) -> void:
 		var auto_team: int = (players.size() % 2) + 1 # Команда 1 или 2 по очереди
 
 		var net_manager = get_node_or_null("/root/NetworkManager")
-		if net_manager and (net_manager.current_mode == "ffa" or net_manager.current_mode == "fist_fight"):
+		if net_manager and (net_manager.current_mode == "ffa" or net_manager.current_mode == "fist_fight" or net_manager.current_mode == "highway_fury"):
 			auto_team = 0
 
 		players[id] = {"name": clean, "kills": 0, "deaths": 0, "team": auto_team, "color": auto_col, "ping": 0}

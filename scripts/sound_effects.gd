@@ -16,6 +16,36 @@ static var _punch_hit: AudioStreamWAV = null
 static var _punch_heavy_hit: AudioStreamWAV = null
 static var _punch_block: AudioStreamWAV = null
 static var _dodge: AudioStreamWAV = null
+static var _car_engine_loop: AudioStreamWAV = null
+static var _car_crash: AudioStreamWAV = null
+static var _car_explosion: AudioStreamWAV = null
+static var _car_skid: AudioStreamWAV = null
+static var _car_boost: AudioStreamWAV = null
+
+static func get_car_engine_loop() -> AudioStream:
+	if _car_engine_loop == null:
+		_car_engine_loop = _generate_car_engine_loop()
+	return _car_engine_loop
+
+static func get_car_crash() -> AudioStream:
+	if _car_crash == null:
+		_car_crash = _generate_car_crash()
+	return _car_crash
+
+static func get_car_explosion() -> AudioStream:
+	if _car_explosion == null:
+		_car_explosion = _generate_car_explosion()
+	return _car_explosion
+
+static func get_car_skid() -> AudioStream:
+	if _car_skid == null:
+		_car_skid = _generate_car_skid()
+	return _car_skid
+
+static func get_car_boost() -> AudioStream:
+	if _car_boost == null:
+		_car_boost = _generate_car_boost()
+	return _car_boost
 
 static func get_hitmarker(is_headshot: bool) -> AudioStream:
 	if is_headshot:
@@ -235,5 +265,53 @@ static func _generate_dodge() -> AudioStreamWAV:
 		var air: float = (randf() * 2.0 - 1.0) * env * 0.7
 		var sweep: float = sin(t * TAU * (140.0 + 80.0 * sin(t / dur * PI))) * 0.35 * env
 		return air + sweep
+	)
+
+static func _generate_car_engine_loop() -> AudioStreamWAV:
+	var wav := _create_wav(22050, 0.5, func(t: float, dur: float) -> float:
+		var rpm_freq: float = 55.0
+		var cyl1: float = sin(t * TAU * rpm_freq) * 0.45
+		var cyl2: float = sin(t * TAU * (rpm_freq * 2.0)) * 0.3
+		var pulse: float = sin(t * TAU * (rpm_freq * 0.5)) * 0.2
+		var rumble: float = (randf() * 2.0 - 1.0) * 0.15
+		return (cyl1 + cyl2 + pulse + rumble) * 0.8
+	)
+	wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	wav.loop_begin = 0
+	wav.loop_end = int(22050 * 0.5)
+	return wav
+
+static func _generate_car_crash() -> AudioStreamWAV:
+	return _create_wav(22050, 0.45, func(t: float, dur: float) -> float:
+		var env: float = exp(-t * 9.0)
+		var metal: float = sin(t * TAU * (180.0 * exp(-t * 12.0))) * 0.6
+		var crunch: float = (randf() * 2.0 - 1.0) * exp(-t * 22.0) * 0.85
+		var clatter: float = sin(t * TAU * 360.0) * exp(-t * 30.0) * 0.4
+		return (metal + crunch + clatter) * env
+	)
+
+static func _generate_car_explosion() -> AudioStreamWAV:
+	return _create_wav(22050, 1.2, func(t: float, dur: float) -> float:
+		var env: float = exp(-t * 3.5)
+		var sub: float = sin(t * TAU * (55.0 * exp(-t * 4.0))) * 0.9
+		var boom: float = (randf() * 2.0 - 1.0) * exp(-t * 6.0) * 0.8
+		var flame: float = (randf() * 2.0 - 1.0) * exp(-t * 2.0) * 0.35
+		return (sub + boom + flame) * env
+	)
+
+static func _generate_car_skid() -> AudioStreamWAV:
+	return _create_wav(22050, 0.35, func(t: float, dur: float) -> float:
+		var env: float = sin((t / dur) * PI)
+		var screech: float = sin(t * TAU * (750.0 + sin(t * 120.0) * 150.0)) * 0.5
+		var tire_rub: float = (randf() * 2.0 - 1.0) * 0.6
+		return (screech + tire_rub) * env * 0.7
+	)
+
+static func _generate_car_boost() -> AudioStreamWAV:
+	return _create_wav(22050, 0.4, func(t: float, dur: float) -> float:
+		var env: float = sin((t / dur) * PI)
+		var jet: float = (randf() * 2.0 - 1.0) * env * 0.65
+		var spool: float = sin(t * TAU * (300.0 + (t / dur) * 600.0)) * 0.4 * env
+		return jet + spool
 	)
 

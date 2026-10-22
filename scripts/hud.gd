@@ -657,6 +657,19 @@ func _build_settings_menu() -> void:
 		)
 		vbox_input.add_child(op_slider)
 
+		var lbl_steer := Label.new()
+		lbl_steer.text = "Управление машиной на таче:"
+		vbox_input.add_child(lbl_steer)
+		var opt_steer := OptionButton.new()
+		opt_steer.add_item("🔄 Поворотный руль", 0)
+		opt_steer.add_item("◀ ▶ Кнопки влево / вправо", 1)
+		opt_steer.selected = GameSettings.vehicle_touch_steering
+		opt_steer.item_selected.connect(func(idx: int):
+			GameSettings.vehicle_touch_steering = idx
+			GameSettings.save_to_disk()
+		)
+		vbox_input.add_child(opt_steer)
+
 		var btn_edit_hud := Button.new()
 		btn_edit_hud.text = "Настроить расположение и размер кнопок"
 		btn_edit_hud.theme_type_variation = "AccentButton"

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MapData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/map_data.gd" id="1_map"]
+
+[resource]
+script = ExtResource("1_map")
+id = "highway_fury"
+display_name = "🏎️ Дорога ярости"
+description = "Бесконечное кибер-шоссе над бездной. Тараньте врагов, взлетайте на трамплинах и выживайте любой ценой!"
+scene_path = "res://scenes/highway_arena.tscn"
+supported_modes = ["highway_fury"]
