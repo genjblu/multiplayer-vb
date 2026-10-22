@@ -267,6 +267,9 @@ func _ready() -> void:
 	else:
 		default_capsule_height = standing_height
 
+	if weapon_ray:
+		weapon_ray.add_exception(self)
+
 	if not is_local_player():
 		camera.clear_current()
 		touch_ui.hide()
@@ -1042,7 +1045,7 @@ func shoot() -> void:
 			_handle_ray_impact()
 			if weapon_ray.is_colliding():
 				var collider = weapon_ray.get_collider()
-				if collider and collider.has_method("take_damage"):
+				if collider and collider != self and not is_ancestor_of(collider) and collider.has_method("take_damage"):
 					var dist: float = weapon_ray.global_position.distance_to(weapon_ray.get_collision_point())
 					var factor: float = 1.0
 					if dist > falloff_start:
@@ -1066,7 +1069,7 @@ func shoot() -> void:
 		_handle_ray_impact()
 		if weapon_ray.is_colliding():
 			var collider = weapon_ray.get_collider()
-			if collider and collider.has_method("take_damage"):
+			if collider and collider != self and not is_ancestor_of(collider) and collider.has_method("take_damage"):
 				var dmg: float = float(stats["damage"])
 				var is_headshot: bool = false
 
@@ -1142,6 +1145,10 @@ func take_damage(amount: int, attacker_id: int, weapon_name: String = "", is_hea
 		return
 
 	if Time.get_ticks_msec() / 1000.0 < invulnerable_until:
+		return
+
+	# Защита от нанесения урона самому себе из своего оружия
+	if attacker_id != 0 and attacker_id == my_id:
 		return
 
 	# Проверка огня по своим (Friendly Fire)
@@ -1336,7 +1343,7 @@ func _handle_ray_impact() -> void:
 	if not weapon_ray.is_colliding():
 		return
 	var hit_collider = weapon_ray.get_collider()
-	if hit_collider and hit_collider.has_method("take_damage"):
+	if hit_collider == self or is_ancestor_of(hit_collider) or (hit_collider and hit_collider.has_method("take_damage")):
 		return
 	BulletDecals.spawn_hit(weapon_ray.get_collision_point(), weapon_ray.get_collision_normal())
 

@@ -10,7 +10,7 @@
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_g2els"]
 radius = 0.31054688
-height = 1.7207031
+height = 1.5524902
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_player"]
 properties/0/path = NodePath(".:sync_position")
@@ -34,13 +34,13 @@ properties/3/replication_mode = 1
 
 [sub_resource type="BoxMesh" id="BoxMesh_fjrip"]
 
-[node name="Player" type="CharacterBody3D" unique_id=433830383 groups=["players"] node_paths=PackedStringArray("scope_overlay")]
+[node name="Player" type="CharacterBody3D" unique_id=433830383 node_paths=PackedStringArray("scope_overlay") groups=["players"]]
 script = ExtResource("1_3vyb7")
 slide_duration = 1.0
 scope_overlay = NodePath("TouchUI/TouchOverlay/HUDContainer/ScopeOverlay")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1710694542]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86035156, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9154053, 0)
 shape = SubResource("CapsuleShape3D_g2els")
 
 [node name="SoldierModel" parent="." unique_id=1789159928 instance=ExtResource("7_soldier")]
