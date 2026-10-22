@@ -521,7 +521,7 @@ func _build_pause_menu(root: Control) -> void:
 		btn_steering.custom_minimum_size = Vector2(0, 38)
 		btn_steering.pressed.connect(func():
 			GameSettings.vehicle_touch_steering = 1 if GameSettings.vehicle_touch_steering == 0 else 0
-			GameSettings.save_settings()
+			GameSettings.save_to_disk()
 			update_steer_label.call()
 			var hud_root = vehicle_hud_layer.get_node_or_null("VehicleHUD") if vehicle_hud_layer else null
 			if hud_root:

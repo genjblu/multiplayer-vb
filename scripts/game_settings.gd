@@ -71,6 +71,9 @@ static func set_language(lang_code: String) -> void:
 	TranslationServer.set_locale(lang_code)
 	save_to_disk()
 
+static func save_settings() -> void:
+	save_to_disk()
+
 static func save_to_disk() -> void:
 	var cfg := ConfigFile.new()
 
