@@ -31,29 +31,27 @@ func _ready() -> void:
 		_spawn_player(1)
 	elif is_server:
 		ready_peers[1] = true
-		if GameStats.players.size() <= 1:
-			_spawn_player(1)
-		else:
-			# Запасной таймер на случай задержки сети у клиентов
-			get_tree().create_timer(3.5).timeout.connect(func():
-				if is_instance_valid(self):
-					_spawn_all_pending_players()
-			)
+		_spawn_player(1)
 	elif has_peer:
 		# Клиент рапортует хосту, что сцена загружена
 		_notify_ready_to_server.rpc_id(1)
+		_start_client_resync_check()
 
 var ready_peers: Dictionary = {}
 
-func _spawn_all_pending_players() -> void:
-	if not multiplayer.is_server():
-		return
-	if not has_node("1"):
-		_spawn_player(1)
-	for pid in ready_peers.keys():
-		var id := int(pid)
-		if id > 1 and not has_node(str(id)):
-			_spawn_player(id)
+func _start_client_resync_check() -> void:
+	var tw := create_tween()
+	tw.tween_interval(1.2)
+	tw.tween_callback(func():
+		if not is_instance_valid(self) or not multiplayer.has_multiplayer_peer() or multiplayer.is_server():
+			return
+		var current_player_nodes: int = 0
+		for child in get_children():
+			if child is CharacterBody3D and child.name.is_valid_int():
+				current_player_nodes += 1
+		if current_player_nodes < GameStats.players.size():
+			_request_resync.rpc_id(1)
+	)
 
 func _handle_late_join_flow() -> void:
 	if not multiplayer.has_multiplayer_peer():
@@ -169,7 +167,20 @@ func _notify_ready_to_server() -> void:
 		peer_id = multiplayer.get_unique_id()
 	print("[Arena] Peer ready in scene: ", peer_id)
 	ready_peers[peer_id] = true
-	_spawn_all_pending_players()
+
+	# 1. Спавним этого игрока на сервере, если он ещё не заспавнен
+	if not has_node(str(peer_id)):
+		_spawn_player(peer_id)
+
+	# 2. Немедленно отправляем подключившемуся клиенту полный снимок ВСЕХ активных игроков
+	_sync_all_players_to(peer_id)
+
+	# 3. Всем остальным клиентам отправляем данные о новом игроке
+	var new_p_data := _get_player_sync_data(peer_id)
+	for oid in ready_peers.keys():
+		var target_id := int(oid)
+		if target_id != peer_id and target_id != 1:
+			_sync_single_player.rpc_id(target_id, new_p_data)
 
 func _show_late_join_team_selection() -> void:
 	if team_dialog_canvas and is_instance_valid(team_dialog_canvas):
@@ -271,37 +282,94 @@ func request_late_spawn(target_peer_id: int, team_id: int, col: Color) -> void:
 func spawn_player_for_peer(peer_id: int) -> void:
 	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
 		return
+	ready_peers[peer_id] = true
 	if not has_node(str(peer_id)):
 		_spawn_player(peer_id)
 
-	# Отправляем новому игроку данные обо всех уже существующих игроках
-	# на случай, если пакеты MultiplayerSpawner были пропущены до входа в арену
+	_sync_all_players_to(peer_id)
+	var new_p_data := _get_player_sync_data(peer_id)
+	for oid in ready_peers.keys():
+		var target_id := int(oid)
+		if target_id != peer_id and target_id != 1:
+			_sync_single_player.rpc_id(target_id, new_p_data)
+
+func _sync_all_players_to(target_peer_id: int) -> void:
 	var existing: Array = []
 	for child in get_children():
 		if child is CharacterBody3D and child.name.is_valid_int():
 			var pid: int = child.name.to_int()
-			existing.append({
-				"id": pid,
-				"pos": child.global_position,
-				"team": GameStats.get_player_team(pid)
-			})
-	_sync_existing_players.rpc_id(peer_id, existing)
+			existing.append(_get_player_sync_data(pid))
+	_sync_existing_players.rpc_id(target_peer_id, existing)
+
+func _get_player_sync_data(peer_id: int) -> Dictionary:
+	var p_node := get_node_or_null(str(peer_id)) as CharacterBody3D
+	var pos: Vector3 = p_node.global_position if p_node else get_spawn_position(GameStats.get_player_team(peer_id))
+	var rot_y: float = p_node.rotation.y if p_node else 0.0
+	var w_type: int = int(p_node.current_weapon) if (p_node and "current_weapon" in p_node) else 0
+	return {
+		"id": peer_id,
+		"pos": pos,
+		"rot_y": rot_y,
+		"team": GameStats.get_player_team(peer_id),
+		"color": GameStats.get_player_color(peer_id),
+		"weapon": w_type
+	}
+
+@rpc("any_peer", "call_local", "reliable")
+func _request_resync() -> void:
+	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
+		return
+	var sender_id := multiplayer.get_remote_sender_id()
+	if sender_id == 0:
+		sender_id = multiplayer.get_unique_id()
+	_sync_all_players_to(sender_id)
 
 @rpc("authority", "call_local", "reliable")
 func _sync_existing_players(players_data: Array) -> void:
 	if multiplayer.is_server():
 		return
 	for p_info in players_data:
-		var pid: int = int(p_info.get("id", 0))
-		if pid <= 0:
-			continue
-		var node_name := str(pid)
-		if not has_node(node_name):
-			var player_instance = player_scene.instantiate()
-			player_instance.name = node_name
-			player_instance.position = p_info.get("pos", Vector3.ZERO)
-			player_instance.set_multiplayer_authority(pid)
-			add_child(player_instance)
+		_apply_player_data(p_info)
+
+@rpc("authority", "call_local", "reliable")
+func _sync_single_player(p_info: Dictionary) -> void:
+	if multiplayer.is_server():
+		return
+	_apply_player_data(p_info)
+
+func _apply_player_data(p_info: Dictionary) -> void:
+	var pid: int = int(p_info.get("id", 0))
+	if pid <= 0:
+		return
+	var node_name := str(pid)
+	var player_instance := get_node_or_null(node_name) as CharacterBody3D
+	var is_new: bool = false
+	if player_instance == null:
+		player_instance = player_scene.instantiate() as CharacterBody3D
+		player_instance.name = node_name
+		player_instance.position = p_info.get("pos", Vector3.ZERO)
+		player_instance.set_multiplayer_authority(pid)
+		add_child(player_instance)
+		is_new = true
+
+	if is_instance_valid(player_instance):
+		var pos: Vector3 = p_info.get("pos", player_instance.global_position)
+		if is_new or player_instance.global_position.distance_squared_to(pos) > 25.0:
+			player_instance.global_position = pos
+		player_instance.sync_position = pos
+		if p_info.has("rot_y"):
+			player_instance.rotation.y = float(p_info["rot_y"])
+		if p_info.has("weapon"):
+			var w_type: int = int(p_info["weapon"])
+			if player_instance.has_method("_switch_weapon") and player_instance.current_weapon != w_type:
+				player_instance._switch_weapon(w_type)
+		if player_instance.has_method("_update_body_color"):
+			player_instance._update_body_color()
+
+		var is_local: bool = (pid == multiplayer.get_unique_id())
+		var soldier = player_instance.get_node_or_null("SoldierModel")
+		if soldier:
+			soldier.visible = not is_local
 
 func _spawn_player(peer_id: int) -> void:
 	if not multiplayer.has_multiplayer_peer() or not multiplayer.is_server():
@@ -340,6 +408,7 @@ func get_spawn_position(team_id: int = 0) -> Vector3:
 	return Vector3(randf_range(-4, 4), 2.0, randf_range(-4, 4))
 
 func _remove_player(peer_id: int) -> void:
+	ready_peers.erase(peer_id)
 	var p = get_node_or_null(str(peer_id))
 	if p:
 		p.queue_free()

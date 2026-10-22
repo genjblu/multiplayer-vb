@@ -105,7 +105,9 @@ func _flash_effect(is_headshot: bool) -> void:
 	flash_mat.emission_energy_multiplier = 2.0
 	mesh_inst.set_surface_override_material(0, flash_mat)
 
-	get_tree().create_timer(0.08).timeout.connect(func():
+	var tw := mesh_inst.create_tween()
+	tw.tween_interval(0.08)
+	tw.tween_callback(func():
 		if is_instance_valid(mesh_inst):
 			mesh_inst.set_surface_override_material(0, orig_mat)
 	)

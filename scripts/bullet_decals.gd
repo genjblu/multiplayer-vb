@@ -67,7 +67,9 @@ func _spawn_local(pos: Vector3, normal: Vector3) -> void:
 	_decals.append(node)
 	while _decals.size() > MAX_DECALS:
 		_remove(_decals[0])
-	get_tree().create_timer(LIFETIME).timeout.connect(func(): _remove(node))
+	var tw := node.create_tween()
+	tw.tween_interval(LIFETIME)
+	tw.tween_callback(func(): _remove(node))
 
 func _remove(node: Node3D) -> void:
 	_decals.erase(node)

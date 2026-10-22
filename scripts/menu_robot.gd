@@ -244,7 +244,9 @@ func take_hit(amount: float, attacker: MenuRobot) -> void:
 	# Вспышка попадания
 	if soldier_model:
 		soldier_model.set_team_color(Color.WHITE)
-		get_tree().create_timer(0.08).timeout.connect(func():
+		var tw := soldier_model.create_tween()
+		tw.tween_interval(0.08)
+		tw.tween_callback(func():
 			if is_instance_valid(soldier_model):
 				soldier_model.set_team_color(team_color)
 		)

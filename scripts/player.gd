@@ -278,9 +278,15 @@ func _enter_tree() -> void:
 func is_local_player() -> bool:
 	if not multiplayer.has_multiplayer_peer():
 		return true
+	var pid: int = name.to_int()
+	if pid > 0:
+		return pid == multiplayer.get_unique_id()
 	return is_multiplayer_authority()
 
 func _ready() -> void:
+	sync_position = global_position
+	sync_rotation = Vector3(head.rotation.x, rotation.y, float(current_weapon))
+
 	if not is_in_group("players"):
 		add_to_group("players")
 	if scope_overlay == null:
@@ -313,6 +319,14 @@ func _ready() -> void:
 	if weapon_ray:
 		weapon_ray.add_exception(self)
 
+	# Своё 3D-тело скрываем для себя в виде от первого лица, но ДЛЯ ДРУГИХ игроков оно ВСЕГДА ДОЛЖНО БЫТЬ ВИДНО!
+	var soldier = get_node_or_null("SoldierModel")
+	if soldier:
+		soldier.visible = not is_local_player()
+	var body_mesh = get_node_or_null("MeshInstance3D")
+	if body_mesh:
+		body_mesh.visible = not is_local_player()
+
 	if not is_local_player():
 		camera.clear_current()
 		touch_ui.hide()
@@ -321,13 +335,6 @@ func _ready() -> void:
 	camera.make_current()
 	if multiplayer.has_multiplayer_peer():
 		GameStats.register_name.rpc_id(1, GameStats.local_nick)
-	# Своё 3D-тело скрываем для себя в виде от первого лица (чтобы голова не перекрывала камеру)
-	var soldier = get_node_or_null("SoldierModel")
-	if soldier:
-		soldier.visible = not is_local_player()
-	var body_mesh = get_node_or_null("MeshInstance3D")
-	if body_mesh:
-		body_mesh.visible = not is_local_player()
 
 	GameSettings.apply_to_player(self)
 	health_changed.emit(health)
@@ -1136,7 +1143,12 @@ func shoot() -> void:
 
 	if muzzle_flash:
 		muzzle_flash.visible = true
-		get_tree().create_timer(0.05).timeout.connect(func(): if muzzle_flash: muzzle_flash.visible = false)
+		var tw_mf := muzzle_flash.create_tween()
+		tw_mf.tween_interval(0.05)
+		tw_mf.tween_callback(func():
+			if is_instance_valid(muzzle_flash):
+				muzzle_flash.visible = false
+		)
 
 	# === ЦИКЛ ВЗВОДА ЗАТВОРА ДЛЯ СНАЙПЕРКИ (AWP) ===
 	var is_sniper: bool = (current_weapon == WeaponType.SNIPER)
@@ -1150,11 +1162,10 @@ func shoot() -> void:
 		is_ads = false
 
 		# Окончание цикла затвора
-		get_tree().create_timer(cycle_delay).timeout.connect(func():
-			if not is_instance_valid(self):
-				return
+		var tw_bolt := create_tween()
+		tw_bolt.tween_interval(cycle_delay)
+		tw_bolt.tween_callback(func():
 			is_cycling_bolt = false
-
 			# Если игрок всё ещё удерживает ПКМ — возвращаем зум
 			if not is_reloading and Input.is_action_pressed("ads"):
 				is_ads = true
@@ -1425,7 +1436,9 @@ func rpc_on_fired() -> void:
 
 	if muzzle_flash:
 		muzzle_flash.visible = true
-		get_tree().create_timer(0.05).timeout.connect(func():
+		var tw_mf := muzzle_flash.create_tween()
+		tw_mf.tween_interval(0.05)
+		tw_mf.tween_callback(func():
 			if is_instance_valid(muzzle_flash):
 				muzzle_flash.visible = false
 		)
@@ -1531,8 +1544,10 @@ func _update_body_color() -> void:
 
 	# 1. Красим 3D-модель бойца (бронежилет, полосы шлема, повязка)
 	var soldier = get_node_or_null("SoldierModel")
-	if soldier and soldier.has_method("set_team_color"):
-		soldier.set_team_color(col)
+	if soldier:
+		soldier.visible = not is_local_player()
+		if soldier.has_method("set_team_color"):
+			soldier.set_team_color(col)
 
 	var body_mesh = get_node_or_null("MeshInstance3D") as MeshInstance3D
 	if body_mesh:

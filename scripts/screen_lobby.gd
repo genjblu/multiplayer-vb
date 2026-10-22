@@ -152,7 +152,9 @@ func _on_copy_code_pressed() -> void:
 	if not current_room_code.is_empty():
 		DisplayServer.clipboard_set(current_room_code)
 		copy_btn.text = tr("CODE_COPIED")
-		get_tree().create_timer(1.8).timeout.connect(func():
+		var tw := copy_btn.create_tween()
+		tw.tween_interval(1.8)
+		tw.tween_callback(func():
 			if is_instance_valid(copy_btn):
 				copy_btn.text = tr("BTN_COPY_CODE")
 		)
