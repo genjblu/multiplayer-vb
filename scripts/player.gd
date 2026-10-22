@@ -359,21 +359,36 @@ func _switch_weapon(type: WeaponType) -> void:
 			current_weapon_node = weapon_sniper
 
 	var view_scene: PackedScene = stats.get("view_scene", null)
-	if view_scene != null and weapon_holder != null:
-		# Новый способ: сцена оружия с анимациями
+	if view_scene != null:
+		# Сцена оружия с анимациями
 		current_view = view_scene.instantiate() as Node3D
-		weapon_holder.add_child(current_view)
-		current_view.position = stats.get("hip_pos", Vector3(0.2, -0.2, -0.4))
-		current_weapon_node = current_view
-		if current_view.has_method("setup_ammo_3d_params"):
-			var a_off: Vector3 = stats.get("ammo_3d_offset", Vector3(-0.06, 0.05, -0.18))
-			var a_rot: Vector3 = stats.get("ammo_3d_rotation_deg", Vector3.ZERO)
-			var a_font: int = stats.get("ammo_3d_font_size", 96)
-			var a_scale: float = stats.get("ammo_3d_scale", 0.0005)
-			current_view.call("setup_ammo_3d_params", a_off, a_rot, a_font, a_scale)
-		_sync_weapon_ammo_3d(current_ammo, reserve_ammo)
-		_update_viewmodel_hands_color()
-		_update_viewmodel_hands_visibility()
+		if is_local_player():
+			if weapon_holder != null:
+				weapon_holder.add_child(current_view)
+				current_view.position = stats.get("hip_pos", Vector3(0.2, -0.2, -0.4))
+				current_view.rotation = Vector3.ZERO
+			current_weapon_node = current_view
+			if current_view.has_method("setup_ammo_3d_params"):
+				var a_off: Vector3 = stats.get("ammo_3d_offset", Vector3(-0.06, 0.05, -0.18))
+				var a_rot: Vector3 = stats.get("ammo_3d_rotation_deg", Vector3.ZERO)
+				var a_font: int = stats.get("ammo_3d_font_size", 96)
+				var a_scale: float = stats.get("ammo_3d_scale", 0.0005)
+				current_view.call("setup_ammo_3d_params", a_off, a_rot, a_font, a_scale)
+			_sync_weapon_ammo_3d(current_ammo, reserve_ammo)
+			_setup_robot_viewmodel_hands(current_view)
+			_update_viewmodel_hands_visibility()
+		else:
+			# Для удалённых игроков оружие крепится прямо к правой руке 3D-модели робота (SoldierModel)
+			var soldier: SoldierModel = get_node_or_null("SoldierModel") as SoldierModel
+			var mount: Node3D = soldier.get_weapon_mount() if (soldier and soldier.has_method("get_weapon_mount")) else null
+			if mount != null:
+				mount.add_child(current_view)
+				current_view.position = Vector3.ZERO
+				current_view.rotation = Vector3.ZERO
+			elif weapon_holder != null:
+				weapon_holder.add_child(current_view)
+			current_weapon_node = current_view
+			_update_viewmodel_hands_visibility()
 	elif current_weapon_node:
 		# Старый способ: узел-заглушка (запасной вариант)
 		current_weapon_node.visible = true
@@ -671,14 +686,16 @@ func _physics_process(delta: float) -> void:
 		if soldier and soldier.has_method("update_animation"):
 			soldier.update_animation(delta, rem_speed, rem_on_floor, rem_sprint, rem_crouch, rem_slide, head.rotation.x, rem_wall_run, rem_wall_side, rem_mantle)
 
-		# 5. Позиционирование оружия от 3-го лица для удалённого наблюдателя
+		# 5. Оружие от 3-го лица для удалённого наблюдателя
 		if is_instance_valid(current_view):
 			current_view.visible = true
 			_update_viewmodel_hands_visibility()
-			var base_pos: Vector3 = Vector3(0.08, -0.20, -0.38)
-			var ads_pos: Vector3 = Vector3(0.02, -0.15, -0.35)
-			var target_pos: Vector3 = ads_pos if rem_ads else base_pos
-			current_view.position = current_view.position.lerp(target_pos, delta * 15.0)
+			var soldier: SoldierModel = get_node_or_null("SoldierModel") as SoldierModel
+			var mount: Node3D = soldier.get_weapon_mount() if (soldier and soldier.has_method("get_weapon_mount")) else null
+			if mount != null and current_view.get_parent() != mount:
+				current_view.reparent(mount)
+				current_view.position = Vector3.ZERO
+				current_view.rotation = Vector3.ZERO
 
 		return
 
@@ -1370,28 +1387,13 @@ func _update_body_color() -> void:
 
 func _update_viewmodel_hands_color() -> void:
 	var peer_id: int = name.to_int()
-	var col: Color = GameStats.get_player_color(peer_id)
+	var col: Color = GameStats.get_player_color(peer_id) if GameStats else Color(1.0, 0.55, 0.1)
 
-	# Загружаем базовый материал и делаем УНИКАЛЬНУЮ копию для этой копии игрока
-	var base_mat = load("res://materials/hands_material.tres") as StandardMaterial3D
-	if not base_mat:
-		return
-
-	var unique_hands_mat = base_mat.duplicate()
-	unique_hands_mat.albedo_color = col
-
-	# Ищем и красим меши рук внутри активного оружия
 	if is_instance_valid(current_view):
-		_apply_hands_material_recursive(current_view, unique_hands_mat)
-
-func _apply_hands_material_recursive(node: Node, mat: Material) -> void:
-	if node is MeshInstance3D:
-		var m_name := node.name.to_lower()
-		# Проверяем, что это меш рук/перчаток
-		if "hand" in m_name or "arm" in m_name or "glove" in m_name or "руки" in m_name or "кисть" in m_name:
-			node.material_override = mat
-	for child in node.get_children():
-		_apply_hands_material_recursive(child, mat)
+		for band in current_view.find_children("RobotArmBand*", "MeshInstance3D", true, false):
+			var band_mesh := band as MeshInstance3D
+			if band_mesh and band_mesh.material_override is StandardMaterial3D:
+				(band_mesh.material_override as StandardMaterial3D).albedo_color = col
 
 func _update_viewmodel_hands_visibility() -> void:
 	if not is_instance_valid(current_view):
@@ -1402,10 +1404,126 @@ func _update_viewmodel_hands_visibility() -> void:
 func _apply_hands_visibility_recursive(node: Node, hands_visible: bool) -> void:
 	if node is Node3D:
 		var n_name := node.name.to_lower()
-		if "righthand" in n_name or "lefthand" in n_name or "arm_lower" in n_name:
+		if "righthand" in n_name or "lefthand" in n_name or "arm_lower" in n_name or "robotpalm" in n_name or "robotforearm" in n_name or "robotfinger" in n_name:
 			node.visible = hands_visible
 	for child in node.get_children():
 		_apply_hands_visibility_recursive(child, hands_visible)
+
+func _setup_robot_viewmodel_hands(weapon_node: Node3D) -> void:
+	if not is_instance_valid(weapon_node):
+		return
+
+	var peer_id: int = name.to_int()
+	var team_col: Color = GameStats.get_player_color(peer_id) if GameStats else Color(1.0, 0.55, 0.1)
+
+	# 1. Материалы, точно повторяющие стиль робота (SoldierModel)
+	var camo_mat := StandardMaterial3D.new()
+	camo_mat.albedo_color = Color(0.24, 0.26, 0.28, 1) # Тёмно-серая броня робота
+	camo_mat.roughness = 0.65
+	camo_mat.metallic = 0.25
+
+	var gear_mat := StandardMaterial3D.new()
+	gear_mat.albedo_color = Color(0.12, 0.13, 0.15, 1) # Тактическая перчатка / шарниры
+	gear_mat.roughness = 0.55
+	gear_mat.metallic = 0.5
+
+	var team_mat := StandardMaterial3D.new()
+	team_mat.albedo_color = team_col # Командная повязка
+	team_mat.roughness = 0.45
+	team_mat.metallic = 0.1
+
+	for hname in ["RightHand", "LeftHand"]:
+		var hand_node := weapon_node.find_child(hname, true, false) as Node3D
+		if not hand_node:
+			continue
+
+		var hand_mesh := hand_node.get_node_or_null("hand") as MeshInstance3D
+		if not hand_mesh:
+			continue
+
+		# Очищаем старую меш-форму кисти
+		hand_mesh.mesh = null
+		for old_c in hand_mesh.get_children():
+			if old_c is MeshInstance3D and old_c.name.begins_with("Robot"):
+				old_c.queue_free()
+
+		# 1. Блочная ладонь робота
+		var palm_mesh := BoxMesh.new()
+		palm_mesh.size = Vector3(1.6, 0.7, 1.8)
+		var palm_inst := MeshInstance3D.new()
+		palm_inst.name = "RobotPalm"
+		palm_inst.mesh = palm_mesh
+		palm_inst.position = Vector3(0, 0, -0.9)
+		palm_inst.material_override = gear_mat
+		hand_mesh.add_child(palm_inst)
+
+		# 2. Квадратное предплечье робота
+		var arm_mesh_inst := hand_mesh.get_node_or_null("arm_lower") as MeshInstance3D
+		if arm_mesh_inst:
+			arm_mesh_inst.mesh = null
+			for old_a in arm_mesh_inst.get_children():
+				if old_a is MeshInstance3D and old_a.name.begins_with("Robot"):
+					old_a.queue_free()
+
+			var a_mesh := BoxMesh.new()
+			a_mesh.size = Vector3(1.4, 1.3, 6.2)
+			var a_inst := MeshInstance3D.new()
+			a_inst.name = "RobotForearm"
+			a_inst.mesh = a_mesh
+			a_inst.position = Vector3(0, 0, 3.1)
+			a_inst.material_override = camo_mat
+			arm_mesh_inst.add_child(a_inst)
+
+			# 3. Повязка с цветом команды
+			var b_mesh := BoxMesh.new()
+			b_mesh.size = Vector3(1.5, 1.4, 1.2)
+			var b_inst := MeshInstance3D.new()
+			b_inst.name = "RobotArmBand"
+			b_inst.mesh = b_mesh
+			b_inst.position = Vector3(0, 0, 2.0)
+			b_inst.material_override = team_mat
+			arm_mesh_inst.add_child(b_inst)
+
+		# 4. Блочные суставы пальцев (следуют анимациям перезарядки)
+		for finger_prefix in ["index", "middle", "ring", "pinky", "thumb"]:
+			var j0 := hand_mesh.get_node_or_null(finger_prefix + "_0") as MeshInstance3D
+			if j0:
+				_build_robot_finger_chain(j0, gear_mat)
+
+func _build_robot_finger_chain(joint: MeshInstance3D, mat: Material) -> void:
+	joint.mesh = null
+	for old_f in joint.get_children():
+		if old_f is MeshInstance3D and old_f.name.begins_with("Robot"):
+			old_f.queue_free()
+
+	var child_joint: MeshInstance3D = null
+	for c in joint.get_children():
+		if c is MeshInstance3D and ("_" in c.name or "joint" in c.name.to_lower()) and not c.name.begins_with("Robot"):
+			child_joint = c
+			break
+
+	if child_joint:
+		var dist: float = child_joint.position.length()
+		if dist > 0.05:
+			var f_mesh := BoxMesh.new()
+			f_mesh.size = Vector3(0.36, 0.32, dist)
+			var f_inst := MeshInstance3D.new()
+			f_inst.name = "RobotFingerSegment"
+			f_inst.mesh = f_mesh
+			f_inst.position = child_joint.position * 0.5
+			f_inst.material_override = mat
+			joint.add_child(f_inst)
+		_build_robot_finger_chain(child_joint, mat)
+	else:
+		var tip_len: float = 0.45
+		var f_mesh := BoxMesh.new()
+		f_mesh.size = Vector3(0.34, 0.30, tip_len)
+		var f_inst := MeshInstance3D.new()
+		f_inst.name = "RobotFingertip"
+		f_inst.mesh = f_mesh
+		f_inst.position = Vector3(0, 0, -tip_len * 0.5)
+		f_inst.material_override = mat
+		joint.add_child(f_inst)
 			
 func _physics_process_target_info() -> void:
 	if not is_local_player() or not weapon_ray:

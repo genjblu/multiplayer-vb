@@ -225,3 +225,17 @@ func _animate_weapon_arms(delta: float, sprinting: bool, speed: float) -> void:
 		forearm_left.rotation.x = lerp_angle(forearm_left.rotation.x, target_l_forearm.x, delta * 12.0)
 		forearm_left.rotation.y = lerp_angle(forearm_left.rotation.y, target_l_forearm.y, delta * 12.0)
 		forearm_left.rotation.z = lerp_angle(forearm_left.rotation.z, target_l_forearm.z, delta * 12.0)
+
+var weapon_mount: Node3D = null
+
+func get_weapon_mount() -> Node3D:
+	_setup_nodes()
+	if weapon_mount == null and forearm_right != null:
+		weapon_mount = forearm_right.get_node_or_null("WeaponMount") as Node3D
+		if weapon_mount == null:
+			weapon_mount = Node3D.new()
+			weapon_mount.name = "WeaponMount"
+			weapon_mount.position = Vector3(0.02, -0.22, -0.05)
+			weapon_mount.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
+			forearm_right.add_child(weapon_mount)
+	return weapon_mount
