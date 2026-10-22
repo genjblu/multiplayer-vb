@@ -29,13 +29,14 @@ var hud_hp_bar: ProgressBar = null
 var hud_nitro_bar: ProgressBar = null
 var local_car: VehicleBody3D = null
 
-# Мобильные элементы управления
+# Мобильные элементы управления и HUD
 var mobile_wheel: Control = null
 var gas_btn: TextureButton = null
 var brake_btn: TextureButton = null
-var handbrake_btn: TextureButton = null
 var cam_btn: TextureButton = null
 var fire_btn: TextureButton = null
+var pause_menu: Control = null
+var is_paused: bool = false
 
 func _ready() -> void:
 	if multiplayer.has_multiplayer_peer() and multiplayer.is_server():
@@ -54,6 +55,9 @@ func _ready() -> void:
 	if net_mgr:
 		net_mgr.player_disconnected.connect(_on_player_disconnected)
 
+	# Создаем HUD до спавна участников, чтобы элементы управления уже существовали
+	_build_vehicle_hud()
+
 	var has_peer := multiplayer.has_multiplayer_peer()
 	var is_server := has_peer and multiplayer.is_server()
 
@@ -63,8 +67,6 @@ func _ready() -> void:
 		_notify_ready_to_server()
 	else:
 		_notify_ready_to_server.rpc_id(1)
-
-	_build_vehicle_hud()
 
 @rpc("authority", "call_local", "reliable")
 func _sync_match_seed(s: int) -> void:
@@ -81,6 +83,11 @@ func _notify_ready_to_server() -> void:
 	_spawn_combat_participant(peer_id)
 
 func _spawn_solo_game() -> void:
+	# Спавним солдата для корректной работы оружия и вида
+	var p_node := player_scene.instantiate()
+	p_node.name = "1"
+	add_child(p_node)
+
 	# Одиночный тестовый заезд
 	var car := car_scene.instantiate() as CombatCarClass
 	car.name = "Car_1"
@@ -89,6 +96,8 @@ func _spawn_solo_game() -> void:
 	car.driver_peer_id = 1
 	player_cars[1] = car
 	local_car = car
+
+	car.assign_player_to_seat(1, 0, p_node)
 	_attach_local_hud(car)
 
 func _spawn_combat_participant(peer_id: int) -> void:
@@ -401,19 +410,159 @@ func _build_vehicle_hud() -> void:
 	if is_mobile:
 		_build_mobile_driving_controls(root)
 
-func _build_mobile_driving_controls(root: Control) -> void:
+	# 3. Кнопка меню (паузы) в верхнем левом углу
+	var pause_btn := Button.new()
+	pause_btn.name = "PauseButton"
+	pause_btn.text = "⏸ Меню"
+	pause_btn.theme = UITheme.build()
+	pause_btn.custom_minimum_size = Vector2(105, 42)
+	pause_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	pause_btn.offset_left = 20
+	pause_btn.offset_top = 20
+	pause_btn.offset_right = 125
+	pause_btn.offset_bottom = 62
+	pause_btn.pressed.connect(_toggle_pause)
+	root.add_child(pause_btn)
+
+	# 4. Переключатель вида камеры в верхнем правом углу
+	cam_btn = TextureButton.new()
+	cam_btn.name = "CamToggleBtn"
+	cam_btn.texture_normal = load("res://gui/cam_toggle.svg")
+	cam_btn.ignore_texture_size = true
+	cam_btn.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	cam_btn.custom_minimum_size = Vector2(50, 50)
+	cam_btn.size = Vector2(50, 50)
+	cam_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	cam_btn.offset_left = -70
+	cam_btn.offset_top = 20
+	cam_btn.offset_right = -20
+	cam_btn.offset_bottom = 70
+	cam_btn.pressed.connect(func(): if local_car: local_car.toggle_camera_mode())
+	root.add_child(cam_btn)
+
+	# 5. Меню паузы
+	_build_pause_menu(root)
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		_toggle_pause()
+		get_viewport().set_input_as_handled()
+
+func _toggle_pause() -> void:
+	is_paused = not is_paused
+	if pause_menu:
+		pause_menu.visible = is_paused
+		pause_menu.mouse_filter = Control.MOUSE_FILTER_STOP if is_paused else Control.MOUSE_FILTER_IGNORE
+
+	if is_paused:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	else:
+		var is_mobile := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or DisplayServer.is_touchscreen_available()
+		if not is_mobile:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+func _build_pause_menu(root: Control) -> void:
+	pause_menu = Control.new()
+	pause_menu.name = "PauseMenu"
+	pause_menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	pause_menu.visible = false
+	pause_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(pause_menu)
+
+	var bg := ColorRect.new()
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	bg.color = Color(0, 0, 0, 0.65)
+	bg.mouse_filter = Control.MOUSE_FILTER_STOP
+	pause_menu.add_child(bg)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_PASS
+	pause_menu.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.theme = UITheme.build()
+	panel.custom_minimum_size = Vector2(340, 260)
+	center.add_child(panel)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 12)
+	panel.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "ПАУЗА"
+	title.theme_type_variation = "HeadingLabel"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.modulate = Color(1.0, 0.85, 0.2)
+	vbox.add_child(title)
+
+	vbox.add_child(HSeparator.new())
+
+	var btn_resume := Button.new()
+	btn_resume.text = "Продолжить"
+	btn_resume.custom_minimum_size = Vector2(0, 42)
+	btn_resume.pressed.connect(_toggle_pause)
+	vbox.add_child(btn_resume)
+
+	var btn_cam := Button.new()
+	btn_cam.text = "Сменить вид камеры"
+	btn_cam.custom_minimum_size = Vector2(0, 38)
+	btn_cam.pressed.connect(func():
+		if local_car: local_car.toggle_camera_mode()
+	)
+	vbox.add_child(btn_cam)
+
+	var is_mobile := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or DisplayServer.is_touchscreen_available()
+	if is_mobile:
+		var btn_steering := Button.new()
+		var update_steer_label = func():
+			btn_steering.text = "Управление: Стрелки" if GameSettings.vehicle_touch_steering == 1 else "Управление: Руль"
+		update_steer_label.call()
+		btn_steering.custom_minimum_size = Vector2(0, 38)
+		btn_steering.pressed.connect(func():
+			GameSettings.vehicle_touch_steering = 1 if GameSettings.vehicle_touch_steering == 0 else 0
+			GameSettings.save_settings()
+			update_steer_label.call()
+			var hud_root = vehicle_hud_layer.get_node_or_null("VehicleHUD") if vehicle_hud_layer else null
+			if hud_root:
+				var cur_wheel = hud_root.get_node_or_null("VirtualWheel")
+				if cur_wheel: cur_wheel.queue_free()
+				var cur_bl = hud_root.get_node_or_null("BtnLeft")
+				if cur_bl: cur_bl.queue_free()
+				var cur_br = hud_root.get_node_or_null("BtnRight")
+				if cur_br: cur_br.queue_free()
+				_setup_mobile_steering(hud_root)
+		)
+		vbox.add_child(btn_steering)
+
+	var btn_quit := Button.new()
+	btn_quit.text = "Выход в главное меню"
+	btn_quit.custom_minimum_size = Vector2(0, 42)
+	btn_quit.modulate = Color(1.0, 0.4, 0.4)
+	btn_quit.pressed.connect(func():
+		GameStats.reset_stats()
+		LanDiscovery.stop_broadcast()
+		BulletDecals.clear_all()
+		var net_disconnect = get_node_or_null("/root/NetworkManager")
+		if net_disconnect:
+			net_disconnect.disconnect_peer()
+		else:
+			get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
+	)
+	vbox.add_child(btn_quit)
+
+func _setup_mobile_steering(root: Control) -> void:
 	var use_buttons: bool = (GameSettings.vehicle_touch_steering == 1)
 	if not use_buttons:
-		# Интерактивный поворотный руль слева
 		mobile_wheel = VirtualSteeringWheelClass.new()
 		mobile_wheel.name = "VirtualWheel"
 		mobile_wheel.custom_minimum_size = Vector2(190, 190)
 		mobile_wheel.size = Vector2(190, 190)
 		mobile_wheel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-		mobile_wheel.offset_left = 40
-		mobile_wheel.offset_top = -230
-		mobile_wheel.offset_right = 230
-		mobile_wheel.offset_bottom = -40
+		mobile_wheel.offset_left = 35
+		mobile_wheel.offset_top = -225
+		mobile_wheel.offset_right = 225
+		mobile_wheel.offset_bottom = -35
 		root.add_child(mobile_wheel)
 
 		var wheel_tex := TextureRect.new()
@@ -425,55 +574,53 @@ func _build_mobile_driving_controls(root: Control) -> void:
 		wheel_tex.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		mobile_wheel.add_child(wheel_tex)
 		mobile_wheel.wheel_node = wheel_tex
+		if local_car:
+			mobile_wheel.vehicle_target = local_car
 	else:
-		# Кнопки влево / вправо
 		var btn_left := Button.new()
+		btn_left.name = "BtnLeft"
 		btn_left.text = "◀"
 		btn_left.add_theme_font_size_override("font_size", 28)
-		btn_left.custom_minimum_size = Vector2(90, 90)
+		btn_left.custom_minimum_size = Vector2(85, 85)
 		btn_left.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 		btn_left.offset_left = 30
-		btn_left.offset_top = -140
-		btn_left.offset_right = 120
+		btn_left.offset_top = -135
+		btn_left.offset_right = 115
 		btn_left.offset_bottom = -50
 		btn_left.button_down.connect(func(): if local_car: local_car.touch_steering = -1.0)
 		btn_left.button_up.connect(func(): if local_car: local_car.touch_steering = 0.0)
 		root.add_child(btn_left)
 
 		var btn_right := Button.new()
+		btn_right.name = "BtnRight"
 		btn_right.text = "▶"
 		btn_right.add_theme_font_size_override("font_size", 28)
-		btn_right.custom_minimum_size = Vector2(90, 90)
+		btn_right.custom_minimum_size = Vector2(85, 85)
 		btn_right.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
-		btn_right.offset_left = 140
-		btn_right.offset_top = -140
-		btn_right.offset_right = 230
+		btn_right.offset_left = 135
+		btn_right.offset_top = -135
+		btn_right.offset_right = 220
 		btn_right.offset_bottom = -50
 		btn_right.button_down.connect(func(): if local_car: local_car.touch_steering = 1.0)
 		btn_right.button_up.connect(func(): if local_car: local_car.touch_steering = 0.0)
 		root.add_child(btn_right)
 
-	# Педаль газа (справа внизу)
-	gas_btn = _create_touch_pedal("res://gui/gas_pedal.svg", Vector2(-130, -210), Vector2(90, 150), root)
+func _build_mobile_driving_controls(root: Control) -> void:
+	# 1. Поворот (руль или кнопки) слева
+	_setup_mobile_steering(root)
+
+	# 2. Педаль газа (справа внизу)
+	gas_btn = _create_touch_pedal("res://gui/gas_pedal.svg", Vector2(-115, -175), Vector2(85, 140), root)
 	gas_btn.button_down.connect(func(): if local_car: local_car.touch_gas = 1.0)
 	gas_btn.button_up.connect(func(): if local_car: local_car.touch_gas = 0.0)
 
-	# Педаль тормоза / заднего хода (левее газа)
-	brake_btn = _create_touch_pedal("res://gui/brake_pedal.svg", Vector2(-250, -180), Vector2(100, 120), root)
+	# 3. Педаль тормоза / заднего хода (левее газа)
+	brake_btn = _create_touch_pedal("res://gui/brake_pedal.svg", Vector2(-225, -160), Vector2(95, 110), root)
 	brake_btn.button_down.connect(func(): if local_car: local_car.touch_brake = 1.0)
 	brake_btn.button_up.connect(func(): if local_car: local_car.touch_brake = 0.0)
 
-	# Ручник (выше тормоза)
-	handbrake_btn = _create_touch_pedal("res://gui/handbrake.svg", Vector2(-250, -280), Vector2(80, 80), root)
-	handbrake_btn.button_down.connect(func(): if local_car: local_car.input_handbrake = true)
-	handbrake_btn.button_up.connect(func(): if local_car: local_car.input_handbrake = false)
-
-	# Переключатель вида камеры (сверху справа)
-	cam_btn = _create_touch_pedal("res://gui/cam_toggle.svg", Vector2(-90, -320), Vector2(70, 70), root)
-	cam_btn.pressed.connect(func(): if local_car: local_car.toggle_camera_mode())
-
-	# Кнопка стрельбы из автопушек
-	fire_btn = _create_touch_pedal("res://gui/shoot.svg", Vector2(-130, -420), Vector2(90, 90), root)
+	# 4. Кнопка стрельбы из автопушек (над газом)
+	fire_btn = _create_touch_pedal("res://gui/shoot.svg", Vector2(-115, -285), Vector2(85, 85), root)
 	fire_btn.button_down.connect(func():
 		if local_car: local_car.touch_fire_active = true
 	)
@@ -481,13 +628,14 @@ func _build_mobile_driving_controls(root: Control) -> void:
 		if local_car: local_car.touch_fire_active = false
 	)
 
-	# Кнопка нитро-ускорения (Буст)
-	var nitro_btn = _create_touch_pedal("res://gui/gas_pedal.svg", Vector2(-250, -380), Vector2(80, 80), root)
+	# 5. Кнопка нитро-ускорения (Буст, над тормозом)
+	var nitro_btn = _create_touch_pedal("res://gui/gas_pedal.svg", Vector2(-215, -270), Vector2(75, 75), root)
 	nitro_btn.modulate = Color(0.2, 0.85, 1.0)
 	var nitro_lbl := Label.new()
 	nitro_lbl.text = "⚡"
 	nitro_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	nitro_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	nitro_lbl.add_theme_font_size_override("font_size", 28)
 	nitro_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	nitro_btn.add_child(nitro_lbl)
 	nitro_btn.button_down.connect(func():

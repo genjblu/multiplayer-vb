@@ -268,7 +268,7 @@ func _process_weapons(delta: float) -> void:
 	var is_mobile := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or DisplayServer.is_touchscreen_available()
 	var wants_fire := false
 	if is_mobile:
-		wants_fire = touch_fire_active or Input.is_action_pressed("fire")
+		wants_fire = touch_fire_active
 	else:
 		wants_fire = Input.is_action_pressed("fire") or (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED)
 
@@ -558,21 +558,19 @@ func assign_player_to_seat(peer_id: int, seat_index: int, player_node: Node3D) -
 		for c in player_node.find_children("*", "CollisionShape3D", true, false):
 			(c as CollisionShape3D).disabled = true
 
-		var soldier_model = player_node.get_node_or_null("SoldierModel")
 		var my_id := multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
 		var is_me := (peer_id == my_id)
 
-		if soldier_model:
-			# Для себя за рулем скрываем солдата от 3 лица, чтобы не загораживать кокпит
-			soldier_model.visible = not is_me
-
-		var v_joy = player_node.find_child("VirtualJoystick", true, false)
-		if v_joy:
-			v_joy.visible = false
-
-		var touch_layer = player_node.get_node_or_null("%TouchUI")
-		if touch_layer:
-			touch_layer.visible = false
+		if is_me and seat_index == 0:
+			# Для себя за рулем полностью скрываем модель пешего персонажа (включая виевмодель и оружие)
+			player_node.visible = false
+		else:
+			var soldier_model = player_node.get_node_or_null("SoldierModel")
+			if soldier_model:
+				soldier_model.visible = true
+			var head_node = player_node.get_node_or_null("Head")
+			if head_node:
+				head_node.visible = false
 
 		# Водителю даем камеру машины
 		if is_me:

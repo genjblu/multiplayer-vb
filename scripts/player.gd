@@ -237,7 +237,18 @@ var is_in_vehicle: bool = false:
 	set(value):
 		is_in_vehicle = value
 		if touch_ui:
-			touch_ui.visible = not value
+			var overlay = touch_ui.get_node_or_null("TouchOverlay")
+			if overlay:
+				overlay.visible = not value
+			var mobile_layer = touch_ui.get_node_or_null("MobileControlsLayer")
+			if mobile_layer:
+				mobile_layer.visible = not value
+		if current_view:
+			current_view.visible = not value
+		if head:
+			head.visible = not value
+		if camera:
+			camera.current = false
 		for c in find_children("*", "CollisionShape3D", true, false):
 			(c as CollisionShape3D).disabled = value
 
@@ -578,9 +589,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		_rotate_camera(event.relative * current_sens)
 		
 func _input(event: InputEvent) -> void:
-	if event is InputEventScreenTouch:
-		print("touch ", event.index, " ", event.pressed, " ", event.position, " mobile=", is_mobile)
-		
 	if not is_local_player() or not is_mobile or is_in_vehicle:
 		return
 
@@ -660,7 +668,7 @@ func _is_over_joystick(pos: Vector2) -> bool:
 	var n: Node = touch_ui.get_node_or_null("TouchOverlay/JoystickBase")
 	return n != null and _node_rect(n).has_point(pos)
 func touch_action(action: String, pressed: bool, pos: Vector2 = Vector2.ZERO) -> void:
-	if not is_local_player():
+	if not is_local_player() or is_in_vehicle:
 		return
 	if touch_ui:
 		if ("is_paused" in touch_ui and touch_ui.is_paused) or ("is_editing_hud" in touch_ui and touch_ui.is_editing_hud):
