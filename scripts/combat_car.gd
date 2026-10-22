@@ -9,7 +9,7 @@ signal nitro_changed(current: float, maximum: float)
 
 @export var max_health: int = 400
 @export var health: int = 400
-@export var max_engine_force: float = 1800.0
+@export var max_engine_force: float = 3800.0
 @export var max_brake_force: float = 80.0
 @export var max_steer_angle: float = 0.45
 @export var nitro_thrust: float = 3800.0
@@ -42,6 +42,8 @@ var input_handbrake: bool = false
 var touch_steering: float = 0.0 # для мобильного руля (-1.0..1.0)
 var touch_gas: float = 0.0
 var touch_brake: float = 0.0
+var touch_fire_active: bool = false
+var touch_nitro: bool = false
 
 # Оружие водителя (автопушки)
 var cannon_cooldown: float = 0.12
@@ -62,6 +64,8 @@ var cam_rot_v: float = 0.0
 @onready var chase_pivot: Node3D = $ChasePivot
 @onready var chase_cam: Camera3D = $ChasePivot/SpringArm3D/ChaseCamera
 @onready var cockpit_cam: Camera3D = $CockpitCamera
+@onready var interior_wheel: Node3D = get_node_or_null("CockpitInterior/SteeringColumn/SteeringWheelPivot")
+@onready var cockpit_interior: Node3D = get_node_or_null("CockpitInterior")
 
 @onready var engine_sound: AudioStreamPlayer3D = $Audio/EngineSound
 @onready var crash_sound: AudioStreamPlayer3D = $Audio/CrashSound
@@ -153,6 +157,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		cam_rot_h -= event.relative.x * 0.003
 		cam_rot_v = clampf(cam_rot_v - event.relative.y * 0.003, -0.6, 0.4)
 
+	# Вращение камеры пальцем на экране (свайп по экрану для обзора)
+	if event is InputEventScreenDrag:
+		cam_rot_h -= event.relative.x * 0.004
+		cam_rot_v = clampf(cam_rot_v - event.relative.y * 0.004, -0.6, 0.4)
+
 func toggle_camera_mode() -> void:
 	camera_mode = (camera_mode + 1) % 2
 	if chase_cam and cockpit_cam:
@@ -163,7 +172,7 @@ func _physics_process(delta: float) -> void:
 	if is_destroyed:
 		engine_force = 0.0
 		steering = 0.0
-		brake = 20.0
+		brake = 25.0
 		return
 
 	if is_local_driver():
@@ -208,7 +217,11 @@ func _process_driver_input(delta: float) -> void:
 	forward = clampf(forward, -1.0, 1.0)
 
 	var target_steering: float = steer * max_steer_angle
-	steering = lerpf(steering, target_steering, delta * 12.0)
+	steering = lerpf(steering, target_steering, delta * 14.0)
+
+	# Вращение руля в салоне
+	if interior_wheel:
+		interior_wheel.rotation.z = -steering * 3.4
 
 	# Скорость вдоль локальной оси Z (вперед -Z)
 	var forward_speed: float = -transform.basis.z.dot(linear_velocity)
@@ -220,7 +233,7 @@ func _process_driver_input(delta: float) -> void:
 			engine_force = 0.0
 		else:
 			brake = 0.0
-			engine_force = forward * max_engine_force
+			engine_force = -forward * max_engine_force
 	elif forward < -0.05:
 		if forward_speed > 1.0:
 			# Тормозим при движении вперед
@@ -228,20 +241,20 @@ func _process_driver_input(delta: float) -> void:
 			engine_force = 0.0
 		else:
 			brake = 0.0
-			engine_force = forward * (max_engine_force * 0.6)
+			engine_force = -forward * (max_engine_force * 0.65)
 	else:
 		engine_force = 0.0
-		brake = 4.0 # легкое сопротивление качению
+		brake = 2.5 # сопротивление качению
 
-	if do_handbrake:
-		brake = max_brake_force * 2.0
+	if do_handbrake or input_handbrake:
+		brake = max_brake_force * 2.5
 
 func _process_nitro(delta: float) -> void:
-	var wants_nitro := false
+	var wants_nitro := touch_nitro
 	if (InputMap.has_action("sprint") and Input.is_action_pressed("sprint")) or Input.is_key_pressed(KEY_SHIFT):
 		wants_nitro = true
 
-	if wants_nitro and nitro_fuel > 0.0 and -transform.basis.z.dot(linear_velocity) > 2.0:
+	if wants_nitro and nitro_fuel > 0.0 and -transform.basis.z.dot(linear_velocity) > 0.5:
 		is_nitro_active = true
 		nitro_fuel = maxf(0.0, nitro_fuel - nitro_burn_rate * delta)
 		apply_central_force(-transform.basis.z * nitro_thrust)
@@ -252,7 +265,13 @@ func _process_nitro(delta: float) -> void:
 	nitro_changed.emit(nitro_fuel, max_nitro)
 
 func _process_weapons(delta: float) -> void:
-	var wants_fire := Input.is_action_pressed("fire") or Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
+	var is_mobile := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or DisplayServer.is_touchscreen_available()
+	var wants_fire := false
+	if is_mobile:
+		wants_fire = touch_fire_active or Input.is_action_pressed("fire")
+	else:
+		wants_fire = Input.is_action_pressed("fire") or (Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED)
+
 	if not wants_fire:
 		return
 
@@ -289,17 +308,20 @@ func _fire_autocannon(side_toggle: bool) -> void:
 	var ray_end := muzzle_pos + forward_dir * 120.0
 
 	var query := PhysicsRayQueryParameters3D.create(muzzle_pos, ray_end)
-	query.exclude = [self.get_rid()]
-	# Также исключаем всех пассажиров в этой машине
+	var excludes: Array[RID] = [self.get_rid()]
+	for c in find_children("*", "CollisionObject3D", true, false):
+		if c is CollisionObject3D:
+			excludes.append(c.get_rid())
 	for p_node in get_tree().get_nodes_in_group("players"):
-		if is_ancestor_of(p_node):
-			query.exclude.append(p_node.get_rid())
+		if is_ancestor_of(p_node) and (p_node is CollisionObject3D):
+			excludes.append(p_node.get_rid())
+	query.exclude = excludes
 
 	var result := space.intersect_ray(query)
 	if result:
 		var collider = result.collider
 		var hit_pos: Vector3 = result.position
-		if collider and collider != self and collider.has_method("take_damage"):
+		if collider and collider != self and not is_ancestor_of(collider) and collider.has_method("take_damage"):
 			var dmg: int = 24
 			var my_id := multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
 			if collider.has_method("destroy_car"):
@@ -395,6 +417,19 @@ func _update_camera(delta: float) -> void:
 			target_fov += 12.0
 		chase_cam.fov = lerpf(chase_cam.fov, target_fov, delta * 6.0)
 
+	elif cockpit_cam and cockpit_cam.current:
+		cockpit_cam.rotation.y = lerp_angle(cockpit_cam.rotation.y, cam_rot_h, delta * 12.0)
+		cockpit_cam.rotation.x = lerpf(cockpit_cam.rotation.x, -0.06 + cam_rot_v, delta * 12.0)
+		var spd := linear_velocity.length()
+		var target_fov: float = 80.0 + clampf((spd / 50.0) * 15.0, 0.0, 15.0)
+		if is_nitro_active:
+			target_fov += 8.0
+		cockpit_cam.fov = lerpf(cockpit_cam.fov, target_fov, delta * 6.0)
+
+	# Плавное возвращение взгляда в центр
+	cam_rot_h = lerpf(cam_rot_h, 0.0, delta * 2.0)
+	cam_rot_v = lerpf(cam_rot_v, 0.0, delta * 2.0)
+
 func _on_body_entered(body: Node) -> void:
 	if is_destroyed:
 		return
@@ -442,6 +477,10 @@ func _play_crash_sound() -> void:
 
 func take_damage(amount: int, attacker_id: int, weapon_name: String = "", is_headshot: bool = false) -> void:
 	if is_destroyed:
+		return
+
+	# Игрок и пассажиры машины никогда не наносят урон своей же машине!
+	if is_in_car(attacker_id) or attacker_id == driver_peer_id:
 		return
 
 	# Если атаковал союзник и дружественный огонь выключен
@@ -511,23 +550,36 @@ func assign_player_to_seat(peer_id: int, seat_index: int, player_node: Node3D) -
 	if player_node:
 		var seat_marker := seat_nodes[seat_index]
 		player_node.reparent(seat_marker)
-		player_node.position = Vector3.ZERO
+		# Сажаем игрока на сиденье, чтобы тело было внутри машины
+		player_node.position = Vector3(0, -0.45, 0)
 		player_node.set("is_in_vehicle", true)
+
+		# Отключаем коллизии игрока внутри машины, чтобы не расталкивать кузов
+		for c in player_node.find_children("*", "CollisionShape3D", true, false):
+			(c as CollisionShape3D).disabled = true
+
 		var soldier_model = player_node.get_node_or_null("SoldierModel")
+		var my_id := multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+		var is_me := (peer_id == my_id)
+
 		if soldier_model:
-			soldier_model.visible = true
+			# Для себя за рулем скрываем солдата от 3 лица, чтобы не загораживать кокпит
+			soldier_model.visible = not is_me
 
 		var v_joy = player_node.find_child("VirtualJoystick", true, false)
 		if v_joy:
 			v_joy.visible = false
 
+		var touch_layer = player_node.get_node_or_null("%TouchUI")
+		if touch_layer:
+			touch_layer.visible = false
+
 		# Водителю даем камеру машины
-		if peer_id == multiplayer.get_unique_id() or (not multiplayer.has_multiplayer_peer() and peer_id <= 1):
+		if is_me:
 			if seat_index == 0:
-				var touch_layer = player_node.find_child("MobileControlsLayer", true, false)
-				if touch_layer:
-					touch_layer.visible = false
-				if chase_cam:
+				if camera_mode == 1 and cockpit_cam:
+					cockpit_cam.make_current()
+				elif chase_cam:
 					chase_cam.make_current()
 			else:
 				# Пассажир использует свою камеру с видом от первого лица из сиденья

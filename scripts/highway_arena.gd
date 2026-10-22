@@ -475,10 +475,26 @@ func _build_mobile_driving_controls(root: Control) -> void:
 	# Кнопка стрельбы из автопушек
 	fire_btn = _create_touch_pedal("res://gui/shoot.svg", Vector2(-130, -420), Vector2(90, 90), root)
 	fire_btn.button_down.connect(func():
-		Input.action_press("fire")
+		if local_car: local_car.touch_fire_active = true
 	)
 	fire_btn.button_up.connect(func():
-		Input.action_release("fire")
+		if local_car: local_car.touch_fire_active = false
+	)
+
+	# Кнопка нитро-ускорения (Буст)
+	var nitro_btn = _create_touch_pedal("res://gui/gas_pedal.svg", Vector2(-250, -380), Vector2(80, 80), root)
+	nitro_btn.modulate = Color(0.2, 0.85, 1.0)
+	var nitro_lbl := Label.new()
+	nitro_lbl.text = "⚡"
+	nitro_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nitro_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	nitro_lbl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	nitro_btn.add_child(nitro_lbl)
+	nitro_btn.button_down.connect(func():
+		if local_car: local_car.touch_nitro = true
+	)
+	nitro_btn.button_up.connect(func():
+		if local_car: local_car.touch_nitro = false
 	)
 
 func _create_touch_pedal(icon_path: String, offset_from_br: Vector2, btn_size: Vector2, parent: Control) -> TextureButton:
@@ -501,6 +517,14 @@ func _attach_local_hud(car: CombatCarClass) -> void:
 		return
 	if mobile_wheel:
 		mobile_wheel.vehicle_target = car
+
+	# Скрываем сенсорный оверлей пешего игрока
+	var my_id := multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
+	var p_node := get_node_or_null(str(my_id))
+	if p_node:
+		var p_touch = p_node.get_node_or_null("%TouchUI")
+		if p_touch:
+			p_touch.visible = false
 
 	car.health_changed.connect(func(cur: int, max_val: int):
 		if hud_hp_bar:

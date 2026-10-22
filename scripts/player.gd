@@ -233,7 +233,14 @@ var _step_distance_accum: float = 0.0
 var _was_on_floor: bool = true
 var _fall_velocity: float = 0.0
 var remote_step_distance_accum: float = 0.0
-var is_in_vehicle: bool = false
+var is_in_vehicle: bool = false:
+	set(value):
+		is_in_vehicle = value
+		if touch_ui:
+			touch_ui.visible = not value
+		for c in find_children("*", "CollisionShape3D", true, false):
+			(c as CollisionShape3D).disabled = value
+
 
 func _init() -> void:
 	if not InputMap.has_action("reload"):
@@ -526,7 +533,7 @@ func cycle_weapon() -> void:
 	_switch_weapon(weapons[idx])
 	
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_local_player():
+	if not is_local_player() or is_in_vehicle:
 		return
 
 	# На телефоне игнорируем мышиные события, которые Godot эмулирует из касаний
@@ -574,7 +581,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		print("touch ", event.index, " ", event.pressed, " ", event.position, " mobile=", is_mobile)
 		
-	if not is_local_player() or not is_mobile:
+	if not is_local_player() or not is_mobile or is_in_vehicle:
 		return
 
 	if touch_ui:
