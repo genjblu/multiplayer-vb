@@ -690,7 +690,6 @@ func _physics_process(delta: float) -> void:
 		if is_instance_valid(current_view):
 			current_view.visible = true
 			_update_viewmodel_hands_visibility()
-			var soldier: SoldierModel = get_node_or_null("SoldierModel") as SoldierModel
 			var mount: Node3D = soldier.get_weapon_mount() if (soldier and soldier.has_method("get_weapon_mount")) else null
 			if mount != null and current_view.get_parent() != mount:
 				current_view.reparent(mount)
