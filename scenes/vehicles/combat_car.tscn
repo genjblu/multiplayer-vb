@@ -227,7 +227,23 @@ roughness = 0.05
 
 [sub_resource type="BoxMesh" id="BoxMesh_windshield"]
 material = SubResource("StandardMaterial3D_glass")
-size = Vector3(1.62, 0.7, 0.02)
+size = Vector3(1.62, 0.62, 0.02)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_seat"]
+albedo_color = Color(0.15, 0.16, 0.19, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_seat_cushion"]
+material = SubResource("StandardMaterial3D_seat")
+size = Vector3(0.48, 0.14, 0.48)
+
+[sub_resource type="BoxMesh" id="BoxMesh_seat_back"]
+material = SubResource("StandardMaterial3D_seat")
+size = Vector3(0.46, 0.56, 0.12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_seat_headrest"]
+material = SubResource("StandardMaterial3D_seat")
+size = Vector3(0.24, 0.16, 0.1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mirror"]
 albedo_color = Color(0.88, 0.92, 0.98, 1)
@@ -244,7 +260,7 @@ size = Vector3(0.23, 0.08, 0.02)
 
 [sub_resource type="BoxMesh" id="BoxMesh_apillar"]
 material = SubResource("StandardMaterial3D_s4ouw")
-size = Vector3(0.08, 0.85, 0.08)
+size = Vector3(0.08, 0.64, 0.08)
 
 [sub_resource type="BoxMesh" id="BoxMesh_topbar"]
 material = SubResource("StandardMaterial3D_s4ouw")
@@ -287,19 +303,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 0.95, 0.1)
 mesh = SubResource("BoxMesh_door")
 
 [node name="APillarL" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911782]
-transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, -0.82, 1.25, -0.55)
+transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, -0.82, 1.27, -0.6)
 mesh = SubResource("BoxMesh_apillar")
 
 [node name="APillarR" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911783]
-transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0.82, 1.25, -0.55)
+transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, 0.82, 1.27, -0.6)
 mesh = SubResource("BoxMesh_apillar")
 
 [node name="TopBar" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911784]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.54, -0.3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.54, -0.45)
 mesh = SubResource("BoxMesh_topbar")
 
 [node name="Windshield" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911785]
-transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 1.24, -0.55)
+transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, 0, 1.27, -0.6)
 mesh = SubResource("BoxMesh_windshield")
 
 [node name="CagePost_2" type="MeshInstance3D" parent="BodyMesh" unique_id=1764672259]
@@ -552,14 +568,62 @@ mesh = SubResource("CylinderMesh_54tl6")
 [node name="Seat_0" type="Node3D" parent="Seats" unique_id=984111476]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.55, -0.1)
 
+[node name="Cushion_0" type="MeshInstance3D" parent="Seats/Seat_0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
+mesh = SubResource("BoxMesh_seat_cushion")
+
+[node name="Backrest_0" type="MeshInstance3D" parent="Seats/Seat_0"]
+transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 0.38, 0.26)
+mesh = SubResource("BoxMesh_seat_back")
+
+[node name="Headrest_0" type="MeshInstance3D" parent="Seats/Seat_0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
+mesh = SubResource("BoxMesh_seat_headrest")
+
 [node name="Seat_1" type="Node3D" parent="Seats" unique_id=831209386]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.55, -0.1)
+
+[node name="Cushion_1" type="MeshInstance3D" parent="Seats/Seat_1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
+mesh = SubResource("BoxMesh_seat_cushion")
+
+[node name="Backrest_1" type="MeshInstance3D" parent="Seats/Seat_1"]
+transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 0.38, 0.26)
+mesh = SubResource("BoxMesh_seat_back")
+
+[node name="Headrest_1" type="MeshInstance3D" parent="Seats/Seat_1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
+mesh = SubResource("BoxMesh_seat_headrest")
 
 [node name="Seat_2" type="Node3D" parent="Seats" unique_id=1438885535]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.55, 0.75)
 
+[node name="Cushion_2" type="MeshInstance3D" parent="Seats/Seat_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
+mesh = SubResource("BoxMesh_seat_cushion")
+
+[node name="Backrest_2" type="MeshInstance3D" parent="Seats/Seat_2"]
+transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 0.38, 0.26)
+mesh = SubResource("BoxMesh_seat_back")
+
+[node name="Headrest_2" type="MeshInstance3D" parent="Seats/Seat_2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
+mesh = SubResource("BoxMesh_seat_headrest")
+
 [node name="Seat_3" type="Node3D" parent="Seats" unique_id=461723435]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.55, 0.75)
+
+[node name="Cushion_3" type="MeshInstance3D" parent="Seats/Seat_3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
+mesh = SubResource("BoxMesh_seat_cushion")
+
+[node name="Backrest_3" type="MeshInstance3D" parent="Seats/Seat_3"]
+transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 0.38, 0.26)
+mesh = SubResource("BoxMesh_seat_back")
+
+[node name="Headrest_3" type="MeshInstance3D" parent="Seats/Seat_3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
+mesh = SubResource("BoxMesh_seat_headrest")
 
 [node name="ChasePivot" type="Node3D" parent="." unique_id=522586142]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)

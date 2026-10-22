@@ -105,6 +105,8 @@ func _ready() -> void:
 			skid_sound.stream = SoundFX.get_car_skid()
 		if nitro_sound:
 			nitro_sound.stream = SoundFX.get_car_boost()
+		if cannon_sound:
+			cannon_sound.stream = SoundFX.get_car_cannon()
 
 	sync_pos = global_position
 	sync_rot = rotation
@@ -221,7 +223,7 @@ func _process_driver_input(delta: float) -> void:
 
 	# Вращение руля в салоне
 	if interior_wheel:
-		interior_wheel.rotation.z = -steering * 3.4
+		interior_wheel.rotation.z = steering * 3.4
 
 	# Скорость вдоль локальной оси Z (вперед -Z)
 	var forward_speed: float = -transform.basis.z.dot(linear_velocity)
@@ -291,21 +293,40 @@ func _fire_autocannon(side_toggle: bool) -> void:
 	if flash_node:
 		flash_node.visible = true
 		var tw := flash_node.create_tween()
-		tw.tween_interval(0.04)
+		tw.tween_interval(0.05)
 		tw.tween_callback(func():
 			if is_instance_valid(flash_node):
 				flash_node.visible = false
 		)
 
 	if cannon_sound:
-		cannon_sound.pitch_scale = randf_range(0.92, 1.08)
+		if cannon_sound.stream == null:
+			cannon_sound.stream = SoundFX.get_car_cannon()
+		cannon_sound.pitch_scale = randf_range(0.94, 1.06)
 		cannon_sound.play()
 
-	# Рейкаст вперед от ствола
 	var space := get_world_3d().direct_space_state
 	var muzzle_pos := (flash_node.global_position if flash_node else global_position)
-	var forward_dir := -global_transform.basis.z
-	var ray_end := muzzle_pos + forward_dir * 120.0
+
+	# Направление выстрела: в точку, куда смотрит камера/прицел
+	var aim_target: Vector3
+	var cam := get_viewport().get_camera_3d() if is_inside_tree() else null
+	if cam and is_local_driver():
+		var cam_forward := -cam.global_transform.basis.z
+		var cam_ray_end := cam.global_position + cam_forward * 160.0
+		var cam_query := PhysicsRayQueryParameters3D.create(cam.global_position, cam_ray_end)
+		var cam_excludes: Array[RID] = [self.get_rid()]
+		for c in find_children("*", "CollisionObject3D", true, false):
+			if c is CollisionObject3D:
+				cam_excludes.append(c.get_rid())
+		cam_query.exclude = cam_excludes
+		var cam_res := space.intersect_ray(cam_query)
+		aim_target = cam_res.position if cam_res else cam_ray_end
+	else:
+		aim_target = muzzle_pos - global_transform.basis.z * 120.0
+
+	var shot_dir := (aim_target - muzzle_pos).normalized()
+	var ray_end := muzzle_pos + shot_dir * 140.0
 
 	var query := PhysicsRayQueryParameters3D.create(muzzle_pos, ray_end)
 	var excludes: Array[RID] = [self.get_rid()]
@@ -318,11 +339,21 @@ func _fire_autocannon(side_toggle: bool) -> void:
 	query.exclude = excludes
 
 	var result := space.intersect_ray(query)
+	var impact_pos: Vector3 = ray_end
+	if not result.is_empty():
+		impact_pos = result.position
+
+	# 1. Трассер пули
+	_spawn_bullet_tracer(muzzle_pos, impact_pos)
+
+	# 2. Обработка попадания и урона
 	if result:
 		var collider = result.collider
-		var hit_pos: Vector3 = result.position
+		var hit_norm: Vector3 = result.normal
+		BulletDecals.spawn_hit(impact_pos, hit_norm)
+
 		if collider and collider != self and not is_ancestor_of(collider) and collider.has_method("take_damage"):
-			var dmg: int = 24
+			var dmg: int = 28
 			var my_id := multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1
 			if collider.has_method("destroy_car"):
 				collider.take_damage(dmg, my_id, "Автопушка")
@@ -331,6 +362,27 @@ func _fire_autocannon(side_toggle: bool) -> void:
 					collider.take_damage.rpc_id(collider.get_multiplayer_authority(), dmg, my_id, "Автопушка", false)
 				else:
 					collider.take_damage(dmg, my_id, "Автопушка", false)
+
+func _spawn_bullet_tracer(from_pos: Vector3, to_pos: Vector3) -> void:
+	var mesh_inst := MeshInstance3D.new()
+	var imm := ImmediateMesh.new()
+	imm.surface_begin(Mesh.PRIMITIVE_LINES)
+	imm.surface_add_vertex(from_pos)
+	imm.surface_add_vertex(to_pos)
+	imm.surface_end()
+	mesh_inst.mesh = imm
+
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(1.0, 0.82, 0.25, 0.95)
+	mesh_inst.material_override = mat
+
+	var scene_root := get_parent() if get_parent() else self
+	scene_root.add_child(mesh_inst)
+
+	var tw := mesh_inst.create_tween()
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.08)
+	tw.tween_callback(mesh_inst.queue_free)
 
 @rpc("unreliable")
 func _rpc_fire_autocannon(side_toggle: bool) -> void:

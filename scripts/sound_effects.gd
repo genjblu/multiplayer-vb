@@ -21,6 +21,20 @@ static var _car_crash: AudioStreamWAV = null
 static var _car_explosion: AudioStreamWAV = null
 static var _car_skid: AudioStreamWAV = null
 static var _car_boost: AudioStreamWAV = null
+static var _car_cannon: AudioStreamWAV = null
+
+static func get_car_cannon() -> AudioStream:
+	if _car_cannon == null:
+		_car_cannon = _generate_car_cannon()
+	return _car_cannon
+
+static func _generate_car_cannon() -> AudioStreamWAV:
+	return _create_wav(22050, 0.22, func(t: float, dur: float) -> float:
+		var env: float = exp(-t * 22.0)
+		var punch: float = sin(t * TAU * (160.0 * exp(-t * 16.0))) * 0.75
+		var blast: float = (randf() * 2.0 - 1.0) * exp(-t * 36.0) * 0.65
+		return (punch + blast) * env
+	)
 
 static func get_car_engine_loop() -> AudioStream:
 	if _car_engine_loop == null:

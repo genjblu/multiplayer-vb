@@ -237,6 +237,8 @@ var is_in_vehicle: bool = false:
 	set(value):
 		is_in_vehicle = value
 		if touch_ui:
+			touch_ui.visible = not value
+			touch_ui.process_mode = Node.PROCESS_MODE_DISABLED if value else Node.PROCESS_MODE_INHERIT
 			var overlay = touch_ui.get_node_or_null("TouchOverlay")
 			if overlay:
 				overlay.visible = not value

@@ -381,7 +381,7 @@ func _input(event: InputEvent) -> void:
 	elif player and multiplayer.has_multiplayer_peer():
 		is_local = player.is_multiplayer_authority()
 
-	if not player or not is_local:
+	if not player or not is_local or ("is_in_vehicle" in player and player.is_in_vehicle):
 		return
 
 	if event.is_action_pressed("weapon_wheel") and not is_paused:
