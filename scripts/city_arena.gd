@@ -37,10 +37,11 @@ func _ready() -> void:
 	var is_server := has_peer and multiplayer.is_server()
 
 	if not has_peer:
-		_spawn_solo_spider()
+		# Defer спавн на следующий физический кадр — даём время коллизиям загрузиться
+		call_deferred("_spawn_solo_spider")
 	elif is_server:
 		ready_peers[1] = true
-		_spawn_spider_player(1)
+		call_deferred("_spawn_spider_player", 1)
 	elif has_peer:
 		_notify_ready_to_server.rpc_id(1)
 
@@ -70,14 +71,14 @@ func _spawn_interactive_props() -> void:
 		return
 
 	var prop_positions := [
-		Vector3(1.37, 64.0, 5.0),
-		Vector3(-22.3, 33.0, 12.0),
-		Vector3(15.6, 50.5, 2.0),
-		Vector3(-15.0, 32.2, -4.0),
-		Vector3(12.5, 36.0, -20.0),
-		Vector3(-5.0, 57.0, -5.0),
-		Vector3(0.0, 2.0, 30.0),
-		Vector3(-30.0, 2.0, -25.0)
+		Vector3(-233.0, 88.7, -212.0),
+		Vector3(-258.0, 88.7, -206.0),
+		Vector3(-216.0, 99.1, -97.0),
+		Vector3(-301.0, 99.1, -210.0),
+		Vector3(-246.0, 73.2, -106.0),
+		Vector3(-107.0, 73.2, -96.0),
+		Vector3(-73.0, 62.0, -126.0),
+		Vector3(-210.0, 1.4, -205.0)
 	]
 
 	for pos in prop_positions:
@@ -97,7 +98,7 @@ func _spawn_spider_player(peer_id: int) -> void:
 	sp.set_multiplayer_authority(peer_id)
 
 	# Выбор точки спавна
-	var spawn_pos: Vector3 = Vector3(1.37, 64.0, 0.0)
+	var spawn_pos: Vector3 = Vector3(-235.2, 88.7, -215.6)
 	var spawn_nodes := spawn_points_root.get_children() if spawn_points_root else []
 	if not spawn_nodes.is_empty():
 		var idx: int = (peer_id - 1) % spawn_nodes.size()

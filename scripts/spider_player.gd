@@ -22,15 +22,15 @@ enum State {
 @export var health: int = 150
 @export var base_speed: float = 12.0
 @export var sprint_speed: float = 18.0
-@export var swing_speed_max: float = 46.0
-@export var zip_speed: float = 42.0
-@export var wall_run_speed: float = 20.0
+@export var swing_speed_max: float = 48.0
+@export var zip_speed: float = 40.0
+@export var wall_run_speed: float = 18.0
 @export var gravity: float = 24.0
 
 var state: State = State.NORMAL
 var current_peer_id: int = 1
 
-# --- Web Swing ---
+# --- Web Swing (Spider-Man 2 2004 Physics) ---
 var web_anchor_pos: Vector3 = Vector3.ZERO
 var web_rope_length: float = 0.0
 var is_swing_active: bool = false
@@ -44,6 +44,7 @@ var zip_timer: float = 0.0
 # --- Wall Run / Climb ---
 var wall_normal: Vector3 = Vector3.ZERO
 var wall_run_timer: float = 0.0
+var wall_move_dir: Vector3 = Vector3.UP
 
 # --- Super Jump ---
 var is_charging_jump: bool = false
@@ -59,15 +60,16 @@ var throw_spin_timer: float = 0.0
 var throw_target_pos: Vector3 = Vector3.ZERO
 
 # --- Web Entrapment (Cocoon) ---
-var web_meter: float = 0.0 # 0..100
+var web_meter: float = 0.0
 var cocoon_timer: float = 0.0
 
-# --- Combat Cooldowns ---
-var web_shoot_cooldown: float = 0.16
+# --- Combat Cooldowns & 4-Hit Limb Combo ---
+var web_shoot_cooldown: float = 0.18
 var next_web_shoot_time: float = 0.0
 var web_shot_hand_toggle: bool = false
 var melee_combo_index: int = 0
 var last_melee_time: float = 0.0
+const MELEE_COMBO_TIMEOUT: float = 1.1
 
 # --- Camera & Look ---
 var cam_rot_h: float = 0.0
@@ -102,7 +104,7 @@ var hud_web_bar: ProgressBar = null
 var hud_jump_bar: ProgressBar = null
 var hud_reticle_label: Label = null
 var hud_crosshair: Control = null
-var hud_target_label: Label = null
+var hud_state_label: Label = null
 
 func is_local_player() -> bool:
 	if not is_inside_tree() or multiplayer == null or not multiplayer.has_multiplayer_peer():
@@ -113,12 +115,18 @@ func _ready() -> void:
 	current_peer_id = name.to_int() if name.is_valid_int() else 1
 	health = max_health
 
+	# Персонаж спавнится спиной к камере (смотрит вперед по -Z)
+	if model:
+		model.rotation.y = PI
+
 	if is_local_player():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		cam_pivot.top_level = true
 		cam_pivot.global_position = global_position + Vector3(0, 1.45, 0)
 		cam_rot_h = 0.0
 		cam_rot_v = deg_to_rad(10.0)
+		cam_pivot.global_rotation = Vector3(0.0, cam_rot_h, 0.0)
+		spring_arm.rotation = Vector3(cam_rot_v, 0.0, 0.0)
 		camera.make_current()
 		_build_spider_hud()
 	else:
@@ -127,21 +135,26 @@ func _ready() -> void:
 	sync_pos = global_position
 	sync_rot = rotation
 
-func _unhandled_input(event: InputEvent) -> void:
+# Использование _input для гарантированного приема мыши (никакой UI не заблокирует обзор)
+func _input(event: InputEvent) -> void:
 	if not is_local_player() or state == State.COCOONED:
 		return
 
+	# Захват мыши по клику ЛКМ в окно
+	if event is InputEventMouseButton and event.pressed:
+		var is_mobile: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
+		if not is_mobile and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+	# Вращение камеры мышью
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		var sens: float = GameSettings.mouse_sensitivity if GameSettings else 0.003
+		var sens: float = 0.003
+		if GameSettings:
+			sens = GameSettings.mouse_sensitivity
 		var inv_y: float = -1.0 if (GameSettings and GameSettings.invert_y) else 1.0
+
 		cam_rot_h -= event.relative.x * sens
 		cam_rot_v = clampf(cam_rot_v - event.relative.y * sens * inv_y, deg_to_rad(-75.0), deg_to_rad(70.0))
-
-	if event is InputEventMouseButton and event.pressed:
-		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
-			var is_mob: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
-			if not is_mob:
-				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _physics_process(delta: float) -> void:
 	if is_local_player():
@@ -154,13 +167,13 @@ func _physics_process(delta: float) -> void:
 	_update_camera_fov(delta)
 
 func _process_local_player(delta: float) -> void:
-	# 1. Проверка кокона (связан)
+	# 1. Если связан в коконе
 	if state == State.COCOONED:
 		_process_cocoon(delta)
 		move_and_slide()
 		return
 
-	# Постепенное рассеивание паутины, если не в коконе
+	# Рассеивание паутины
 	if web_meter > 0.0:
 		web_meter = maxf(0.0, web_meter - delta * 12.0)
 		web_entrapment_changed.emit(web_meter, 100.0)
@@ -168,18 +181,20 @@ func _process_local_player(delta: float) -> void:
 	if swing_cooldown > 0.0:
 		swing_cooldown -= delta
 
-	# Вращение и слежение независимой камеры
+	# ========================================================
+	# КАМЕРА: независимое следование и вращение пивота
+	# ========================================================
 	cam_pivot.global_position = global_position + Vector3(0, 1.45, 0)
-	cam_pivot.rotation = Vector3(0, cam_rot_h, 0)
-	spring_arm.rotation = Vector3(cam_rot_v, 0, 0)
+	cam_pivot.global_rotation = Vector3(0.0, cam_rot_h, 0.0)
+	spring_arm.rotation = Vector3(cam_rot_v, 0.0, 0.0)
 
 	# 2. Обработка супер-прыжка
 	_process_super_jump(delta)
 
-	# 3. Обработка боя и атак
+	# 3. Бой и паучьи приёмы
 	_process_combat(delta)
 
-	# 4. Обработка состояний перемещения
+	# 4. Состояния перемещения
 	match state:
 		State.NORMAL:
 			_process_normal_movement(delta)
@@ -196,7 +211,7 @@ func _process_local_player(delta: float) -> void:
 
 	move_and_slide()
 
-	# Обновление процедурной анимации модели
+	# 5. Процедурная анимация
 	if model:
 		model.is_right_arm_swinging = swing_hand_is_right
 		model.update_animation(
@@ -211,7 +226,6 @@ func _process_local_player(delta: float) -> void:
 			cam_rot_v
 		)
 
-	# Обновление HUD
 	_update_hud_reticle()
 
 # ========================================================
@@ -222,14 +236,18 @@ func _process_normal_movement(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 
-	# Ввод направления
+	# Ввод направления W/S/A/D относительно камеры
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
-	var cam_forward: Vector3 = -cam_pivot.global_transform.basis.z
-	var cam_right: Vector3 = cam_pivot.global_transform.basis.x
+
+	var cam_basis: Basis = cam_pivot.global_transform.basis
+	var cam_forward: Vector3 = -cam_basis.z
+	var cam_right: Vector3 = cam_basis.x
 	cam_forward.y = 0.0
 	cam_right.y = 0.0
-	cam_forward = cam_forward.normalized()
-	cam_right = cam_right.normalized()
+	if cam_forward.length_squared() > 0.001:
+		cam_forward = cam_forward.normalized()
+	if cam_right.length_squared() > 0.001:
+		cam_right = cam_right.normalized()
 
 	var move_dir: Vector3 = (cam_forward * -input_dir.y + cam_right * input_dir.x).normalized()
 
@@ -239,38 +257,38 @@ func _process_normal_movement(delta: float) -> void:
 	if move_dir.length_squared() > 0.01:
 		velocity.x = lerpf(velocity.x, move_dir.x * speed, delta * 14.0)
 		velocity.z = lerpf(velocity.z, move_dir.z * speed, delta * 14.0)
-		# Поворот модели персонажа в сторону движения
-		var target_angle: float = atan2(move_dir.x, move_dir.z) + PI
+		# Персонаж смотрит в сторону движения
+		var target_angle: float = atan2(move_dir.x, move_dir.z)
 		if model:
 			model.rotation.y = lerp_angle(model.rotation.y, target_angle, delta * 14.0)
 	else:
 		velocity.x = lerpf(velocity.x, 0.0, delta * 10.0)
 		velocity.z = lerpf(velocity.z, 0.0, delta * 10.0)
 
-	# Обычный прыжок (если не заряжается супер-прыжок)
+	# Прыжок
 	if Input.is_action_just_pressed("jump") and is_on_floor() and not is_charging_jump:
-		velocity.y = 11.0
+		velocity.y = 11.5
 
-	# Проверка карабкания по стене
-	if is_on_wall() and (Input.is_action_pressed("move_forward") or move_dir.length() > 0.5):
-		wall_normal = get_wall_normal()
-		if wall_normal.dot(Vector3.UP) < 0.2: # Вертикальная стена
+	# Зацеп за стену (карабкание)
+	if is_on_wall() and (Input.is_action_pressed("move_forward") or move_dir.length() > 0.4):
+		var n: Vector3 = get_wall_normal()
+		if n.dot(Vector3.UP) < 0.2: # Вертикальная стена
+			wall_normal = n
 			_start_wall_run()
 			return
 
-	# Запуск раскачивания на паутине (RMB)
+	# Запуск раскачивания на паутине (ПКМ в воздухе)
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) and not is_on_floor() and swing_cooldown <= 0.0:
 		_try_start_web_swing()
 
-	# Запуск притягивания паутиной (Web-Zip на F или СКМ)
+	# Web-Zip (F или СКМ)
 	if Input.is_key_pressed(KEY_F) or Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
 		_try_start_web_zip()
 
 # ========================================================
-# ПЕРЕМЕЩЕНИЕ: WEB-SWING (РАСКАЧИВАНИЕ НА ПАУТИНЕ)
+# ПЕРЕМЕЩЕНИЕ: WEB-SWING (Spider-Man 2 2004 Physics)
 # ========================================================
 func _try_start_web_swing() -> void:
-	# Ищем здание над головой / впереди слева/справа
 	var anchor := _find_swing_anchor()
 	if anchor == Vector3.ZERO:
 		return
@@ -281,104 +299,137 @@ func _try_start_web_swing() -> void:
 	state = State.SWINGING
 	swing_hand_is_right = not swing_hand_is_right
 
-	# Звук THWIP!
 	if audio_web:
 		audio_web.stream = SoundFX.get_web_shoot()
 		audio_web.play()
 
-	# Начальный импульс вперед при зацепе
-	var forward: Vector3 = -cam_pivot.global_transform.basis.z
-	velocity += forward * 6.0 + Vector3.UP * 2.0
+	# Начальный импульс по дуге маятника
+	var to_anchor := (web_anchor_pos - global_position).normalized()
+	var cam_fwd: Vector3 = -cam_pivot.global_transform.basis.z
+	var swing_tangent := cam_fwd - to_anchor * cam_fwd.dot(to_anchor)
+	if swing_tangent.length_squared() > 0.01:
+		velocity += swing_tangent.normalized() * 6.5 + Vector3.UP * 2.0
 
 func _find_swing_anchor() -> Vector3:
 	var space := get_world_3d().direct_space_state
 	var origin: Vector3 = global_position + Vector3.UP * 1.5
 
-	# Пускаем веер лучей вперед и вверх по направлению взгляда
 	var cam_fwd: Vector3 = -camera.global_transform.basis.z
-	var cam_up: Vector3 = camera.global_transform.basis.y
-	var cam_side: Vector3 = camera.global_transform.basis.x * (1.0 if swing_hand_is_right else -1.0)
+	var cam_up: Vector3 = Vector3.UP
+	var side_mult: float = 1.0 if swing_hand_is_right else -1.0
+	var cam_side: Vector3 = cam_pivot.global_transform.basis.x * side_mult
 
+	# 1. Веер лучей для предпочитаемой руки (вперед, вверх, вбок)
 	var ray_dirs := [
-		(cam_fwd * 0.7 + cam_up * 0.7 + cam_side * 0.25).normalized(),
-		(cam_fwd * 0.5 + cam_up * 0.85).normalized(),
-		(cam_fwd * 0.85 + cam_up * 0.5 + cam_side * 0.35).normalized(),
-		(Vector3.UP * 0.85 + cam_side * 0.4).normalized(),
-		(cam_fwd * 0.95 + cam_up * 0.3).normalized()
+		(cam_fwd * 0.45 + cam_side * 0.6 + cam_up * 0.65).normalized(),
+		(cam_fwd * 0.2 + cam_side * 0.8 + cam_up * 0.55).normalized(),
+		(cam_fwd * 0.7 + cam_side * 0.35 + cam_up * 0.6).normalized(),
+		(cam_side * 0.85 + cam_up * 0.5).normalized(),
+		(cam_fwd * 0.85 + cam_up * 0.45).normalized(),
+		(cam_fwd * 0.35 + cam_up * 0.92).normalized(),
+		# 2. Запасной веер для противоположной стороны (если с предпочитаемой стороны нет небоскрёба)
+		(cam_fwd * 0.45 - cam_side * 0.6 + cam_up * 0.65).normalized(),
+		(cam_fwd * 0.2 - cam_side * 0.8 + cam_up * 0.55).normalized(),
+		(-cam_side * 0.85 + cam_up * 0.5).normalized()
 	]
 
 	for r_dir in ray_dirs:
 		var query := PhysicsRayQueryParameters3D.new()
 		query.from = origin
-		query.to = origin + r_dir * 65.0
+		query.to = origin + r_dir * 95.0
 		query.exclude = [get_rid()]
 		var res := space.intersect_ray(query)
 		if res and not res.collider.is_in_group("players"):
-			return res.position
+			if res.position.y > global_position.y - 2.0:
+				# Если зацепились за противоположную сторону — переключаем руку
+				if r_dir.dot(cam_side) < 0.0:
+					swing_hand_is_right = not swing_hand_is_right
+				return res.position
 
 	return Vector3.ZERO
 
 func _process_web_swing(delta: float) -> void:
-	# Если отпустили ПКМ или нажали Пробел — отцепляемся со взрывным бустом
-	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_action_just_pressed("jump"):
-		_release_web_swing()
+	# Отпускание ПКМ или прыжок
+	var release_with_jump := Input.is_action_just_pressed("jump")
+	if not Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or release_with_jump:
+		_release_web_swing(release_with_jump)
 		return
 
-	# Гравитация тянет вниз
+	# 1. Гравитация маятника
 	velocity.y -= gravity * delta
 
-	# Вектор от игрока к точке крепления паутины
+	# 2. Вектор к точке крепления верёвки
 	var to_anchor: Vector3 = web_anchor_pos - global_position
 	var cur_dist: float = to_anchor.length()
 
-	# Физический маятник: если веревка натянута, убираем компоненту скорости от центра
-	if cur_dist >= web_rope_length:
-		var rope_dir: Vector3 = to_anchor.normalized()
-		var vel_along_rope: float = velocity.dot(rope_dir)
+	if cur_dist > 0.01:
+		var rope_dir: Vector3 = to_anchor / cur_dist
 
-		# Если удаляемся от якоря — гасим движение наружу и преобразуем в центростремительную силу
-		if vel_along_rope < 0.0:
-			velocity -= rope_dir * vel_along_rope
-			# Сокращаем длину веревки для динамичного подтягивания к вершине дуги
-			web_rope_length = maxf(8.0, web_rope_length - delta * 4.0)
+		# 3. Физическое ограничение верёвки
+		if cur_dist >= web_rope_length:
+			var vel_radial: float = velocity.dot(rope_dir)
+			if vel_radial < 0.0:
+				# Устраняем радиальную скорость от якоря
+				velocity -= rope_dir * vel_radial
 
-		# Корректируем позицию чтобы не растягивать паутину
-		global_position = web_anchor_pos - rope_dir * web_rope_length
+			# Центростремительная сила дуги
+			var speed_sq: float = velocity.length_squared()
+			var centripetal: float = speed_sq / maxf(web_rope_length, 6.0)
+			velocity += rope_dir * centripetal * delta * 0.45
 
-	# Дополнительный разгон в сторону взгляда (W)
-	if Input.is_action_pressed("move_forward"):
-		var fwd: Vector3 = -camera.global_transform.basis.z
-		velocity += fwd * (delta * 22.0)
+			# Мягкая фиксация длины нити
+			global_position = web_anchor_pos - rope_dir * web_rope_length
 
-	# Ограничение максимальной скорости полета
+		# 4. Раскачка и подтягивание (Spider-Man 2 Pumping)
+		# Зажатый W или Shift разгоняет по касательной и укорачивает нить для набора высоты
+		if Input.is_action_pressed("move_forward"):
+			var spd := velocity.length()
+			if spd > 1.0:
+				velocity += velocity.normalized() * (20.0 * delta)
+			# Укорачивание верёвки при движении вверх по дуге
+			if velocity.y > -2.0:
+				web_rope_length = maxf(8.0, web_rope_length - delta * 6.5)
+
+		# 5. Боковое маневрирование вокруг зданий (Banking)
+		var cam_side: Vector3 = cam_pivot.global_transform.basis.x
+		cam_side.y = 0.0
+		if cam_side.length_squared() > 0.001:
+			cam_side = cam_side.normalized()
+		var strafe: float = Input.get_axis("move_left", "move_right")
+		velocity += cam_side * strafe * (16.0 * delta)
+
+	# Ограничение максимальной скорости
 	if velocity.length() > swing_speed_max:
 		velocity = velocity.normalized() * swing_speed_max
 
 	# Поворот персонажа по вектору полета
-	if velocity.length() > 3.0:
-		var look_dir := Vector3(velocity.x, 0, velocity.z).normalized()
-		if look_dir.length_squared() > 0.01 and model:
-			model.rotation.y = lerp_angle(model.rotation.y, atan2(look_dir.x, look_dir.z) + PI, delta * 12.0)
+	var horiz_vel := Vector3(velocity.x, 0, velocity.z)
+	if horiz_vel.length_squared() > 1.5 and model:
+		var look_dir := horiz_vel.normalized()
+		model.rotation.y = lerp_angle(model.rotation.y, atan2(look_dir.x, look_dir.z), delta * 12.0)
 
-	# Если коснулись земли во время полета — мягкий переход в бег
+	# Касание земли
 	if is_on_floor():
 		_release_web_swing(false)
 
-func _release_web_swing(apply_boost: bool = true) -> void:
+func _release_web_swing(jump_boost: bool = false) -> void:
 	is_swing_active = false
 	state = State.NORMAL
 	swing_cooldown = 0.12
+	web_rope_length = 0.0
 
-	if apply_boost:
-		var fwd: Vector3 = -camera.global_transform.basis.z
-		velocity += fwd * 8.0 + Vector3.UP * 4.5
-		# Звук свиста воздуха
+	# Сохранение честной физической инерции маятника
+	if jump_boost:
+		# Акробатический прыжок на вершине дуги
+		if velocity.y > 1.5:
+			velocity *= 1.15
+			velocity.y += 4.5
 		if audio_fx:
 			audio_fx.stream = SoundFX.get_dodge()
 			audio_fx.play()
 
 # ========================================================
-# ПЕРЕМЕЩЕНИЕ: WEB-ZIP (ТОЧЕЧНОЕ ПРИТЯГИВАНИЕ)
+# ПЕРЕМЕЩЕНИЕ: WEB-ZIP (ТОЧЕЧНЫЙ РЫВОК)
 # ========================================================
 func _try_start_web_zip() -> void:
 	var space := get_world_3d().direct_space_state
@@ -387,7 +438,7 @@ func _try_start_web_zip() -> void:
 
 	var query := PhysicsRayQueryParameters3D.new()
 	query.from = origin
-	query.to = origin + dir * 75.0
+	query.to = origin + dir * 85.0
 	query.exclude = [get_rid()]
 	var res := space.intersect_ray(query)
 
@@ -405,21 +456,19 @@ func _process_web_zip(delta: float) -> void:
 	var to_target: Vector3 = zip_target_pos - global_position
 	var dist: float = to_target.length()
 
-	# Прилетели к цели или вышло время
 	if dist < 2.5 or zip_timer > 1.2:
 		state = State.NORMAL
-		# Катапультирующий прыжок на уступ
-		velocity = -camera.global_transform.basis.z * 16.0 + Vector3.UP * 9.0
+		velocity = -camera.global_transform.basis.z * 16.0 + Vector3.UP * 8.5
 		return
 
-	# Стремительный полет на натянутой нити
 	velocity = to_target.normalized() * zip_speed
 	var look_dir := Vector3(velocity.x, 0, velocity.z).normalized()
 	if look_dir.length_squared() > 0.01 and model:
-		model.rotation.y = atan2(look_dir.x, look_dir.z) + PI
+		model.rotation.y = atan2(look_dir.x, look_dir.z)
 
 # ========================================================
-# ПЕРЕМЕЩЕНИЕ: WALL-RUN / WALL-CLIMB (БЕГ ПО СТЕНАМ)
+# ПЕРЕМЕЩЕНИЕ: КАРАБКАНİЕ И БЕГ ПО СТЕНАМ (WALL RUN)
+# Управление ориентировано относительно камеры (A = влево по экрану, D = вправо)
 # ========================================================
 func _start_wall_run() -> void:
 	state = State.WALL_RUNNING
@@ -429,25 +478,58 @@ func _start_wall_run() -> void:
 func _process_wall_run(delta: float) -> void:
 	wall_run_timer += delta
 
-	# Если нажали прыжок — мощный отскок от стены
+	# Прыжок со стены
 	if Input.is_action_just_pressed("jump"):
 		state = State.NORMAL
 		velocity = wall_normal * 14.0 + Vector3.UP * 11.0 + (-cam_pivot.global_transform.basis.z * 6.0)
 		return
 
-	# Направление бега: вверх по стене
-	var up_dir: Vector3 = Vector3.UP
-	var side_dir: Vector3 = wall_normal.cross(Vector3.UP).normalized()
+	# ========================================================
+	# КАМЕРО-ОРИЕНТИРОВАННОЕ УПРАВЛЕНИЕ НА СТЕНЕ:
+	# wall_right = проекция вектора экрана вправо на стену
+	# wall_up = вектор вверх по стене
+	# ========================================================
+	var cam_right: Vector3 = cam_pivot.global_transform.basis.x
+	# Проекция на плоскость стены:
+	var wall_right: Vector3 = (cam_right - wall_normal * cam_right.dot(wall_normal)).normalized()
+	if wall_right.length_squared() < 0.01:
+		wall_right = Vector3.UP.cross(wall_normal).normalized()
+
+	var wall_up: Vector3 = wall_normal.cross(wall_right).normalized()
+	if wall_up.dot(Vector3.UP) < 0.0:
+		wall_up = -wall_up
+		wall_right = -wall_right
+
 	var input_dir: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_backward")
+	# W (-input_dir.y) -> wall_up (вверх по стене)
+	# S (+input_dir.y) -> -wall_up (вниз по стене)
+	# D (+input_dir.x) -> wall_right (вправо по экрану)
+	# A (-input_dir.x) -> -wall_right (влево по экрану)
+	var move_vec: Vector3 = wall_up * -input_dir.y + wall_right * input_dir.x
 
-	var wall_move: Vector3 = (up_dir * -input_dir.y + side_dir * input_dir.x).normalized()
-	if wall_move.length_squared() > 0.01:
-		velocity = wall_move * wall_run_speed - wall_normal * 2.0
+	if move_vec.length_squared() > 0.01:
+		wall_move_dir = move_vec.normalized()
+		velocity = wall_move_dir * wall_run_speed - wall_normal * 3.0
 	else:
-		velocity = -wall_normal * 2.0
+		velocity = -wall_normal * 3.0
 
-	# Если оторвались от стены или упали
-	if not is_on_wall() and wall_run_timer > 0.2:
+	# Прижимание к стене
+	if not is_on_floor():
+		velocity.y -= gravity * delta * 0.12
+
+	# Ориентация модели на стене:
+	# Грудь (+Z) направлена к стене (-wall_normal)
+	# Вверх (+Y) направлен по вектору движения wall_move_dir
+	if model:
+		var target_fwd := -wall_normal
+		var target_up := wall_move_dir if move_vec.length_squared() > 0.01 else wall_up
+		var target_side := target_up.cross(target_fwd).normalized()
+		target_up = target_fwd.cross(target_side).normalized()
+		var wall_basis := Basis(target_side, target_up, target_fwd)
+		model.global_transform.basis = model.global_transform.basis.slerp(wall_basis, delta * 12.0)
+
+	# Сход со стены
+	if not is_on_wall() and wall_run_timer > 0.25:
 		state = State.NORMAL
 	if is_on_floor():
 		state = State.NORMAL
@@ -458,11 +540,10 @@ func _process_wall_run(delta: float) -> void:
 func _process_super_jump(delta: float) -> void:
 	if is_on_floor() and Input.is_action_pressed("jump"):
 		is_charging_jump = true
-		jump_charge = minf(1.0, jump_charge + delta * 2.0)
+		jump_charge = minf(1.0, jump_charge + delta * 2.2)
 	elif is_charging_jump:
-		# Отпустили пробел — запуск супер-прыжка!
-		if jump_charge > 0.25:
-			var force: float = lerpf(12.0, 28.0, jump_charge)
+		if jump_charge > 0.2:
+			var force: float = lerpf(12.0, 30.0, jump_charge)
 			var fwd: Vector3 = -cam_pivot.global_transform.basis.z
 			velocity = fwd * (force * 0.45) + Vector3.UP * force
 
@@ -478,29 +559,32 @@ func _process_super_jump(delta: float) -> void:
 		hud_jump_bar.value = jump_charge * 100.0
 
 # ========================================================
-# БОЕВАЯ СИСТЕМА (БЕЗ ОРУЖИЯ, ПАУЧЬИ СИЛЫ)
+# БОЕВАЯ СИСТЕМА: 4-ХИТОВОЕ КОМБО КОНЕЧНОСТЯМИ
 # ========================================================
 func _process_combat(delta: float) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
 
-	# 1. Выстрелы паутиной на ЛКМ (или ближний бой в упор)
+	# Сброс серии ударов по таймауту
+	if now - last_melee_time > MELEE_COMBO_TIMEOUT:
+		melee_combo_index = 0
+
+	# 1. ЛКМ: ближний бой в упор (< 2.8м) или выстрел паутиной
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_action_pressed("fire"):
-		# Проверяем, есть ли враг в упор (< 2.5м)
-		var melee_target := _get_melee_target(2.5)
+		var melee_target := _get_melee_target(2.8)
 		if melee_target and now > next_web_shoot_time:
 			_perform_melee_attack(melee_target)
-			next_web_shoot_time = now + 0.28
+			next_web_shoot_time = now + 0.32
 		elif now > next_web_shoot_time:
 			_fire_web_shot()
 			next_web_shoot_time = now + web_shoot_cooldown
 
-	# 2. Web-Strike на Q (Акробатический рывок-удар по врагу)
+	# 2. Q: Web-Strike (Акробатический налёт-дропкик)
 	if Input.is_key_pressed(KEY_Q) and state != State.WEB_STRIKING:
 		var strike_enemy := _find_targeted_enemy(45.0)
 		if strike_enemy:
 			_start_web_strike(strike_enemy)
 
-	# 3. Web-Throw на E (Захват и бросок бочки/врага)
+	# 3. E: Web-Throw (Захват и бросок бочки)
 	if Input.is_key_pressed(KEY_E) and state != State.THROWING:
 		_try_start_web_throw()
 
@@ -508,7 +592,6 @@ func _fire_web_shot() -> void:
 	web_shot_hand_toggle = not web_shot_hand_toggle
 	var wrist_pos: Vector3 = model.get_wrist_global_pos(web_shot_hand_toggle) if model else global_position + Vector3.UP * 1.2
 
-	# Направление к точке прицела
 	var space := get_world_3d().direct_space_state
 	var cam_pos := camera.global_position
 	var cam_fwd := -camera.global_transform.basis.z
@@ -519,10 +602,9 @@ func _fire_web_shot() -> void:
 	query.exclude = [get_rid()]
 	var res := space.intersect_ray(query)
 
-	var target_pos: Vector3 = res.position if res else cam_pos + cam_fwd * 70.0
+	var target_pos: Vector3 = res.position if res else cam_pos + cam_fwd * 75.0
 	var fire_dir: Vector3 = (target_pos - wrist_pos).normalized()
 
-	# Спавн снаряда
 	var proj = web_proj_scene.instantiate()
 	get_parent().add_child(proj)
 	proj.init_projectile(wrist_pos, fire_dir, current_peer_id)
@@ -550,27 +632,36 @@ func _get_melee_target(max_dist: float) -> Node3D:
 	query.to = origin + fwd * max_dist
 	query.exclude = [get_rid()]
 	var res := space.intersect_ray(query)
-	if res and res.collider != self and (res.collider.is_in_group("players") or res.collider.has_method("take_damage")):
+	if res and res.collider != self and (res.collider.is_in_group("players") or res.collider.has_method("take_damage") or res.collider.is_in_group("throwable_objects")):
 		return res.collider
 	return null
 
 func _perform_melee_attack(target: Node3D) -> void:
-	melee_combo_index = (melee_combo_index + 1) % 3
-	if model:
-		model.play_punch(melee_combo_index + 1)
+	last_melee_time = Time.get_ticks_msec() / 1000.0
+	melee_combo_index = (melee_combo_index % 4) + 1
 
-	var dmg: int = [18, 24, 38][melee_combo_index]
-	var knock: float = [10.0, 14.0, 26.0][melee_combo_index]
+	if model and model.has_method("play_punch"):
+		model.play_punch(melee_combo_index)
+
+	# Урон и импульс растут с каждым ударом серии
+	var dmg: int = [18, 26, 36, 50][melee_combo_index - 1]
+	var knock: float = [8.0, 14.0, 22.0, 32.0][melee_combo_index - 1]
+
+	var attack_names := ["Джеб", "Кросс", "Удар ногой с разворота", "Паучий flip-kick"]
+	var attack_name: String = attack_names[melee_combo_index - 1]
 
 	if target.has_method("take_damage"):
-		target.take_damage(dmg, current_peer_id, "Паучий удар")
+		target.take_damage(dmg, current_peer_id, attack_name)
 
 	if "velocity" in target:
 		var push := (target.global_position - global_position).normalized()
-		target.velocity += push * knock + Vector3.UP * 4.0
+		target.velocity += push * knock + Vector3.UP * (3.0 + float(melee_combo_index) * 1.5)
+	elif target is RigidBody3D:
+		var push := (target.global_position - global_position).normalized()
+		(target as RigidBody3D).apply_central_impulse(push * knock * 2.0 + Vector3.UP * 8.0)
 
 	if audio_fx:
-		audio_fx.stream = SoundFX.get_hitmarker(false)
+		audio_fx.stream = SoundFX.get_hitmarker(melee_combo_index == 4)
 		audio_fx.play()
 
 # Web-Strike
@@ -606,24 +697,22 @@ func _process_web_strike(delta: float) -> void:
 	var to_enemy: Vector3 = strike_target.global_position - global_position
 	var dist: float = to_enemy.length()
 
-	if dist < 2.0:
-		# Наносим мощный дропкик с отбрасыванием
+	if dist < 2.2:
 		if strike_target.has_method("take_damage"):
-			strike_target.take_damage(40, current_peer_id, "Web-Strike")
+			strike_target.take_damage(45, current_peer_id, "Web-Strike Dropkick")
 
 		if "velocity" in strike_target:
-			strike_target.velocity += velocity.normalized() * 32.0 + Vector3.UP * 6.0
+			strike_target.velocity += velocity.normalized() * 34.0 + Vector3.UP * 7.0
 
 		if audio_fx:
 			audio_fx.stream = SoundFX.get_car_crash()
 			audio_fx.play()
 
-		# Отскок назад после удара
-		velocity = -to_enemy.normalized() * 12.0 + Vector3.UP * 8.0
+		velocity = -to_enemy.normalized() * 14.0 + Vector3.UP * 9.0
 		state = State.NORMAL
 		return
 
-	velocity = to_enemy.normalized() * 45.0
+	velocity = to_enemy.normalized() * 48.0
 
 # Web-Throw
 func _try_start_web_throw() -> void:
@@ -633,7 +722,7 @@ func _try_start_web_throw() -> void:
 
 	var query := PhysicsRayQueryParameters3D.new()
 	query.from = origin
-	query.to = origin + fwd * 30.0
+	query.to = origin + fwd * 35.0
 	query.exclude = [get_rid()]
 	var res := space.intersect_ray(query)
 
@@ -656,21 +745,19 @@ func _process_web_throw(delta: float) -> void:
 		state = State.NORMAL
 		return
 
-	# Раскручиваем предмет вокруг себя
 	var angle := throw_spin_timer * TAU * 2.5
 	var orbit_radius := 3.2
 	var offset := Vector3(cos(angle) * orbit_radius, sin(angle) * 1.5 + 2.0, sin(angle) * orbit_radius)
 	held_throw_object.global_position = global_position + offset
 
-	# Запуск вперед через 0.35 секунды
 	if throw_spin_timer >= 0.35:
 		var throw_dir := -camera.global_transform.basis.z
 		if held_throw_object.has_method("launch"):
-			held_throw_object.launch(throw_dir, 38.0, current_peer_id)
+			held_throw_object.launch(throw_dir, 40.0, current_peer_id)
 		elif held_throw_object is RigidBody3D:
 			var rb := held_throw_object as RigidBody3D
 			rb.freeze = false
-			rb.linear_velocity = throw_dir * 38.0
+			rb.linear_velocity = throw_dir * 40.0
 
 		state = State.NORMAL
 		held_throw_object = null
@@ -686,8 +773,7 @@ func apply_web_shot(potency: float, dmg: int, shooter: int) -> void:
 	web_meter += potency
 	web_entrapment_changed.emit(web_meter, 100.0)
 
-	# Спайдер-чутье мигает при атаке
-	if model:
+	if model and model.has_method("set_spider_sense"):
 		model.set_spider_sense(true)
 		get_tree().create_timer(0.4).timeout.connect(func(): if is_instance_valid(model): model.set_spider_sense(false))
 
@@ -698,10 +784,9 @@ func _enter_cocoon() -> void:
 	state = State.COCOONED
 	cocoon_timer = 3.5
 	is_swing_active = false
-	if model:
+	if model and model.has_method("set_cocooned"):
 		model.set_cocooned(true)
 
-	# Оповещение в чат
 	var stats = get_node_or_null("/root/GameStats")
 	if stats:
 		stats.emit_signal("kill_feed_message", "🕸️ %s полностью связан в кокон!" % name)
@@ -713,7 +798,6 @@ func _process_cocoon(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= gravity * delta
 
-	# Вырывание из кокона нажатиями клавиш
 	if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("fire"):
 		cocoon_timer -= 0.35
 
@@ -721,10 +805,10 @@ func _process_cocoon(delta: float) -> void:
 		state = State.NORMAL
 		web_meter = 0.0
 		web_entrapment_changed.emit(0.0, 100.0)
-		if model:
+		if model and model.has_method("set_cocooned"):
 			model.set_cocooned(false)
 
-func take_damage(dmg: int, attacker_id: int = 0, weapon: String = "Удар") -> void:
+func take_damage(dmg: int, attacker_id: int = 0, weapon: String = "Паучий удар") -> void:
 	if health <= 0:
 		return
 	health = maxi(0, health - dmg)
@@ -739,7 +823,6 @@ func _die(attacker_id: int, weapon: String) -> void:
 	if stats and stats.has_method("record_kill"):
 		stats.record_kill(attacker_id, current_peer_id, weapon)
 
-	# Респавн
 	visible = false
 	collision_shape.set_deferred("disabled", true)
 	await get_tree().create_timer(2.0).timeout
@@ -749,22 +832,22 @@ func _respawn() -> void:
 	health = max_health
 	web_meter = 0.0
 	state = State.NORMAL
-	if model: model.set_cocooned(false)
+	if model and model.has_method("set_cocooned"):
+		model.set_cocooned(false)
 	visible = true
 	collision_shape.set_deferred("disabled", false)
 	health_changed.emit(health, max_health)
 
-	# Находим случайную точку спавна
 	var spawn_points := get_tree().get_nodes_in_group("spawn_points")
 	if not spawn_points.is_empty():
 		var sp = spawn_points.pick_random() as Node3D
 		global_position = sp.global_position + Vector3.UP * 1.5
 	else:
-		global_position = Vector3(0, 10, 0)
+		global_position = Vector3(-235.2, 88.7, -215.6)
 	velocity = Vector3.ZERO
 
 # ========================================================
-# ОТРИСОВКА ЛИНИИ ПАУТИНЫ
+# ОТРИСОВКА ПАУТИНЫ И FOV
 # ========================================================
 func _update_web_visuals() -> void:
 	if not web_line_mesh:
@@ -795,7 +878,7 @@ func _update_camera_fov(delta: float) -> void:
 	if not is_local_player() or not camera:
 		return
 	var speed := velocity.length()
-	target_fov = lerpf(75.0, 95.0, clampf(speed / swing_speed_max, 0.0, 1.0))
+	target_fov = lerpf(75.0, 96.0, clampf(speed / swing_speed_max, 0.0, 1.0))
 	camera.fov = lerpf(camera.fov, target_fov, delta * 8.0)
 
 # ========================================================
@@ -831,7 +914,7 @@ func _process_remote_interpolation(delta: float) -> void:
 		model.update_animation(delta, velocity, is_on_floor(), state == State.SWINGING, state == State.ZIPPING, state == State.WALL_RUNNING, state == State.WEB_STRIKING, false, 0.0)
 
 # ========================================================
-# HUD СПАЙДЕРМЕНА
+# HUD СПАЙДЕРМЕНА (БЕЗ БЛОКИРОВКИ МЫШИ)
 # ========================================================
 func _build_spider_hud() -> void:
 	hud_layer = CanvasLayer.new()
@@ -843,42 +926,47 @@ func _build_spider_hud() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_layer.add_child(root)
 
-	# 1. Прицел паука по центру
+	# 1. Прицел
 	hud_crosshair = Control.new()
 	hud_crosshair.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	hud_crosshair.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(hud_crosshair)
 
 	var dot := ColorRect.new()
 	dot.custom_minimum_size = Vector2(6, 6)
 	dot.position = Vector2(-3, -3)
 	dot.color = Color(1.0, 1.0, 1.0, 0.9)
+	dot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_crosshair.add_child(dot)
 
-	# Индикатор дальности / готовности паутины
 	hud_reticle_label = Label.new()
 	hud_reticle_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hud_reticle_label.position = Vector2(-80, 12)
 	hud_reticle_label.custom_minimum_size = Vector2(160, 24)
 	hud_reticle_label.add_theme_font_size_override("font_size", 12)
 	hud_reticle_label.modulate = Color(0.2, 0.9, 1.0)
+	hud_reticle_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud_crosshair.add_child(hud_reticle_label)
 
-	# 2. HP и статус внизу слева
+	# 2. HP и кокон
 	var bottom_left := VBoxContainer.new()
 	bottom_left.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	bottom_left.offset_left = 30
 	bottom_left.offset_bottom = -30
 	bottom_left.custom_minimum_size = Vector2(240, 60)
+	bottom_left.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(bottom_left)
 
 	var hp_lbl := Label.new()
 	hp_lbl.text = "❤️ ЗДОРОВЬЕ:"
+	hp_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bottom_left.add_child(hp_lbl)
 
 	hud_hp_bar = ProgressBar.new()
 	hud_hp_bar.max_value = max_health
 	hud_hp_bar.value = health
 	hud_hp_bar.custom_minimum_size = Vector2(240, 18)
+	hud_hp_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.85, 0.15, 0.2)
 	sb.set_corner_radius_all(4)
@@ -886,20 +974,35 @@ func _build_spider_hud() -> void:
 	bottom_left.add_child(hud_hp_bar)
 
 	var web_lbl := Label.new()
-	web_lbl.text = "🕸️ ЗАХВАТ В ПАУТИНУ:"
+	web_lbl.text = "🕸️ КОКОН:"
+	web_lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	bottom_left.add_child(web_lbl)
 
 	hud_web_bar = ProgressBar.new()
 	hud_web_bar.max_value = 100
 	hud_web_bar.value = 0
 	hud_web_bar.custom_minimum_size = Vector2(240, 14)
+	hud_web_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb_w := StyleBoxFlat.new()
 	sb_w.bg_color = Color(0.9, 0.92, 1.0)
 	sb_w.set_corner_radius_all(4)
 	hud_web_bar.add_theme_stylebox_override("fill", sb_w)
 	bottom_left.add_child(hud_web_bar)
 
-	# 3. Индикатор зарядки супер-прыжка по центру снизу
+	# 3. Индикатор состояния
+	hud_state_label = Label.new()
+	hud_state_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	hud_state_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hud_state_label.offset_left = -150
+	hud_state_label.offset_right = 150
+	hud_state_label.offset_top = 12
+	hud_state_label.offset_bottom = 40
+	hud_state_label.add_theme_font_size_override("font_size", 16)
+	hud_state_label.modulate = Color(0.4, 0.9, 1.0, 0.9)
+	hud_state_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(hud_state_label)
+
+	# 4. Зарядка прыжка
 	hud_jump_bar = ProgressBar.new()
 	hud_jump_bar.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	hud_jump_bar.offset_left = -100
@@ -908,20 +1011,22 @@ func _build_spider_hud() -> void:
 	hud_jump_bar.offset_bottom = -104
 	hud_jump_bar.max_value = 100
 	hud_jump_bar.visible = false
+	hud_jump_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var sb_j := StyleBoxFlat.new()
 	sb_j.bg_color = Color(1.0, 0.85, 0.1)
 	sb_j.set_corner_radius_all(4)
 	hud_jump_bar.add_theme_stylebox_override("fill", sb_j)
 	root.add_child(hud_jump_bar)
 
-	# 4. Подсказки управления справа внизу
+	# 5. Подсказки управления
 	var hints := Label.new()
 	hints.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-	hints.offset_left = -320
+	hints.offset_left = -330
 	hints.offset_bottom = -25
-	hints.text = "ЛКМ: Выстрел паутиной / Удар\nПКМ (Зажать): Полет на паутине\nF / СКМ: Web-Zip (Рывок)\nQ: Web-Strike (Удар в полете)\nE: Паутинный бросок предмета\nПробел (Зажать): Супер-прыжок\nСтена + W: Бег по стене"
+	hints.text = "ЛКМ: Паутина / Серия ударов\nПКМ (Зажать): Полёт (маятник)\nShift / W в полёте: Раскачка\nПробел на взлёте: Сальто-ускорение\nF / СКМ: Web-Zip (Рывок)\nQ: Web-Strike (Налёт)\nE: Бросок предмета паутиной\nСтена + W: Карабкание (A/D = экран)"
 	hints.add_theme_font_size_override("font_size", 13)
 	hints.modulate = Color(0.85, 0.9, 1.0, 0.85)
+	hints.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(hints)
 
 func _update_hud_reticle() -> void:
@@ -930,6 +1035,16 @@ func _update_hud_reticle() -> void:
 
 	if hud_hp_bar: hud_hp_bar.value = health
 	if hud_web_bar: hud_web_bar.value = web_meter
+
+	if hud_state_label:
+		match state:
+			State.SWINGING: hud_state_label.text = "🕸️ ПОЛЁТ НА ПАУТИНЕ (W: Раскачка)"
+			State.ZIPPING: hud_state_label.text = "⚡ WEB-ZIP"
+			State.WALL_RUNNING: hud_state_label.text = "🧗 КАРАБКАНИЕ"
+			State.WEB_STRIKING: hud_state_label.text = "💥 WEB-STRIKE"
+			State.THROWING: hud_state_label.text = "🌀 БРОСОК ПАУТИНОЙ"
+			State.COCOONED: hud_state_label.text = "🕸️ В КОКОНЕ! (Жми Пробел/ЛКМ)"
+			_: hud_state_label.text = ""
 
 	var space := get_world_3d().direct_space_state
 	var origin := camera.global_position
