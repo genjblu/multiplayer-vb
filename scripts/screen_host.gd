@@ -18,6 +18,7 @@ const MAP_PATHS: Array[String] = [
 	"res://maps/polygon.tres",
 	"res://maps/figting_arena.tres",
 	"res://maps/highway_fury.tres",
+	"res://maps/city.tres",
 ]
 var filtered_maps: Array[MapData] = []
 
@@ -65,8 +66,9 @@ func _ready() -> void:
 	mode_option.add_item(tr("HOST_MODE_4V4"), 3)
 	mode_option.add_item("🥊 Кулачный бой (Бокс)", 4)
 	mode_option.add_item("🏎️ Дорога ярости", 5)
+	mode_option.add_item("🕷️ Паучий бой (City)", 6)
 	mode_option.item_selected.connect(func(idx: int):
-		var modes := ["ffa", "2v2", "3v3v3", "4v4", "fist_fight", "highway_fury"]
+		var modes := ["ffa", "2v2", "3v3v3", "4v4", "fist_fight", "highway_fury", "spider_battle"]
 		var m_str: String = modes[idx] if idx < modes.size() else "ffa"
 		_update_maps_for_mode(m_str)
 	)

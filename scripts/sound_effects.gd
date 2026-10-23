@@ -22,6 +22,42 @@ static var _car_explosion: AudioStreamWAV = null
 static var _car_skid: AudioStreamWAV = null
 static var _car_boost: AudioStreamWAV = null
 static var _car_cannon: AudioStreamWAV = null
+static var _web_shoot: AudioStreamWAV = null
+static var _web_zip: AudioStreamWAV = null
+static var _web_hit: AudioStreamWAV = null
+static var _spider_sense: AudioStreamWAV = null
+static var _super_jump: AudioStreamWAV = null
+static var _web_throw: AudioStreamWAV = null
+
+static func get_web_shoot() -> AudioStream:
+	if _web_shoot == null:
+		_web_shoot = _generate_web_shoot()
+	return _web_shoot
+
+static func get_web_zip() -> AudioStream:
+	if _web_zip == null:
+		_web_zip = _generate_web_zip()
+	return _web_zip
+
+static func get_web_hit() -> AudioStream:
+	if _web_hit == null:
+		_web_hit = _generate_web_hit()
+	return _web_hit
+
+static func get_spider_sense() -> AudioStream:
+	if _spider_sense == null:
+		_spider_sense = _generate_spider_sense()
+	return _spider_sense
+
+static func get_super_jump() -> AudioStream:
+	if _super_jump == null:
+		_super_jump = _generate_super_jump()
+	return _super_jump
+
+static func get_web_throw() -> AudioStream:
+	if _web_throw == null:
+		_web_throw = _generate_web_throw()
+	return _web_throw
 
 static func get_car_cannon() -> AudioStream:
 	if _car_cannon == null:
@@ -327,5 +363,60 @@ static func _generate_car_boost() -> AudioStreamWAV:
 		var jet: float = (randf() * 2.0 - 1.0) * env * 0.65
 		var spool: float = sin(t * TAU * (300.0 + (t / dur) * 600.0)) * 0.4 * env
 		return jet + spool
+	)
+
+static func _generate_web_shoot() -> AudioStreamWAV:
+	# Знаменитый звук "THWIP!": резкий щелчок картриджа + свист выпуска нити
+	return _create_wav(22050, 0.18, func(t: float, dur: float) -> float:
+		var env: float = exp(-t * 26.0)
+		var snap: float = sin(t * TAU * (1200.0 * exp(-t * 35.0))) * 0.8
+		var hiss: float = (randf() * 2.0 - 1.0) * exp(-t * 18.0) * 0.55
+		var whistle: float = sin(t * TAU * (850.0 + t * 400.0)) * 0.3 * exp(-t * 15.0)
+		return (snap + hiss + whistle) * env
+	)
+
+static func _generate_web_zip() -> AudioStreamWAV:
+	# Свист стремительного полета на натянутой струне
+	return _create_wav(22050, 0.32, func(t: float, dur: float) -> float:
+		var env: float = sin((t / dur) * PI)
+		var tension: float = sin(t * TAU * (450.0 + (t / dur) * 350.0)) * 0.5
+		var rush: float = (randf() * 2.0 - 1.0) * 0.65 * env
+		return (tension + rush) * env
+	)
+
+static func _generate_web_hit() -> AudioStreamWAV:
+	# Плотный липкий удар паутины о поверхность/врага
+	return _create_wav(22050, 0.15, func(t: float, dur: float) -> float:
+		var env: float = exp(-t * 32.0)
+		var thud: float = sin(t * TAU * (140.0 * exp(-t * 20.0))) * 0.7
+		var splat: float = (randf() * 2.0 - 1.0) * exp(-t * 40.0) * 0.6
+		return (thud + splat) * env
+	)
+
+static func _generate_spider_sense() -> AudioStreamWAV:
+	# Высокочастотное покалывающее чутье опасности
+	return _create_wav(22050, 0.28, func(t: float, dur: float) -> float:
+		var env: float = sin((t / dur) * PI)
+		var shimmer: float = sin(t * TAU * 1850.0) * sin(t * TAU * 36.0) * 0.65
+		var sub_harm: float = sin(t * TAU * 925.0) * 0.35
+		return (shimmer + sub_harm) * env
+	)
+
+static func _generate_super_jump() -> AudioStreamWAV:
+	# Мощный упругий толчок ногами
+	return _create_wav(22050, 0.35, func(t: float, dur: float) -> float:
+		var env: float = exp(-t * 10.0)
+		var whoosh: float = sin(t * TAU * (90.0 + t * 240.0)) * 0.75 * env
+		var pop: float = (randf() * 2.0 - 1.0) * exp(-t * 28.0) * 0.5
+		return (whoosh + pop) * env
+	)
+
+static func _generate_web_throw() -> AudioStreamWAV:
+	# Раскручивание предмета на паутине
+	return _create_wav(22050, 0.45, func(t: float, dur: float) -> float:
+		var env: float = sin((t / dur) * PI)
+		var spin: float = sin(t * TAU * (120.0 + sin(t * TAU * 4.0) * 80.0)) * 0.7
+		var air: float = (randf() * 2.0 - 1.0) * 0.4 * env
+		return (spin + air) * env
 	)
 

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MapData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/map_data.gd" id="1_map"]
+
+[resource]
+script = ExtResource("1_map")
+id = "city"
+display_name = "🕷️ Небоскрёбы (City)"
+description = "Огромный мегаполис со стеклянными небоскрёбами и крышами. Летайте на паутине, бегайте по стенам и сражайтесь паучьими силами!"
+scene_path = "res://scenes/city_arena.tscn"
+supported_modes = ["spider_battle"]

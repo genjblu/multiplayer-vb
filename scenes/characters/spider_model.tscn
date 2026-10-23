@@ -1,0 +1,236 @@
+[gd_scene format=3 uid="uid://cspider_model_001"]
+
+[ext_resource type="Script" path="res://scripts/spider_model.gd" id="1_model"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_SuitRed"]
+albedo_color = Color(0.85, 0.12, 0.12, 1)
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_SuitBlue"]
+albedo_color = Color(0.08, 0.22, 0.65, 1)
+roughness = 0.55
+
+[sub_resource type="StandardMaterial3D" id="Mat_Eyes"]
+shading_mode = 0
+albedo_color = Color(0.96, 0.98, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Black"]
+albedo_color = Color(0.08, 0.08, 0.09, 1)
+roughness = 0.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_WebCocoon"]
+transparency = 1
+albedo_color = Color(0.95, 0.95, 1, 0.82)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="Mesh_Torso"]
+material = SubResource("Mat_SuitRed")
+size = Vector3(0.38, 0.44, 0.24)
+
+[sub_resource type="BoxMesh" id="Mesh_ChestSideL"]
+material = SubResource("Mat_SuitBlue")
+size = Vector3(0.08, 0.4, 0.25)
+
+[sub_resource type="BoxMesh" id="Mesh_ChestSideR"]
+material = SubResource("Mat_SuitBlue")
+size = Vector3(0.08, 0.4, 0.25)
+
+[sub_resource type="BoxMesh" id="Mesh_Emblem"]
+material = SubResource("Mat_Black")
+size = Vector3(0.12, 0.16, 0.02)
+
+[sub_resource type="BoxMesh" id="Mesh_Head"]
+material = SubResource("Mat_SuitRed")
+size = Vector3(0.22, 0.24, 0.22)
+
+[sub_resource type="BoxMesh" id="Mesh_Eye"]
+material = SubResource("Mat_Eyes")
+size = Vector3(0.06, 0.05, 0.02)
+
+[sub_resource type="BoxMesh" id="Mesh_Pelvis"]
+material = SubResource("Mat_SuitBlue")
+size = Vector3(0.34, 0.14, 0.22)
+
+[sub_resource type="BoxMesh" id="Mesh_UpperArm"]
+material = SubResource("Mat_SuitRed")
+size = Vector3(0.1, 0.2, 0.1)
+
+[sub_resource type="BoxMesh" id="Mesh_Forearm"]
+material = SubResource("Mat_SuitBlue")
+size = Vector3(0.09, 0.18, 0.09)
+
+[sub_resource type="BoxMesh" id="Mesh_Glove"]
+material = SubResource("Mat_SuitRed")
+size = Vector3(0.095, 0.09, 0.095)
+
+[sub_resource type="CylinderMesh" id="Mesh_Shooter"]
+material = SubResource("Mat_Black")
+top_radius = 0.02
+bottom_radius = 0.02
+height = 0.03
+
+[sub_resource type="BoxMesh" id="Mesh_UpperLeg"]
+material = SubResource("Mat_SuitBlue")
+size = Vector3(0.12, 0.32, 0.12)
+
+[sub_resource type="BoxMesh" id="Mesh_Shin"]
+material = SubResource("Mat_SuitBlue")
+size = Vector3(0.11, 0.3, 0.11)
+
+[sub_resource type="BoxMesh" id="Mesh_Boot"]
+material = SubResource("Mat_SuitRed")
+size = Vector3(0.115, 0.18, 0.14)
+
+[sub_resource type="CapsuleMesh" id="Mesh_Cocoon"]
+material = SubResource("Mat_WebCocoon")
+radius = 0.48
+height = 1.85
+
+[sub_resource type="StandardMaterial3D" id="Mat_Sense"]
+shading_mode = 0
+albedo_color = Color(1, 0.85, 0.1, 1)
+
+[sub_resource type="TorusMesh" id="Mesh_Sense"]
+material = SubResource("Mat_Sense")
+inner_radius = 0.18
+outer_radius = 0.24
+
+[node name="SpiderModel" type="Node3D"]
+script = ExtResource("1_model")
+
+[node name="Pelvis" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+
+[node name="PelvisMesh" type="MeshInstance3D" parent="Pelvis"]
+mesh = SubResource("Mesh_Pelvis")
+
+[node name="Torso" type="Node3D" parent="Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28, 0)
+
+[node name="TorsoMesh" type="MeshInstance3D" parent="Pelvis/Torso"]
+mesh = SubResource("Mesh_Torso")
+
+[node name="ChestSideL" type="MeshInstance3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.16, 0, 0)
+mesh = SubResource("Mesh_ChestSideL")
+
+[node name="ChestSideR" type="MeshInstance3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.16, 0, 0)
+mesh = SubResource("Mesh_ChestSideR")
+
+[node name="Emblem" type="MeshInstance3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0.125)
+mesh = SubResource("Mesh_Emblem")
+
+[node name="Head" type="Node3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.34, 0)
+
+[node name="HeadMesh" type="MeshInstance3D" parent="Pelvis/Torso/Head"]
+mesh = SubResource("Mesh_Head")
+
+[node name="EyeL" type="MeshInstance3D" parent="Pelvis/Torso/Head"]
+transform = Transform3D(0.965926, 0, 0.258819, 0, 1, 0, -0.258819, 0, 0.965926, -0.055, 0.02, 0.115)
+mesh = SubResource("Mesh_Eye")
+
+[node name="EyeR" type="MeshInstance3D" parent="Pelvis/Torso/Head"]
+transform = Transform3D(0.965926, 0, -0.258819, 0, 1, 0, 0.258819, 0, 0.965926, 0.055, 0.02, 0.115)
+mesh = SubResource("Mesh_Eye")
+
+[node name="ArmL" type="Node3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.24, 0.16, 0)
+
+[node name="UpperArmL" type="MeshInstance3D" parent="Pelvis/Torso/ArmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.09, 0)
+mesh = SubResource("Mesh_UpperArm")
+
+[node name="ForearmL" type="Node3D" parent="Pelvis/Torso/ArmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+
+[node name="ForearmLMesh" type="MeshInstance3D" parent="Pelvis/Torso/ArmL/ForearmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+mesh = SubResource("Mesh_Forearm")
+
+[node name="GloveL" type="MeshInstance3D" parent="Pelvis/Torso/ArmL/ForearmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.16, 0)
+mesh = SubResource("Mesh_Glove")
+
+[node name="ShooterL" type="MeshInstance3D" parent="Pelvis/Torso/ArmL/ForearmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.14, 0.055)
+mesh = SubResource("Mesh_Shooter")
+
+[node name="WristL" type="Node3D" parent="Pelvis/Torso/ArmL/ForearmL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0.04)
+
+[node name="ArmR" type="Node3D" parent="Pelvis/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0.16, 0)
+
+[node name="UpperArmR" type="MeshInstance3D" parent="Pelvis/Torso/ArmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.09, 0)
+mesh = SubResource("Mesh_UpperArm")
+
+[node name="ForearmR" type="Node3D" parent="Pelvis/Torso/ArmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, 0)
+
+[node name="ForearmRMesh" type="MeshInstance3D" parent="Pelvis/Torso/ArmR/ForearmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.08, 0)
+mesh = SubResource("Mesh_Forearm")
+
+[node name="GloveR" type="MeshInstance3D" parent="Pelvis/Torso/ArmR/ForearmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.16, 0)
+mesh = SubResource("Mesh_Glove")
+
+[node name="ShooterR" type="MeshInstance3D" parent="Pelvis/Torso/ArmR/ForearmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.14, 0.055)
+mesh = SubResource("Mesh_Shooter")
+
+[node name="WristR" type="Node3D" parent="Pelvis/Torso/ArmR/ForearmR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0.04)
+
+[node name="LegL" type="Node3D" parent="Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12, -0.08, 0)
+
+[node name="UpperLegL" type="MeshInstance3D" parent="Pelvis/LegL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.14, 0)
+mesh = SubResource("Mesh_UpperLeg")
+
+[node name="ShinL" type="Node3D" parent="Pelvis/LegL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.32, 0)
+
+[node name="ShinLMesh" type="MeshInstance3D" parent="Pelvis/LegL/ShinL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.12, 0)
+mesh = SubResource("Mesh_Shin")
+
+[node name="BootL" type="MeshInstance3D" parent="Pelvis/LegL/ShinL"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.22, 0.02)
+mesh = SubResource("Mesh_Boot")
+
+[node name="LegR" type="Node3D" parent="Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, -0.08, 0)
+
+[node name="UpperLegR" type="MeshInstance3D" parent="Pelvis/LegR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.14, 0)
+mesh = SubResource("Mesh_UpperLeg")
+
+[node name="ShinR" type="Node3D" parent="Pelvis/LegR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.32, 0)
+
+[node name="ShinRMesh" type="MeshInstance3D" parent="Pelvis/LegR/ShinR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.12, 0)
+mesh = SubResource("Mesh_Shin")
+
+[node name="BootR" type="MeshInstance3D" parent="Pelvis/LegR/ShinR"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.22, 0.02)
+mesh = SubResource("Mesh_Boot")
+
+[node name="SpiderSenseFX" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, 0)
+visible = false
+
+[node name="SenseRing" type="MeshInstance3D" parent="SpiderSenseFX"]
+transform = Transform3D(1, 0, 0, 0, 0.2, 0, 0, 0, 1, 0, 0, 0)
+mesh = SubResource("Mesh_Sense")
+
+[node name="CocoonMesh" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+visible = false
+mesh = SubResource("Mesh_Cocoon")

@@ -105,7 +105,7 @@ roughness = 0.75
 
 [sub_resource type="BoxMesh" id="BoxMesh_dash"]
 material = SubResource("StandardMaterial3D_dash")
-size = Vector3(1.65, 0.22, 0.4)
+size = Vector3(1.65, 0.31129396, 0.3866455)
 
 [sub_resource type="BoxMesh" id="BoxMesh_console"]
 material = SubResource("StandardMaterial3D_dash")
@@ -113,7 +113,7 @@ size = Vector3(0.28, 0.38, 0.95)
 
 [sub_resource type="BoxMesh" id="BoxMesh_cowl"]
 material = SubResource("StandardMaterial3D_dash")
-size = Vector3(0.46, 0.06, 0.22)
+size = Vector3(0.46, 0.06, 0.19410644)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dial"]
 albedo_color = Color(0.05, 0.06, 0.08, 1)
@@ -144,12 +144,6 @@ roughness = 0.35
 [sub_resource type="BoxMesh" id="BoxMesh_phonecase"]
 material = SubResource("StandardMaterial3D_phonecase")
 size = Vector3(0.13, 0.24, 0.018)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_phonescreen"]
-albedo_color = Color(0.03, 0.09, 0.14, 1)
-emission_enabled = true
-emission = Color(0.1, 0.65, 0.85, 1)
-emission_energy_multiplier = 2.2
 
 [sub_resource type="QuadMesh" id="QuadMesh_phonescreen"]
 size = Vector2(0.11, 0.21)
@@ -292,10 +286,11 @@ center_of_mass = Vector3(0, -0.25, 0)
 script = ExtResource("1_fhas0")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2001035117]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.725, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.96828115, 0)
 shape = SubResource("BoxShape3D_5a865")
 
 [node name="BodyMesh" type="Node3D" parent="." unique_id=453072480]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24328113, 0)
 
 [node name="Chasis" type="Node3D" parent="BodyMesh" unique_id=1479686953]
 
@@ -459,9 +454,10 @@ spot_range = 45.0
 spot_angle = 35.0
 
 [node name="CockpitInterior" type="Node3D" parent="." unique_id=1991911790]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24328113, 0)
 
 [node name="Dashboard" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911791]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, -0.68)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.89564705, -0.6866773)
 mesh = SubResource("BoxMesh_dash")
 
 [node name="CenterConsole" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911792]
@@ -469,7 +465,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, -0.15)
 mesh = SubResource("BoxMesh_console")
 
 [node name="GaugesCowl" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911793]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.94, -0.56)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.94000006, -0.5729468)
 mesh = SubResource("BoxMesh_cowl")
 
 [node name="SpeedoDial" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911794]
@@ -479,7 +475,7 @@ mesh = SubResource("CylinderMesh_dial")
 [node name="SpeedoPivot" type="Node3D" parent="CockpitInterior" unique_id=1991911795]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.46, 0.94, -0.46)
 
-[node name="SpeedoNeedle" type="MeshInstance3D" parent="CockpitInterior/SpeedoPivot"]
+[node name="SpeedoNeedle" type="MeshInstance3D" parent="CockpitInterior/SpeedoPivot" unique_id=1440984834]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.022, 0.002)
 mesh = SubResource("BoxMesh_needle")
 
@@ -490,12 +486,12 @@ mesh = SubResource("CylinderMesh_dial")
 [node name="TachoPivot" type="Node3D" parent="CockpitInterior" unique_id=1991911797]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.34, 0.94, -0.46)
 
-[node name="TachoNeedle" type="MeshInstance3D" parent="CockpitInterior/TachoPivot"]
+[node name="TachoNeedle" type="MeshInstance3D" parent="CockpitInterior/TachoPivot" unique_id=1134177012]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.022, 0.002)
 mesh = SubResource("BoxMesh_needle")
 
 [node name="GPSPhoneBody" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911798]
-transform = Transform3D(0.965926, -0.0449435, 0.254887, 0, 0.984808, 0.173648, -0.258819, -0.167731, 0.951251, 0.14, 0.95, -0.48)
+transform = Transform3D(1.0000001, 0, 0, 0, 0.98480785, 0.17364813, 0, -0.1736482, 0.98480743, 0.0102823675, 1.0099218, -0.46902326)
 mesh = SubResource("BoxMesh_phonecase")
 
 [node name="GPSPhoneScreen" type="MeshInstance3D" parent="CockpitInterior/GPSPhoneBody" unique_id=1991911799]
@@ -519,7 +515,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.33, 0.58, -0.28)
 mesh = SubResource("BoxMesh_leg")
 
 [node name="SteeringColumn" type="Node3D" parent="CockpitInterior" unique_id=1991911804]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.90, -0.42)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.9, -0.42)
 
 [node name="SteeringWheelPivot" type="Node3D" parent="CockpitInterior/SteeringColumn" unique_id=1991911805]
 
@@ -641,6 +637,7 @@ transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 0, 0
 mesh = SubResource("CylinderMesh_54tl6")
 
 [node name="Seats" type="Node3D" parent="." unique_id=254924376]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24328113, 0)
 
 [node name="Seat_0" type="Node3D" parent="Seats" unique_id=984111476]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.65, -0.085)
@@ -703,7 +700,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
 mesh = SubResource("BoxMesh_seat_headrest")
 
 [node name="ChasePivot" type="Node3D" parent="." unique_id=522586142]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.043281, 0)
 
 [node name="SpringArm3D" type="SpringArm3D" parent="ChasePivot" unique_id=567638992]
 transform = Transform3D(1, 0, 0, 0, 0.9781476, 0.2079117, 0, -0.2079117, 0.9781476, 0, 0.4, 0)
@@ -714,10 +711,11 @@ margin = 0.2
 current = true
 
 [node name="CockpitCamera" type="Camera3D" parent="." unique_id=1551045514]
-transform = Transform3D(1, 0, 0, 0, 0.989016, 0.147809, 0, -0.147809, 0.989016, -0.4, 1.18, -0.08)
+transform = Transform3D(1, 0, 0, 0, 0.989016, 0.147809, 0, -0.147809, 0.989016, -0.4, 1.4232811, -0.08)
 fov = 82.0
 
 [node name="Audio" type="Node3D" parent="." unique_id=263375004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24328113, 0)
 
 [node name="EngineSound" type="AudioStreamPlayer3D" parent="Audio" unique_id=2012302735]
 max_distance = 60.0
@@ -735,6 +733,7 @@ max_distance = 70.0
 max_distance = 90.0
 
 [node name="FX" type="Node3D" parent="." unique_id=1827998326]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24328113, 0)
 
 [node name="SmokeParticles" type="CPUParticles3D" parent="FX" unique_id=1761137487]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, -1.3)
@@ -803,9 +802,9 @@ light_energy = 3.5
 omni_range = 6.0
 
 [node name="Windshield2" type="MeshInstance3D" parent="." unique_id=813683372]
-transform = Transform3D(-4.3711392e-08, 0, 1.0003662, 0, 1.0003662, 0, -1.0000001, 0, -4.3727397e-08, -0.858639, 1.2933143, 0.39391485)
+transform = Transform3D(-4.3711392e-08, 0, 1.0003662, 0, 1.0003662, 0, -1.0000001, 0, -4.3727397e-08, -0.858639, 1.5365955, 0.39391485)
 mesh = SubResource("BoxMesh_windshield")
 
 [node name="Windshield3" type="MeshInstance3D" parent="." unique_id=79267765]
-transform = Transform3D(-4.3711392e-08, 0, 1.0003662, 0, 1.0003662, 0, -1.0000001, 0, -4.3727397e-08, 0.84537333, 1.2933143, 0.39391485)
+transform = Transform3D(-4.3711392e-08, 0, 1.0003662, 0, 1.0003662, 0, -1.0000001, 0, -4.3727397e-08, 0.84537333, 1.5365955, 0.39391485)
 mesh = SubResource("BoxMesh_windshield")

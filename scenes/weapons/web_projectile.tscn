@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://cweb_proj_001"]
+
+[ext_resource type="Script" path="res://scripts/web_projectile.gd" id="1_web"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_web"]
+shading_mode = 0
+albedo_color = Color(0.96, 0.98, 1, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_pellet"]
+material = SubResource("StandardMaterial3D_web")
+radius = 0.08
+height = 0.16
+
+[sub_resource type="BoxMesh" id="BoxMesh_trail"]
+material = SubResource("StandardMaterial3D_web")
+size = Vector3(0.04, 0.04, 0.6)
+
+[node name="WebProjectile" type="Node3D"]
+script = ExtResource("1_web")
+
+[node name="Pellet" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_pellet")
+
+[node name="Trail" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.3)
+mesh = SubResource("BoxMesh_trail")
