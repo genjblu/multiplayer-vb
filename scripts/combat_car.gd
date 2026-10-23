@@ -9,10 +9,10 @@ signal nitro_changed(current: float, maximum: float)
 
 @export var max_health: int = 400
 @export var health: int = 400
-@export var max_engine_force: float = 3800.0
-@export var max_brake_force: float = 80.0
-@export var max_steer_angle: float = 0.45
-@export var nitro_thrust: float = 3800.0
+@export var max_engine_force: float = 2200.0
+@export var max_brake_force: float = 85.0
+@export var max_steer_angle: float = 0.38
+@export var nitro_thrust: float = 3200.0
 @export var max_nitro: float = 100.0
 @export var nitro_burn_rate: float = 28.0
 @export var nitro_regen_rate: float = 14.0
@@ -23,6 +23,7 @@ var driver_peer_id: int = 0
 var passengers: Array[int] = [0, 0, 0, 0] # 0 = свободно, иначе peer_id. [0]=водитель, [1..3]=пассажиры
 
 var nitro_fuel: float = 100.0
+var current_throttle: float = 0.0
 var is_nitro_active: bool = false
 var is_destroyed: bool = false
 
@@ -66,6 +67,19 @@ var cam_rot_v: float = 0.0
 @onready var cockpit_cam: Camera3D = $CockpitCamera
 @onready var interior_wheel: Node3D = get_node_or_null("CockpitInterior/SteeringColumn/SteeringWheelPivot")
 @onready var cockpit_interior: Node3D = get_node_or_null("CockpitInterior")
+@onready var speedo_pivot: Node3D = get_node_or_null("CockpitInterior/SpeedoPivot")
+@onready var tacho_pivot: Node3D = get_node_or_null("CockpitInterior/TachoPivot")
+@onready var gps_phone_body: Node3D = get_node_or_null("CockpitInterior/GPSPhoneBody")
+@onready var gps_phone_screen: MeshInstance3D = get_node_or_null("CockpitInterior/GPSPhoneBody/GPSPhoneScreen")
+
+var gps_viewport: SubViewport = null
+var gps_speed_label: Label = null
+var gps_arrow_label: Label = null
+var gps_status_label: Label = null
+var gps_substatus_label: Label = null
+var gps_hp_bar: ProgressBar = null
+var gps_nitro_bar: ProgressBar = null
+var gps_panel_bg: StyleBoxFlat = null
 
 @onready var engine_sound: AudioStreamPlayer3D = $Audio/EngineSound
 @onready var crash_sound: AudioStreamPlayer3D = $Audio/CrashSound
@@ -113,6 +127,14 @@ func _ready() -> void:
 
 	# Проверяем цвет команды
 	_update_car_color()
+
+	# Инициализация экрана смартфона на торпеде
+	_setup_gps_screen()
+
+func _process(delta: float) -> void:
+	if not is_destroyed:
+		_update_gauges(delta)
+		_update_gps_screen(delta)
 
 func _update_car_color() -> void:
 	if not is_instance_valid(body_mesh):
@@ -218,35 +240,54 @@ func _process_driver_input(delta: float) -> void:
 	steer = clampf(steer, -1.0, 1.0)
 	forward = clampf(forward, -1.0, 1.0)
 
-	var target_steering: float = steer * max_steer_angle
-	steering = lerpf(steering, target_steering, delta * 14.0)
+	# Плавная акселерация (троттл) вместо резкого удара с пробуксовкой
+	current_throttle = move_toward(current_throttle, forward, delta * 3.5)
 
-	# Вращение руля в салоне
+	# Текущая скорость в км/ч
+	var speed_kmh := linear_velocity.length() * 3.6
+
+	# Защита от разворота на 360: динамическое ограничение угла поворота на скорости
+	# На низкой скорости (< 25 км/ч) — полный угол 0.38 рад (~22 град)
+	# На высокой скорости (> 110 км/ч) — угол плавно сужается до 0.08 рад (~4.5 град)
+	var dynamic_max_steer := lerpf(max_steer_angle, 0.08, clampf(speed_kmh / 110.0, 0.0, 1.0))
+	var target_steering: float = steer * dynamic_max_steer
+	steering = lerpf(steering, target_steering, delta * 12.0)
+
+	# Вращение руля в салоне (передаточное число 3.2)
 	if interior_wheel:
-		interior_wheel.rotation.z = steering * 3.4
+		interior_wheel.rotation.z = steering * 3.2
+
+	# Анти-спин: демпфирование избыточного рыскания при боковом скольжении на скорости
+	var lateral_vel: float = transform.basis.x.dot(linear_velocity)
+	if not do_handbrake and not input_handbrake and absf(lateral_vel) > 1.8 and speed_kmh > 25.0:
+		angular_velocity.y = move_toward(angular_velocity.y, 0.0, delta * 4.5)
 
 	# Скорость вдоль локальной оси Z (вперед -Z)
 	var forward_speed: float = -transform.basis.z.dot(linear_velocity)
 
-	if forward > 0.05:
+	# Плавный срез максимальной тяги на околопредельных скоростях
+	var speed_ratio := clampf(absf(forward_speed) / 48.0, 0.0, 1.0)
+	var dynamic_force := max_engine_force * (1.0 - speed_ratio * 0.35)
+
+	if current_throttle > 0.05:
 		if forward_speed < -1.0:
 			# Тормозим при движении назад
-			brake = max_brake_force * forward
+			brake = max_brake_force * current_throttle
 			engine_force = 0.0
 		else:
 			brake = 0.0
-			engine_force = -forward * max_engine_force
-	elif forward < -0.05:
+			engine_force = -current_throttle * dynamic_force
+	elif current_throttle < -0.05:
 		if forward_speed > 1.0:
 			# Тормозим при движении вперед
-			brake = max_brake_force * absf(forward)
+			brake = max_brake_force * absf(current_throttle)
 			engine_force = 0.0
 		else:
 			brake = 0.0
-			engine_force = -forward * (max_engine_force * 0.65)
+			engine_force = -current_throttle * (dynamic_force * 0.6)
 	else:
 		engine_force = 0.0
-		brake = 2.5 # сопротивление качению
+		brake = 3.5 # естественное сопротивление качению
 
 	if do_handbrake or input_handbrake:
 		brake = max_brake_force * 2.5
@@ -267,7 +308,7 @@ func _process_nitro(delta: float) -> void:
 	nitro_changed.emit(nitro_fuel, max_nitro)
 
 func _process_weapons(delta: float) -> void:
-	var is_mobile := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or DisplayServer.is_touchscreen_available()
+	var is_mobile := (OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or OS.get_name() in ["Android", "iOS"]) and not (OS.get_name() in ["Windows", "Linux", "macOS"])
 	var wants_fire := false
 	if is_mobile:
 		wants_fire = touch_fire_active
@@ -350,7 +391,9 @@ func _fire_autocannon(side_toggle: bool) -> void:
 	if result:
 		var collider = result.collider
 		var hit_norm: Vector3 = result.normal
-		BulletDecals.spawn_hit(impact_pos, hit_norm)
+		var decals = get_node_or_null("/root/BulletDecals")
+		if decals:
+			decals.spawn_hit(impact_pos, hit_norm)
 
 		if collider and collider != self and not is_ancestor_of(collider) and collider.has_method("take_damage"):
 			var dmg: int = 28
@@ -655,3 +698,202 @@ func _promote_next_passenger() -> void:
 			set_multiplayer_authority(new_driver)
 			return
 	driver_peer_id = 0
+
+func _setup_gps_screen() -> void:
+	if not gps_phone_body or not gps_phone_screen:
+		return
+
+	gps_viewport = SubViewport.new()
+	gps_viewport.size = Vector2i(240, 420)
+	gps_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	add_child(gps_viewport)
+
+	var root_ctrl := Control.new()
+	root_ctrl.custom_minimum_size = Vector2(240, 420)
+	root_ctrl.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	gps_viewport.add_child(root_ctrl)
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	gps_panel_bg = StyleBoxFlat.new()
+	gps_panel_bg.bg_color = Color(0.04, 0.07, 0.12, 1.0)
+	gps_panel_bg.border_width_left = 5
+	gps_panel_bg.border_width_top = 5
+	gps_panel_bg.border_width_right = 5
+	gps_panel_bg.border_width_bottom = 5
+	gps_panel_bg.border_color = Color(0.12, 0.85, 0.45, 1.0)
+	gps_panel_bg.set_corner_radius_all(14)
+	panel.add_theme_stylebox_override("panel", gps_panel_bg)
+	root_ctrl.add_child(panel)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 14)
+	margin.add_theme_constant_override("margin_top", 14)
+	margin.add_theme_constant_override("margin_right", 14)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	margin.add_child(vbox)
+
+	var header := Label.new()
+	header.text = "GPS / НАВИГАЦИЯ"
+	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	header.add_theme_font_size_override("font_size", 16)
+	header.modulate = Color(0.4, 0.8, 1.0)
+	vbox.add_child(header)
+
+	gps_speed_label = Label.new()
+	gps_speed_label.text = "0 KM/H"
+	gps_speed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gps_speed_label.add_theme_font_size_override("font_size", 34)
+	gps_speed_label.modulate = Color(1.0, 1.0, 1.0)
+	vbox.add_child(gps_speed_label)
+
+	vbox.add_child(HSeparator.new())
+
+	# Навигация (Стрелка + Направление)
+	var nav_box := VBoxContainer.new()
+	nav_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	nav_box.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_child(nav_box)
+
+	gps_arrow_label = Label.new()
+	gps_arrow_label.text = "⬆"
+	gps_arrow_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gps_arrow_label.add_theme_font_size_override("font_size", 68)
+	gps_arrow_label.modulate = Color(0.12, 0.95, 0.45)
+	nav_box.add_child(gps_arrow_label)
+
+	gps_status_label = Label.new()
+	gps_status_label.text = "КУРС ВЕРНЫЙ"
+	gps_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gps_status_label.add_theme_font_size_override("font_size", 20)
+	gps_status_label.modulate = Color(0.12, 0.95, 0.45)
+	nav_box.add_child(gps_status_label)
+
+	gps_substatus_label = Label.new()
+	gps_substatus_label.text = "ВПЕРЕД ПО ТРАССЕ"
+	gps_substatus_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	gps_substatus_label.add_theme_font_size_override("font_size", 14)
+	gps_substatus_label.modulate = Color(0.7, 0.75, 0.85)
+	nav_box.add_child(gps_substatus_label)
+
+	vbox.add_child(HSeparator.new())
+
+	# Статус машины (HP и Нитро)
+	var hp_lbl := Label.new()
+	hp_lbl.text = "🚗 СОСТОЯНИЕ АВТО:"
+	hp_lbl.add_theme_font_size_override("font_size", 13)
+	hp_lbl.modulate = Color(0.85, 0.85, 0.85)
+	vbox.add_child(hp_lbl)
+
+	gps_hp_bar = ProgressBar.new()
+	gps_hp_bar.min_value = 0
+	gps_hp_bar.max_value = max_health
+	gps_hp_bar.value = health
+	gps_hp_bar.custom_minimum_size = Vector2(0, 16)
+	gps_hp_bar.show_percentage = true
+	var sb_hp := StyleBoxFlat.new()
+	sb_hp.bg_color = Color(0.15, 0.85, 0.3)
+	sb_hp.set_corner_radius_all(4)
+	gps_hp_bar.add_theme_stylebox_override("fill", sb_hp)
+	vbox.add_child(gps_hp_bar)
+
+	var nitro_lbl := Label.new()
+	nitro_lbl.text = "⚡ ЗАКИСЬ АЗОТА:"
+	nitro_lbl.add_theme_font_size_override("font_size", 13)
+	nitro_lbl.modulate = Color(0.85, 0.85, 0.85)
+	vbox.add_child(nitro_lbl)
+
+	gps_nitro_bar = ProgressBar.new()
+	gps_nitro_bar.min_value = 0
+	gps_nitro_bar.max_value = max_nitro
+	gps_nitro_bar.value = nitro_fuel
+	gps_nitro_bar.custom_minimum_size = Vector2(0, 16)
+	gps_nitro_bar.show_percentage = true
+	var sb_nitro := StyleBoxFlat.new()
+	sb_nitro.bg_color = Color(0.1, 0.75, 1.0)
+	sb_nitro.set_corner_radius_all(4)
+	gps_nitro_bar.add_theme_stylebox_override("fill", sb_nitro)
+	vbox.add_child(gps_nitro_bar)
+
+	# Накладываем текстуру SubViewport на экран телефона
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_texture = gps_viewport.get_texture()
+	gps_phone_screen.set_surface_override_material(0, mat)
+
+func _update_gauges(delta: float) -> void:
+	var speed_kmh := linear_velocity.length() * 3.6
+
+	# Спидометр: 0 км/ч = 135 град (+2.356 рад), 220 км/ч = -135 град (-2.356 рад)
+	if speedo_pivot:
+		var speed_frac := clampf(speed_kmh / 220.0, 0.0, 1.0)
+		var target_speed_rad := lerpf(deg_to_rad(135.0), deg_to_rad(-135.0), speed_frac)
+		speedo_pivot.rotation.z = lerp_angle(speedo_pivot.rotation.z, target_speed_rad, delta * 12.0)
+
+	# Тахометр (обороты двигателя)
+	if tacho_pivot:
+		var engine_rpm := 900.0
+		if absf(engine_force) > 10.0 or is_nitro_active:
+			var gear_speed := fmod(speed_kmh, 45.0)
+			var gear_rpm := (gear_speed / 45.0) * 5500.0
+			engine_rpm = clampf(1200.0 + gear_rpm + (1200.0 if is_nitro_active else 0.0), 900.0, 7500.0)
+		else:
+			engine_rpm = lerpf(900.0, 2400.0, clampf(speed_kmh / 140.0, 0.0, 1.0))
+		var rpm_frac := clampf((engine_rpm - 900.0) / 6600.0, 0.0, 1.0)
+		var target_tacho_rad := lerpf(deg_to_rad(135.0), deg_to_rad(-135.0), rpm_frac)
+		tacho_pivot.rotation.z = lerp_angle(tacho_pivot.rotation.z, target_tacho_rad, delta * 14.0)
+
+func _update_gps_screen(delta: float) -> void:
+	if not is_instance_valid(gps_viewport) or not gps_speed_label:
+		return
+
+	var speed_kmh := linear_velocity.length() * 3.6
+	gps_speed_label.text = "%d KM/H" % int(speed_kmh)
+
+	if gps_hp_bar:
+		gps_hp_bar.value = health
+	if gps_nitro_bar:
+		gps_nitro_bar.value = nitro_fuel
+
+	# Курс по отношению к трассе (трасса идет вдоль -Z в мировых координатах)
+	var car_fwd := -global_transform.basis.z
+	var highway_dir := Vector3(0, 0, -1)
+	var forward_dot := car_fwd.dot(highway_dir)
+	var cross_y := car_fwd.cross(highway_dir).y
+
+	if forward_dot > 0.6:
+		gps_arrow_label.text = "⬆"
+		gps_status_label.text = "КУРС ВЕРНЫЙ"
+		gps_substatus_label.text = "ВПЕРЕД ПО ТРАССЕ"
+		var ok_col := Color(0.12, 0.95, 0.45)
+		gps_arrow_label.modulate = ok_col
+		gps_status_label.modulate = ok_col
+		if gps_panel_bg: gps_panel_bg.border_color = ok_col
+	elif forward_dot < -0.25:
+		gps_arrow_label.text = "↺"
+		gps_status_label.text = "РАЗВОРОТ!"
+		gps_substatus_label.text = "ВЫ ЕДЕТЕ НАЗАД!"
+		var warn_col := Color(1.0, 0.15, 0.15) if fmod(Time.get_ticks_msec() / 250.0, 2.0) < 1.0 else Color(1.0, 0.6, 0.1)
+		gps_arrow_label.modulate = warn_col
+		gps_status_label.modulate = warn_col
+		if gps_panel_bg: gps_panel_bg.border_color = warn_col
+	elif cross_y > 0.2:
+		gps_arrow_label.text = "➡"
+		gps_status_label.text = "ДОВОРОТ ВПРАВО"
+		gps_substatus_label.text = "ВЫРАВНЯЙТЕ КУРС"
+		var steer_col := Color(1.0, 0.85, 0.1)
+		gps_arrow_label.modulate = steer_col
+		gps_status_label.modulate = steer_col
+		if gps_panel_bg: gps_panel_bg.border_color = steer_col
+	else:
+		gps_arrow_label.text = "⬅"
+		gps_status_label.text = "ДОВОРОТ ВЛЕВО"
+		gps_substatus_label.text = "ВЫРАВНЯЙТЕ КУРС"
+		var steer_col := Color(1.0, 0.85, 0.1)
+		gps_arrow_label.modulate = steer_col
+		gps_status_label.modulate = steer_col
+		if gps_panel_bg: gps_panel_bg.border_color = steer_col

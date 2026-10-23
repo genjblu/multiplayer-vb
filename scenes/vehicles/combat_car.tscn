@@ -1,18 +1,60 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://drmo8sn4m5hl6"]
 
-[ext_resource type="Script" path="res://scripts/combat_car.gd" id="1_fhas0"]
+[ext_resource type="Script" uid="uid://2fqt1b40live" path="res://scripts/combat_car.gd" id="1_fhas0"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_5a865"]
-size = Vector3(2.1, 0.95, 4.2)
+size = Vector3(2.1, 0.7, 4.2)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s4ouw"]
 albedo_color = Color(0.95, 0.45, 0.08, 1)
 metallic = 0.5
 roughness = 0.35
 
+[sub_resource type="BoxMesh" id="BoxMesh_fhas0"]
+material = SubResource("StandardMaterial3D_s4ouw")
+size = Vector3(2.1, 0.2, 4.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_5a865"]
+material = SubResource("StandardMaterial3D_s4ouw")
+size = Vector3(0.3, 0.55, 4.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_s4ouw"]
+material = SubResource("StandardMaterial3D_s4ouw")
+size = Vector3(0.3, 0.55, 4.3)
+
 [sub_resource type="BoxMesh" id="BoxMesh_qik3o"]
 material = SubResource("StandardMaterial3D_s4ouw")
-size = Vector3(2.1, 0.55, 4.3)
+size = Vector3(2.1, 0.55, 1.3000001)
+
+[sub_resource type="BoxMesh" id="BoxMesh_6v28s"]
+material = SubResource("StandardMaterial3D_s4ouw")
+size = Vector3(2.1, 0.55, 0.90000004)
+
+[sub_resource type="BoxMesh" id="BoxMesh_apillar"]
+material = SubResource("StandardMaterial3D_s4ouw")
+size = Vector3(0.08, 0.64, 0.08)
+
+[sub_resource type="BoxMesh" id="BoxMesh_topbar"]
+material = SubResource("StandardMaterial3D_s4ouw")
+size = Vector3(1.8321655, 0.08699707, 0.12470703)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glass"]
+transparency = 1
+albedo_color = Color(0.8, 0.92, 1, 0.06)
+roughness = 0.05
+
+[sub_resource type="BoxMesh" id="BoxMesh_windshield"]
+material = SubResource("StandardMaterial3D_glass")
+size = Vector3(1.7896386, 0.43820983, 0.02)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mnj1l"]
+albedo_color = Color(0.25, 0.28, 0.32, 1)
+metallic = 0.8
+roughness = 0.3
+
+[sub_resource type="BoxMesh" id="BoxMesh_2rrmm"]
+material = SubResource("StandardMaterial3D_mnj1l")
+size = Vector3(0.11277343, 0.7, 0.09861328)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6v28s"]
 albedo_color = Color(0.14, 0.16, 0.19, 1)
@@ -23,14 +65,9 @@ roughness = 0.45
 material = SubResource("StandardMaterial3D_6v28s")
 size = Vector3(0.15, 0.4, 2.2)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mnj1l"]
-albedo_color = Color(0.25, 0.28, 0.32, 1)
-metallic = 0.8
-roughness = 0.3
-
-[sub_resource type="BoxMesh" id="BoxMesh_2rrmm"]
-material = SubResource("StandardMaterial3D_mnj1l")
-size = Vector3(0.08, 0.7, 0.08)
+[sub_resource type="BoxMesh" id="BoxMesh_door"]
+material = SubResource("StandardMaterial3D_s4ouw")
+size = Vector3(0.08248047, 0.35, 2.315637)
 
 [sub_resource type="BoxMesh" id="BoxMesh_h86vg"]
 material = SubResource("StandardMaterial3D_s4ouw")
@@ -62,6 +99,132 @@ emission_energy_multiplier = 3.5
 material = SubResource("StandardMaterial3D_j1i4l")
 size = Vector3(0.35, 0.12, 0.05)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dash"]
+albedo_color = Color(0.12, 0.13, 0.15, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="BoxMesh_dash"]
+material = SubResource("StandardMaterial3D_dash")
+size = Vector3(1.65, 0.22, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_console"]
+material = SubResource("StandardMaterial3D_dash")
+size = Vector3(0.28, 0.38, 0.95)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cowl"]
+material = SubResource("StandardMaterial3D_dash")
+size = Vector3(0.46, 0.06, 0.22)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dial"]
+albedo_color = Color(0.05, 0.06, 0.08, 1)
+emission_enabled = true
+emission = Color(0.1, 0.18, 0.22, 1)
+emission_energy_multiplier = 1.2
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_dial"]
+material = SubResource("StandardMaterial3D_dial")
+top_radius = 0.065
+bottom_radius = 0.065
+height = 0.015
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_needle"]
+albedo_color = Color(1, 0.3, 0.05, 1)
+emission_enabled = true
+emission = Color(1, 0.3, 0.05, 1)
+emission_energy_multiplier = 3.5
+
+[sub_resource type="BoxMesh" id="BoxMesh_needle"]
+material = SubResource("StandardMaterial3D_needle")
+size = Vector3(0.008, 0.055, 0.006)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_phonecase"]
+albedo_color = Color(0.98, 0.48, 0.06, 1)
+roughness = 0.35
+
+[sub_resource type="BoxMesh" id="BoxMesh_phonecase"]
+material = SubResource("StandardMaterial3D_phonecase")
+size = Vector3(0.13, 0.24, 0.018)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_phonescreen"]
+albedo_color = Color(0.03, 0.09, 0.14, 1)
+emission_enabled = true
+emission = Color(0.1, 0.65, 0.85, 1)
+emission_energy_multiplier = 2.2
+
+[sub_resource type="QuadMesh" id="QuadMesh_phonescreen"]
+size = Vector2(0.11, 0.21)
+
+[sub_resource type="BoxMesh" id="BoxMesh_mirror_back"]
+material = SubResource("StandardMaterial3D_dash")
+size = Vector3(0.23, 0.08, 0.02)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mirror"]
+albedo_color = Color(0.88, 0.92, 0.98, 1)
+metallic = 0.95
+roughness = 0.05
+
+[sub_resource type="BoxMesh" id="BoxMesh_mirror"]
+material = SubResource("StandardMaterial3D_mirror")
+size = Vector3(0.22, 0.07, 0.015)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_legs"]
+albedo_color = Color(0.18, 0.22, 0.3, 1)
+roughness = 0.7
+
+[sub_resource type="BoxMesh" id="BoxMesh_leg"]
+material = SubResource("StandardMaterial3D_legs")
+size = Vector3(0.12, 0.12, 0.55)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wheel"]
+albedo_color = Color(0.09, 0.09, 0.1, 1)
+roughness = 0.6
+
+[sub_resource type="TorusMesh" id="TorusMesh_wheel"]
+material = SubResource("StandardMaterial3D_wheel")
+inner_radius = 0.14
+outer_radius = 0.17
+rings = 16
+ring_segments = 12
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6s8iv"]
+albedo_color = Color(0.7, 0.75, 0.8, 1)
+metallic = 0.9
+roughness = 0.2
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hub"]
+material = SubResource("StandardMaterial3D_6s8iv")
+top_radius = 0.045
+bottom_radius = 0.045
+height = 0.03
+
+[sub_resource type="BoxMesh" id="BoxMesh_spoke_h"]
+material = SubResource("StandardMaterial3D_wheel")
+size = Vector3(0.28, 0.03, 0.015)
+
+[sub_resource type="BoxMesh" id="BoxMesh_spoke_v"]
+material = SubResource("StandardMaterial3D_wheel")
+size = Vector3(0.035, 0.13, 0.015)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_armskin"]
+albedo_color = Color(0.92, 0.78, 0.65, 1)
+roughness = 0.45
+
+[sub_resource type="BoxMesh" id="BoxMesh_hand"]
+material = SubResource("StandardMaterial3D_armskin")
+size = Vector3(0.065, 0.06, 0.08)
+
+[sub_resource type="BoxMesh" id="BoxMesh_forearm"]
+material = SubResource("StandardMaterial3D_armskin")
+size = Vector3(0.07, 0.07, 0.22)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_armsleeve"]
+albedo_color = Color(0.28, 0.36, 0.24, 1)
+roughness = 0.7
+
+[sub_resource type="BoxMesh" id="BoxMesh_upperarm"]
+material = SubResource("StandardMaterial3D_armsleeve")
+size = Vector3(0.08, 0.08, 0.3)
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_djk0t"]
 albedo_color = Color(0.06, 0.06, 0.07, 1)
 roughness = 0.85
@@ -72,16 +235,27 @@ top_radius = 0.45
 bottom_radius = 0.45
 height = 0.35
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6s8iv"]
-albedo_color = Color(0.7, 0.75, 0.8, 1)
-metallic = 0.9
-roughness = 0.2
-
 [sub_resource type="CylinderMesh" id="CylinderMesh_54tl6"]
 material = SubResource("StandardMaterial3D_6s8iv")
 top_radius = 0.28
 bottom_radius = 0.28
 height = 0.37
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_seat"]
+albedo_color = Color(0.15, 0.16, 0.19, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_seat_cushion"]
+material = SubResource("StandardMaterial3D_seat")
+size = Vector3(0.48, 0.14, 0.48)
+
+[sub_resource type="BoxMesh" id="BoxMesh_seat_back"]
+material = SubResource("StandardMaterial3D_seat")
+size = Vector3(0.46, 0.56, 0.12)
+
+[sub_resource type="BoxMesh" id="BoxMesh_seat_headrest"]
+material = SubResource("StandardMaterial3D_seat")
+size = Vector3(0.24, 0.16, 0.1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2nh6w"]
 transparency = 1
@@ -111,165 +285,6 @@ emission_energy_multiplier = 3.0
 material = SubResource("StandardMaterial3D_w1jj1")
 size = Vector3(0.15, 0.15, 0.15)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dash"]
-albedo_color = Color(0.12, 0.13, 0.15, 1)
-roughness = 0.75
-
-[sub_resource type="BoxMesh" id="BoxMesh_dash"]
-material = SubResource("StandardMaterial3D_dash")
-size = Vector3(1.65, 0.22, 0.5)
-
-[sub_resource type="BoxMesh" id="BoxMesh_cowl"]
-material = SubResource("StandardMaterial3D_dash")
-size = Vector3(0.46, 0.06, 0.22)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dial"]
-albedo_color = Color(0.05, 0.06, 0.08, 1)
-emission_enabled = true
-emission = Color(0.1, 0.18, 0.22, 1)
-emission_energy_multiplier = 1.2
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_dial"]
-material = SubResource("StandardMaterial3D_dial")
-top_radius = 0.065
-bottom_radius = 0.065
-height = 0.015
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_needle"]
-albedo_color = Color(1, 0.3, 0.05, 1)
-emission_enabled = true
-emission = Color(1, 0.3, 0.05, 1)
-emission_energy_multiplier = 3.5
-
-[sub_resource type="BoxMesh" id="BoxMesh_needle"]
-material = SubResource("StandardMaterial3D_needle")
-size = Vector3(0.008, 0.055, 0.006)
-
-[sub_resource type="BoxMesh" id="BoxMesh_console"]
-material = SubResource("StandardMaterial3D_dash")
-size = Vector3(0.28, 0.38, 0.95)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_phonecase"]
-albedo_color = Color(0.98, 0.48, 0.06, 1)
-roughness = 0.35
-
-[sub_resource type="BoxMesh" id="BoxMesh_phonecase"]
-material = SubResource("StandardMaterial3D_phonecase")
-size = Vector3(0.13, 0.24, 0.018)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_phonescreen"]
-albedo_color = Color(0.03, 0.09, 0.14, 1)
-emission_enabled = true
-emission = Color(0.1, 0.65, 0.85, 1)
-emission_energy_multiplier = 2.2
-
-[sub_resource type="BoxMesh" id="BoxMesh_phonescreen"]
-material = SubResource("StandardMaterial3D_phonescreen")
-size = Vector3(0.11, 0.21, 0.005)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wheel"]
-albedo_color = Color(0.09, 0.09, 0.1, 1)
-roughness = 0.6
-
-[sub_resource type="TorusMesh" id="TorusMesh_wheel"]
-material = SubResource("StandardMaterial3D_wheel")
-inner_radius = 0.14
-outer_radius = 0.17
-rings = 16
-ring_segments = 12
-
-[sub_resource type="CylinderMesh" id="CylinderMesh_hub"]
-material = SubResource("StandardMaterial3D_6s8iv")
-top_radius = 0.045
-bottom_radius = 0.045
-height = 0.03
-
-[sub_resource type="BoxMesh" id="BoxMesh_spoke_h"]
-material = SubResource("StandardMaterial3D_wheel")
-size = Vector3(0.28, 0.03, 0.015)
-
-[sub_resource type="BoxMesh" id="BoxMesh_spoke_v"]
-material = SubResource("StandardMaterial3D_wheel")
-size = Vector3(0.035, 0.13, 0.015)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_armsleeve"]
-albedo_color = Color(0.28, 0.36, 0.24, 1)
-roughness = 0.7
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_armskin"]
-albedo_color = Color(0.92, 0.78, 0.65, 1)
-roughness = 0.45
-
-[sub_resource type="BoxMesh" id="BoxMesh_upperarm"]
-material = SubResource("StandardMaterial3D_armsleeve")
-size = Vector3(0.08, 0.08, 0.3)
-
-[sub_resource type="BoxMesh" id="BoxMesh_forearm"]
-material = SubResource("StandardMaterial3D_armskin")
-size = Vector3(0.07, 0.07, 0.22)
-
-[sub_resource type="BoxMesh" id="BoxMesh_hand"]
-material = SubResource("StandardMaterial3D_armskin")
-size = Vector3(0.065, 0.06, 0.08)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_legs"]
-albedo_color = Color(0.18, 0.22, 0.3, 1)
-roughness = 0.7
-
-[sub_resource type="BoxMesh" id="BoxMesh_leg"]
-material = SubResource("StandardMaterial3D_legs")
-size = Vector3(0.12, 0.12, 0.55)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glass"]
-transparency = 1
-albedo_color = Color(0.8, 0.92, 1, 0.06)
-roughness = 0.05
-
-[sub_resource type="BoxMesh" id="BoxMesh_windshield"]
-material = SubResource("StandardMaterial3D_glass")
-size = Vector3(1.62, 0.62, 0.02)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_seat"]
-albedo_color = Color(0.15, 0.16, 0.19, 1)
-roughness = 0.85
-
-[sub_resource type="BoxMesh" id="BoxMesh_seat_cushion"]
-material = SubResource("StandardMaterial3D_seat")
-size = Vector3(0.48, 0.14, 0.48)
-
-[sub_resource type="BoxMesh" id="BoxMesh_seat_back"]
-material = SubResource("StandardMaterial3D_seat")
-size = Vector3(0.46, 0.56, 0.12)
-
-[sub_resource type="BoxMesh" id="BoxMesh_seat_headrest"]
-material = SubResource("StandardMaterial3D_seat")
-size = Vector3(0.24, 0.16, 0.1)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mirror"]
-albedo_color = Color(0.88, 0.92, 0.98, 1)
-metallic = 0.95
-roughness = 0.05
-
-[sub_resource type="BoxMesh" id="BoxMesh_mirror"]
-material = SubResource("StandardMaterial3D_mirror")
-size = Vector3(0.22, 0.07, 0.015)
-
-[sub_resource type="BoxMesh" id="BoxMesh_mirror_back"]
-material = SubResource("StandardMaterial3D_dash")
-size = Vector3(0.23, 0.08, 0.02)
-
-[sub_resource type="BoxMesh" id="BoxMesh_apillar"]
-material = SubResource("StandardMaterial3D_s4ouw")
-size = Vector3(0.08, 0.64, 0.08)
-
-[sub_resource type="BoxMesh" id="BoxMesh_topbar"]
-material = SubResource("StandardMaterial3D_s4ouw")
-size = Vector3(1.7, 0.08, 0.1)
-
-[sub_resource type="BoxMesh" id="BoxMesh_door"]
-material = SubResource("StandardMaterial3D_s4ouw")
-size = Vector3(0.08, 0.35, 1.9)
-
 [node name="CombatCar" type="VehicleBody3D" unique_id=37258449]
 mass = 1200.0
 center_of_mass_mode = 1
@@ -277,14 +292,73 @@ center_of_mass = Vector3(0, -0.25, 0)
 script = ExtResource("1_fhas0")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2001035117]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.725, 0)
 shape = SubResource("BoxShape3D_5a865")
 
 [node name="BodyMesh" type="Node3D" parent="." unique_id=453072480]
 
-[node name="Chassis" type="MeshInstance3D" parent="BodyMesh" unique_id=942177086]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 0)
+[node name="Chasis" type="Node3D" parent="BodyMesh" unique_id=1479686953]
+
+[node name="Chassis6" type="MeshInstance3D" parent="BodyMesh/Chasis" unique_id=1407818423]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.375, 0)
+mesh = SubResource("BoxMesh_fhas0")
+
+[node name="Chassis2" type="MeshInstance3D" parent="BodyMesh/Chasis" unique_id=244768153]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.9, 0.55, 0)
+mesh = SubResource("BoxMesh_5a865")
+
+[node name="Chassis3" type="MeshInstance3D" parent="BodyMesh/Chasis" unique_id=1926609265]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.9, 0.55, 0)
+mesh = SubResource("BoxMesh_s4ouw")
+
+[node name="Chassis4" type="MeshInstance3D" parent="BodyMesh/Chasis" unique_id=1339378354]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, -1.5)
 mesh = SubResource("BoxMesh_qik3o")
+
+[node name="Chassis5" type="MeshInstance3D" parent="BodyMesh/Chasis" unique_id=1528753740]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, 1.7)
+mesh = SubResource("BoxMesh_6v28s")
+
+[node name="WindShieldFront" type="Node3D" parent="BodyMesh" unique_id=1933267046]
+
+[node name="APillarL" type="MeshInstance3D" parent="BodyMesh/WindShieldFront" unique_id=1428319044]
+transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, -0.82, 1.27, -0.6)
+mesh = SubResource("BoxMesh_apillar")
+
+[node name="APillarR" type="MeshInstance3D" parent="BodyMesh/WindShieldFront" unique_id=690846977]
+transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, 0.82, 1.27, -0.6)
+mesh = SubResource("BoxMesh_apillar")
+
+[node name="TopBar" type="MeshInstance3D" parent="BodyMesh/WindShieldFront" unique_id=681780762]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.54, -0.45)
+mesh = SubResource("BoxMesh_topbar")
+
+[node name="TopBar2" type="MeshInstance3D" parent="BodyMesh/WindShieldFront" unique_id=1046340206]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.9604645e-08, 1.0811998, -0.7164564)
+mesh = SubResource("BoxMesh_topbar")
+
+[node name="Windshield" type="MeshInstance3D" parent="BodyMesh/WindShieldFront" unique_id=2121175729]
+transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, 0, 1.27, -0.6)
+mesh = SubResource("BoxMesh_windshield")
+
+[node name="WindShieldBack" type="Node3D" parent="BodyMesh" unique_id=1603137343]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1.4310837, 0, 8.742278e-08, 0, -1, 6.610304e-08, -0.6650195, 0.76679313)
+
+[node name="TopBar" type="MeshInstance3D" parent="BodyMesh/WindShieldBack" unique_id=775768927]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0066467538, 1.5434985, -0.46235347)
+mesh = SubResource("BoxMesh_topbar")
+
+[node name="Windshield" type="MeshInstance3D" parent="BodyMesh/WindShieldBack" unique_id=500334770]
+transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, 0, 1.27, -0.6)
+mesh = SubResource("BoxMesh_windshield")
+
+[node name="CagePost_3" type="MeshInstance3D" parent="BodyMesh/WindShieldBack" unique_id=1826332940]
+transform = Transform3D(1, 0, 0, 0, 0.87461984, -0.48480958, 0, 0.4848096, 0.87461966, 0.8615056, 1.2499175, -0.63265157)
+mesh = SubResource("BoxMesh_2rrmm")
+
+[node name="CagePost_4" type="MeshInstance3D" parent="BodyMesh/WindShieldBack" unique_id=1434770645]
+transform = Transform3D(1, 0, 0, 0, 0.87461984, -0.48480958, 0, 0.4848096, 0.87461966, -0.8537213, 1.2544296, -0.6407919)
+mesh = SubResource("BoxMesh_2rrmm")
 
 [node name="ArmorSkirtL" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911779]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.12, 0.45, 0)
@@ -294,36 +368,32 @@ mesh = SubResource("BoxMesh_dp08y")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.12, 0.45, 0)
 mesh = SubResource("BoxMesh_dp08y")
 
-[node name="DoorL" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911780]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 0.95, 0.1)
-mesh = SubResource("BoxMesh_door")
-
 [node name="DoorR" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911781]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 0.95, 0.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8673619, 0.9331539, 0.30781853)
 mesh = SubResource("BoxMesh_door")
 
-[node name="APillarL" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911782]
-transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, -0.82, 1.27, -0.6)
-mesh = SubResource("BoxMesh_apillar")
-
-[node name="APillarR" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911783]
-transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, 0.82, 1.27, -0.6)
-mesh = SubResource("BoxMesh_apillar")
-
-[node name="TopBar" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911784]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.54, -0.45)
-mesh = SubResource("BoxMesh_topbar")
-
-[node name="Windshield" type="MeshInstance3D" parent="BodyMesh" unique_id=1991911785]
-transform = Transform3D(1, 0, 0, 0, 0.8746, -0.4856, 0, 0.4856, 0.8746, 0, 1.27, -0.6)
-mesh = SubResource("BoxMesh_windshield")
+[node name="DoorL" type="MeshInstance3D" parent="BodyMesh" unique_id=1306655623]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8672513, 0.9331539, 0.30781853)
+mesh = SubResource("BoxMesh_door")
 
 [node name="CagePost_2" type="MeshInstance3D" parent="BodyMesh" unique_id=1764672259]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 1.15, 1.05)
 mesh = SubResource("BoxMesh_2rrmm")
 
+[node name="CagePost_6" type="MeshInstance3D" parent="BodyMesh" unique_id=972527756]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, 1.1593307, 1.05)
+mesh = SubResource("BoxMesh_2rrmm")
+
 [node name="CagePost_3" type="MeshInstance3D" parent="BodyMesh" unique_id=190890758]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 1.15, 1.05)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, 1.1572078, 1.05)
+mesh = SubResource("BoxMesh_2rrmm")
+
+[node name="CagePost_4" type="MeshInstance3D" parent="BodyMesh" unique_id=1091477962]
+transform = Transform3D(1, 0, 0, 0, 0.9856032, 0.16907482, 0, -0.16907482, 0.9856032, 0.85, 1.1700157, 0.34295192)
+mesh = SubResource("BoxMesh_2rrmm")
+
+[node name="CagePost_5" type="MeshInstance3D" parent="BodyMesh" unique_id=666284416]
+transform = Transform3D(1, 0, 0, 0, 0.9856032, 0.16907482, 0, -0.16907482, 0.9856032, -0.8461021, 1.1700157, 0.34295192)
 mesh = SubResource("BoxMesh_2rrmm")
 
 [node name="CageRoof" type="MeshInstance3D" parent="BodyMesh" unique_id=2015869905]
@@ -391,40 +461,46 @@ spot_angle = 35.0
 [node name="CockpitInterior" type="Node3D" parent="." unique_id=1991911790]
 
 [node name="Dashboard" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911791]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.92, -0.65)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, -0.68)
 mesh = SubResource("BoxMesh_dash")
 
 [node name="CenterConsole" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911792]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, -0.15)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, -0.15)
 mesh = SubResource("BoxMesh_console")
 
 [node name="GaugesCowl" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911793]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.98, -0.58)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.94, -0.56)
 mesh = SubResource("BoxMesh_cowl")
 
 [node name="SpeedoDial" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911794]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.46, 0.98, -0.47)
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.46, 0.94, -0.47)
 mesh = SubResource("CylinderMesh_dial")
 
-[node name="SpeedoNeedle" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911795]
-transform = Transform3D(0.707107, 0.707107, 0, -0.707107, 0.707107, 0, 0, 0, 1, -0.46, 0.99, -0.46)
+[node name="SpeedoPivot" type="Node3D" parent="CockpitInterior" unique_id=1991911795]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.46, 0.94, -0.46)
+
+[node name="SpeedoNeedle" type="MeshInstance3D" parent="CockpitInterior/SpeedoPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.022, 0.002)
 mesh = SubResource("BoxMesh_needle")
 
 [node name="TachoDial" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911796]
-transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.34, 0.98, -0.47)
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, -0.34, 0.94, -0.47)
 mesh = SubResource("CylinderMesh_dial")
 
-[node name="TachoNeedle" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911797]
-transform = Transform3D(0.866025, -0.5, 0, 0.5, 0.866025, 0, 0, 0, 1, -0.34, 0.99, -0.46)
+[node name="TachoPivot" type="Node3D" parent="CockpitInterior" unique_id=1991911797]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.34, 0.94, -0.46)
+
+[node name="TachoNeedle" type="MeshInstance3D" parent="CockpitInterior/TachoPivot"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.022, 0.002)
 mesh = SubResource("BoxMesh_needle")
 
 [node name="GPSPhoneBody" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911798]
-transform = Transform3D(0.965926, -0.0449435, 0.254887, 0, 0.984808, 0.173648, -0.258819, -0.167731, 0.951251, 0.16, 1.05, -0.46)
+transform = Transform3D(0.965926, -0.0449435, 0.254887, 0, 0.984808, 0.173648, -0.258819, -0.167731, 0.951251, 0.14, 0.95, -0.48)
 mesh = SubResource("BoxMesh_phonecase")
 
 [node name="GPSPhoneScreen" type="MeshInstance3D" parent="CockpitInterior/GPSPhoneBody" unique_id=1991911799]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.01)
-mesh = SubResource("BoxMesh_phonescreen")
+mesh = SubResource("QuadMesh_phonescreen")
 
 [node name="MirrorBack" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911800]
 transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 0, 1.45, -0.32)
@@ -435,15 +511,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.012)
 mesh = SubResource("BoxMesh_mirror")
 
 [node name="DriverLegL" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911802]
-transform = Transform3D(0.996195, 0, -0.0871557, 0.022554, 0.965926, 0.257834, 0.0841857, -0.258819, 0.96225, -0.48, 0.78, -0.18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.47, 0.58, -0.28)
 mesh = SubResource("BoxMesh_leg")
 
 [node name="DriverLegR" type="MeshInstance3D" parent="CockpitInterior" unique_id=1991911803]
-transform = Transform3D(0.996195, 0, 0.0871557, -0.022554, 0.965926, 0.257834, -0.0841857, -0.258819, 0.96225, -0.32, 0.78, -0.18)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.33, 0.58, -0.28)
 mesh = SubResource("BoxMesh_leg")
 
 [node name="SteeringColumn" type="Node3D" parent="CockpitInterior" unique_id=1991911804]
-transform = Transform3D(1, 0, 0, 0, 0.939693, -0.34202, 0, 0.34202, 0.939693, -0.4, 1.05, -0.36)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.90, -0.42)
 
 [node name="SteeringWheelPivot" type="Node3D" parent="CockpitInterior/SteeringColumn" unique_id=1991911805]
 
@@ -467,11 +543,11 @@ transform = Transform3D(0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0, 0, 1, 
 mesh = SubResource("BoxMesh_hand")
 
 [node name="ForearmL" type="MeshInstance3D" parent="CockpitInterior/SteeringColumn/SteeringWheelPivot/HandL" unique_id=1991911811]
-transform = Transform3D(0.965926, 0, 0.258819, -0.067, 0.965926, 0.25, -0.25, -0.258819, 0.933, -0.06, -0.04, 0.12)
+transform = Transform3D(0.981268, 0.066693336, -0.1807348, -0.036809187, 0.9857872, 0.16391319, 0.18910027, -0.15419179, 0.9697642, -0.028466403, -0.0024613738, 0.13351911)
 mesh = SubResource("BoxMesh_forearm")
 
 [node name="UpperArmL" type="MeshInstance3D" parent="CockpitInterior/SteeringColumn/SteeringWheelPivot/HandL/ForearmL" unique_id=1991911812]
-transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, -0.04, -0.08, 0.18)
+transform = Transform3D(0.94025993, -0.09808302, 0.32602325, -0.03216157, 0.9277311, 0.3718605, -0.33893517, -0.36013097, 0.8691538, 0.040765226, 0.054112278, 0.19910586)
 mesh = SubResource("BoxMesh_upperarm")
 
 [node name="HandR" type="MeshInstance3D" parent="CockpitInterior/SteeringColumn/SteeringWheelPivot" unique_id=1991911813]
@@ -479,11 +555,11 @@ transform = Transform3D(0.965926, -0.258819, 0, 0.258819, 0.965926, 0, 0, 0, 1, 
 mesh = SubResource("BoxMesh_hand")
 
 [node name="ForearmR" type="MeshInstance3D" parent="CockpitInterior/SteeringColumn/SteeringWheelPivot/HandR" unique_id=1991911814]
-transform = Transform3D(0.965926, 0, -0.258819, 0.067, 0.965926, 0.25, 0.25, -0.258819, 0.933, 0.06, -0.04, 0.12)
+transform = Transform3D(0.99284273, -0.045342483, 0.11048871, 0.025589403, 0.9844071, 0.17403094, -0.11665821, -0.16996, 0.978509, 0.02661746, 0.0027207732, 0.14721143)
 mesh = SubResource("BoxMesh_forearm")
 
 [node name="UpperArmR" type="MeshInstance3D" parent="CockpitInterior/SteeringColumn/SteeringWheelPivot/HandR/ForearmR" unique_id=1991911815]
-transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0.04, -0.08, 0.18)
+transform = Transform3D(0.96021456, -0.015098626, -0.27885494, 0.05431446, 0.989566, 0.13344726, 0.2739307, -0.1432838, 0.95101583, -0.031188903, 0.020355405, 0.19937076)
 mesh = SubResource("BoxMesh_upperarm")
 
 [node name="Wheel_FL" type="VehicleWheel3D" parent="." unique_id=1630510807]
@@ -492,7 +568,7 @@ use_as_traction = true
 use_as_steering = true
 wheel_roll_influence = 0.08
 wheel_radius = 0.45
-wheel_friction_slip = 4.5
+wheel_friction_slip = 4.0
 suspension_travel = 0.25
 suspension_stiffness = 38.0
 damping_compression = 2.2
@@ -512,7 +588,7 @@ use_as_traction = true
 use_as_steering = true
 wheel_roll_influence = 0.08
 wheel_radius = 0.45
-wheel_friction_slip = 4.5
+wheel_friction_slip = 4.0
 suspension_travel = 0.25
 suspension_stiffness = 38.0
 damping_compression = 2.2
@@ -531,7 +607,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.18, 0.45, 1.35)
 use_as_traction = true
 wheel_roll_influence = 0.08
 wheel_radius = 0.45
-wheel_friction_slip = 4.5
+wheel_friction_slip = 6.2
 suspension_travel = 0.25
 suspension_stiffness = 38.0
 damping_compression = 2.2
@@ -550,7 +626,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.18, 0.45, 1.35)
 use_as_traction = true
 wheel_roll_influence = 0.08
 wheel_radius = 0.45
-wheel_friction_slip = 4.5
+wheel_friction_slip = 6.2
 suspension_travel = 0.25
 suspension_stiffness = 38.0
 damping_compression = 2.2
@@ -567,62 +643,62 @@ mesh = SubResource("CylinderMesh_54tl6")
 [node name="Seats" type="Node3D" parent="." unique_id=254924376]
 
 [node name="Seat_0" type="Node3D" parent="Seats" unique_id=984111476]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.82, -0.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.65, -0.085)
 
-[node name="Cushion_0" type="MeshInstance3D" parent="Seats/Seat_0"]
+[node name="Cushion_0" type="MeshInstance3D" parent="Seats/Seat_0" unique_id=2122899374]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
 mesh = SubResource("BoxMesh_seat_cushion")
 
-[node name="Backrest_0" type="MeshInstance3D" parent="Seats/Seat_0"]
+[node name="Backrest_0" type="MeshInstance3D" parent="Seats/Seat_0" unique_id=886708372]
 transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 0.38, 0.26)
 mesh = SubResource("BoxMesh_seat_back")
 
-[node name="Headrest_0" type="MeshInstance3D" parent="Seats/Seat_0"]
+[node name="Headrest_0" type="MeshInstance3D" parent="Seats/Seat_0" unique_id=1565789934]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
 mesh = SubResource("BoxMesh_seat_headrest")
 
 [node name="Seat_1" type="Node3D" parent="Seats" unique_id=831209386]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.82, -0.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.65, -0.085)
 
-[node name="Cushion_1" type="MeshInstance3D" parent="Seats/Seat_1"]
+[node name="Cushion_1" type="MeshInstance3D" parent="Seats/Seat_1" unique_id=2037768100]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
 mesh = SubResource("BoxMesh_seat_cushion")
 
-[node name="Backrest_1" type="MeshInstance3D" parent="Seats/Seat_1"]
+[node name="Backrest_1" type="MeshInstance3D" parent="Seats/Seat_1" unique_id=950466654]
 transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 0.38, 0.26)
 mesh = SubResource("BoxMesh_seat_back")
 
-[node name="Headrest_1" type="MeshInstance3D" parent="Seats/Seat_1"]
+[node name="Headrest_1" type="MeshInstance3D" parent="Seats/Seat_1" unique_id=1869388633]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
 mesh = SubResource("BoxMesh_seat_headrest")
 
 [node name="Seat_2" type="Node3D" parent="Seats" unique_id=1438885535]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.82, 0.75)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.4, 0.65, 0.765)
 
-[node name="Cushion_2" type="MeshInstance3D" parent="Seats/Seat_2"]
+[node name="Cushion_2" type="MeshInstance3D" parent="Seats/Seat_2" unique_id=1458432081]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
 mesh = SubResource("BoxMesh_seat_cushion")
 
-[node name="Backrest_2" type="MeshInstance3D" parent="Seats/Seat_2"]
+[node name="Backrest_2" type="MeshInstance3D" parent="Seats/Seat_2" unique_id=1873226737]
 transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 0.38, 0.26)
 mesh = SubResource("BoxMesh_seat_back")
 
-[node name="Headrest_2" type="MeshInstance3D" parent="Seats/Seat_2"]
+[node name="Headrest_2" type="MeshInstance3D" parent="Seats/Seat_2" unique_id=1178254773]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
 mesh = SubResource("BoxMesh_seat_headrest")
 
 [node name="Seat_3" type="Node3D" parent="Seats" unique_id=461723435]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.82, 0.75)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.4, 0.65, 0.765)
 
-[node name="Cushion_3" type="MeshInstance3D" parent="Seats/Seat_3"]
+[node name="Cushion_3" type="MeshInstance3D" parent="Seats/Seat_3" unique_id=489144129]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.08, 0.05)
 mesh = SubResource("BoxMesh_seat_cushion")
 
-[node name="Backrest_3" type="MeshInstance3D" parent="Seats/Seat_3"]
+[node name="Backrest_3" type="MeshInstance3D" parent="Seats/Seat_3" unique_id=1269091697]
 transform = Transform3D(1, 0, 0, 0, 0.9848, 0.1736, 0, -0.1736, 0.9848, 0, 0.38, 0.26)
 mesh = SubResource("BoxMesh_seat_back")
 
-[node name="Headrest_3" type="MeshInstance3D" parent="Seats/Seat_3"]
+[node name="Headrest_3" type="MeshInstance3D" parent="Seats/Seat_3" unique_id=429970648]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0.31)
 mesh = SubResource("BoxMesh_seat_headrest")
 
@@ -638,7 +714,7 @@ margin = 0.2
 current = true
 
 [node name="CockpitCamera" type="Camera3D" parent="." unique_id=1551045514]
-transform = Transform3D(1, 0, 0, 0, 0.99863, 0.052336, 0, -0.052336, 0.99863, -0.4, 1.34, -0.08)
+transform = Transform3D(1, 0, 0, 0, 0.989016, 0.147809, 0, -0.147809, 0.989016, -0.4, 1.18, -0.08)
 fov = 82.0
 
 [node name="Audio" type="Node3D" parent="." unique_id=263375004]
@@ -725,3 +801,11 @@ visible = false
 light_color = Color(1, 0.8, 0.2, 1)
 light_energy = 3.5
 omni_range = 6.0
+
+[node name="Windshield2" type="MeshInstance3D" parent="." unique_id=813683372]
+transform = Transform3D(-4.3711392e-08, 0, 1.0003662, 0, 1.0003662, 0, -1.0000001, 0, -4.3727397e-08, -0.858639, 1.2933143, 0.39391485)
+mesh = SubResource("BoxMesh_windshield")
+
+[node name="Windshield3" type="MeshInstance3D" parent="." unique_id=79267765]
+transform = Transform3D(-4.3711392e-08, 0, 1.0003662, 0, 1.0003662, 0, -1.0000001, 0, -4.3727397e-08, 0.84537333, 1.2933143, 0.39391485)
+mesh = SubResource("BoxMesh_windshield")

@@ -35,6 +35,7 @@ var gas_btn: TextureButton = null
 var brake_btn: TextureButton = null
 var cam_btn: TextureButton = null
 var fire_btn: TextureButton = null
+var hud_dash_panel: Control = null
 var pause_menu: Control = null
 var is_paused: bool = false
 
@@ -405,8 +406,10 @@ func _build_vehicle_hud() -> void:
 	hud_nitro_bar.add_theme_stylebox_override("fill", style_nitro)
 	nitro_row.add_child(hud_nitro_bar)
 
-	# 2. Мобильные сенсорные кнопки (если мобильный билд или сенсорный экран)
-	var is_mobile := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or DisplayServer.is_touchscreen_available()
+	hud_dash_panel = dash_panel
+
+	# 2. Мобильные сенсорные кнопки (только для мобильных ОС Android/iOS)
+	var is_mobile := (OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or OS.get_name() in ["Android", "iOS"]) and not (OS.get_name() in ["Windows", "Linux", "macOS"])
 	if is_mobile:
 		_build_mobile_driving_controls(root)
 
@@ -462,7 +465,7 @@ func _toggle_pause() -> void:
 	if is_paused:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	else:
-		var is_mobile := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or DisplayServer.is_touchscreen_available()
+		var is_mobile := (OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or OS.get_name() in ["Android", "iOS"]) and not (OS.get_name() in ["Windows", "Linux", "macOS"])
 		if not is_mobile:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -564,7 +567,7 @@ func _build_pause_menu(root: Control) -> void:
 	)
 	vbox_settings.add_child(chk_fs)
 
-	var is_mobile := OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or DisplayServer.is_touchscreen_available()
+	var is_mobile := (OS.has_feature("mobile") or OS.has_feature("android") or OS.has_feature("ios") or OS.get_name() in ["Android", "iOS"]) and not (OS.get_name() in ["Windows", "Linux", "macOS"])
 	if is_mobile:
 		var btn_steering := Button.new()
 		var update_steer_label = func():
@@ -614,7 +617,9 @@ func _build_pause_menu(root: Control) -> void:
 	btn_quit.pressed.connect(func():
 		GameStats.reset_stats()
 		LanDiscovery.stop_broadcast()
-		BulletDecals.clear_all()
+		var decals = get_node_or_null("/root/BulletDecals")
+		if decals:
+			decals.clear_all()
 		var net_disconnect = get_node_or_null("/root/NetworkManager")
 		if net_disconnect:
 			net_disconnect.disconnect_peer()
@@ -756,9 +761,13 @@ func _attach_local_hud(car: CombatCarClass) -> void:
 	)
 
 func _process(delta: float) -> void:
-	if local_car and is_instance_valid(local_car) and hud_speed_label:
-		var spd_kmh := int(local_car.linear_velocity.length() * 3.6)
-		hud_speed_label.text = "%d KM/H" % spd_kmh
+	if local_car and is_instance_valid(local_car):
+		if hud_speed_label:
+			var spd_kmh := int(local_car.linear_velocity.length() * 3.6)
+			hud_speed_label.text = "%d KM/H" % spd_kmh
+		if hud_dash_panel:
+			# В виде от первого лица (кокпит) скрываем 2D панель, чтобы не загораживать руль и 3D приборы
+			hud_dash_panel.visible = (local_car.camera_mode == 0)
 
 func _on_player_disconnected(peer_id: int) -> void:
 	var p = get_node_or_null(str(peer_id))
