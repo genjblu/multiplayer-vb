@@ -448,7 +448,7 @@ func _build_pause_menu() -> void:
 
 	var bg = ColorRect.new()
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0, 0, 0, 0.6)
+	bg.color = Color(0.04, 0.06, 0.09, 0.72)
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	pause_menu.add_child(bg)
 
@@ -457,26 +457,37 @@ func _build_pause_menu() -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_PASS
 	pause_menu.add_child(center)
 
+	var panel = PanelContainer.new()
+	panel.theme = UITheme.build()
+	var is_mob := _is_mobile()
+	panel.custom_minimum_size = Vector2(340 if is_mob else 380, 0)
+	center.add_child(panel)
+
 	var vbox = VBoxContainer.new()
-	vbox.custom_minimum_size = Vector2(300, 200)
-	vbox.mouse_filter = Control.MOUSE_FILTER_PASS
-	center.add_child(vbox)
+	vbox.add_theme_constant_override("separation", 14)
+	panel.add_child(vbox)
 
 	var title = Label.new()
-	title.text = "ПАУЗА"
+	title.text = "⏸ ПАУЗА"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 28)
+	title.add_theme_font_size_override("font_size", 24 if is_mob else 26)
+	title.modulate = Color(1.0, 0.85, 0.4)
 	vbox.add_child(title)
 
 	vbox.add_child(HSeparator.new())
 
 	var btn_resume = Button.new()
-	btn_resume.text = "Продолжить"
+	btn_resume.text = "▶  Продолжить"
+	btn_resume.theme = UITheme.build()
+	btn_resume.theme_type_variation = "AccentButton"
+	btn_resume.custom_minimum_size = Vector2(0, 46)
 	btn_resume.pressed.connect(_toggle_pause)
 	vbox.add_child(btn_resume)
 
 	var btn_settings = Button.new()
-	btn_settings.text = "Настройки"
+	btn_settings.text = "⚙  Настройки"
+	btn_settings.theme = UITheme.build()
+	btn_settings.custom_minimum_size = Vector2(0, 44)
 	btn_settings.pressed.connect(func():
 		if settings_menu:
 			if pause_menu:
@@ -489,7 +500,10 @@ func _build_pause_menu() -> void:
 	vbox.add_child(btn_settings)
 
 	var btn_quit = Button.new()
-	btn_quit.text = "Выход в меню"
+	btn_quit.text = "🚪  Выход в главное меню"
+	btn_quit.theme = UITheme.build()
+	btn_quit.custom_minimum_size = Vector2(0, 44)
+	btn_quit.modulate = Color(1.0, 0.45, 0.45)
 	btn_quit.pressed.connect(func():
 		GameStats.reset_stats()
 		LanDiscovery.stop_broadcast()

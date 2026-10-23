@@ -51,28 +51,29 @@ spawn_path = NodePath("..")
 [node name="SpawnPoints" type="Node3D" parent="."]
 
 [node name="SpawnPoint_0" type="Node3D" parent="SpawnPoints" groups=["spawn_points"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 48, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.37, 64, 0)
 
 [node name="SpawnPoint_1" type="Node3D" parent="SpawnPoints" groups=["spawn_points"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 62, -80)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.3, 33, 7.3)
 
 [node name="SpawnPoint_2" type="Node3D" parent="SpawnPoints" groups=["spawn_points"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 55, 70)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15.6, 50.5, -0.5)
 
 [node name="SpawnPoint_3" type="Node3D" parent="SpawnPoints" groups=["spawn_points"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 110, 75, -150)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 32.2, 0)
 
 [node name="SpawnPoint_4" type="Node3D" parent="SpawnPoints" groups=["spawn_points"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -90, 42, -110)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 36, -24.4)
 
 [node name="SpawnPoint_5" type="Node3D" parent="SpawnPoints" groups=["spawn_points"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 35, 85, 120)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 57, -10)
 
 [node name="SpawnPoint_6" type="Node3D" parent="SpawnPoints" groups=["spawn_points"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 15, 2, 15)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.5, 99.2, 0)
 
 [node name="SpawnPoint_7" type="Node3D" parent="SpawnPoints" groups=["spawn_points"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 2, -30)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 25)
 
 [node name="SpawnPoint_8" type="Node3D" parent="SpawnPoints" groups=["spawn_points"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 80, 2, -50)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 2, -30)
+

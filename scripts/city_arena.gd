@@ -4,13 +4,14 @@ extends Node3D
 @export var player_scene: PackedScene = preload("res://scenes/spider_player.tscn")
 @export var barrel_scene: PackedScene = preload("res://scenes/interactive/throw_barrel.tscn")
 
+const PauseMenuClass = preload("res://scripts/pause_menu.gd")
+
 @onready var city_root: Node3D = $CityModel
 @onready var spawn_points_root: Node3D = $SpawnPoints
 @onready var player_spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var barrels_root: Node3D = $ThrowableBarrels
 
-var pause_menu: Control = null
-var is_paused: bool = false
+var pause_menu = null
 var ready_peers: Dictionary = {}
 
 func _ready() -> void:
@@ -28,7 +29,9 @@ func _ready() -> void:
 	if net_mgr:
 		net_mgr.player_disconnected.connect(_on_player_disconnected)
 
-	_build_pause_menu()
+	# 4. Универсальное красивое меню паузы
+	pause_menu = PauseMenuClass.new()
+	add_child(pause_menu)
 
 	var has_peer := multiplayer.has_multiplayer_peer()
 	var is_server := has_peer and multiplayer.is_server()
@@ -40,6 +43,18 @@ func _ready() -> void:
 		_spawn_spider_player(1)
 	elif has_peer:
 		_notify_ready_to_server.rpc_id(1)
+
+func _physics_process(_delta: float) -> void:
+	# Защита от вылета за карту (void recovery)
+	for child in get_children():
+		if child is CharacterBody3D and child.name.is_valid_int():
+			if child.global_position.y < -15.0:
+				var p_id: int = child.name.to_int()
+				var spawn_nodes := spawn_points_root.get_children() if spawn_points_root else []
+				if not spawn_nodes.is_empty():
+					var idx: int = (p_id - 1) % spawn_nodes.size()
+					child.global_position = (spawn_nodes[idx] as Node3D).global_position + Vector3(0, 1.5, 0)
+					child.velocity = Vector3.ZERO
 
 func _generate_city_collisions() -> void:
 	if not city_root:
@@ -55,22 +70,20 @@ func _spawn_interactive_props() -> void:
 		return
 
 	var prop_positions := [
-		Vector3(5, 50.0, 5),
-		Vector3(-8, 50.0, -12),
-		Vector3(45, 64.0, -78),
-		Vector3(-55, 57.0, 68),
-		Vector3(105, 77.0, -145),
-		Vector3(-85, 44.0, -105),
-		Vector3(30, 87.0, 115),
-		Vector3(12, 1.5, 20),
-		Vector3(-35, 1.5, -25),
-		Vector3(75, 1.5, -45)
+		Vector3(1.37, 64.0, 5.0),
+		Vector3(-22.3, 33.0, 12.0),
+		Vector3(15.6, 50.5, 2.0),
+		Vector3(-15.0, 32.2, -4.0),
+		Vector3(12.5, 36.0, -20.0),
+		Vector3(-5.0, 57.0, -5.0),
+		Vector3(0.0, 2.0, 30.0),
+		Vector3(-30.0, 2.0, -25.0)
 	]
 
 	for pos in prop_positions:
 		var barrel := barrel_scene.instantiate() as RigidBody3D
-		barrel.global_position = pos
 		barrels_root.add_child(barrel)
+		barrel.global_position = pos
 
 func _spawn_solo_spider() -> void:
 	_spawn_spider_player(1)
@@ -84,7 +97,7 @@ func _spawn_spider_player(peer_id: int) -> void:
 	sp.set_multiplayer_authority(peer_id)
 
 	# Выбор точки спавна
-	var spawn_pos: Vector3 = Vector3(0, 50.0, 0)
+	var spawn_pos: Vector3 = Vector3(1.37, 64.0, 0.0)
 	var spawn_nodes := spawn_points_root.get_children() if spawn_points_root else []
 	if not spawn_nodes.is_empty():
 		var idx: int = (peer_id - 1) % spawn_nodes.size()
@@ -92,6 +105,10 @@ func _spawn_spider_player(peer_id: int) -> void:
 
 	sp.position = spawn_pos
 	add_child(sp, true)
+
+	if peer_id == multiplayer.get_unique_id() or not multiplayer.has_multiplayer_peer():
+		if pause_menu:
+			pause_menu.set_target_player(sp)
 
 @rpc("any_peer", "call_local", "reliable")
 func _notify_ready_to_server() -> void:
@@ -106,80 +123,3 @@ func _on_player_disconnected(peer_id: int) -> void:
 	var p := get_node_or_null(str(peer_id))
 	if p:
 		p.queue_free()
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
-		_toggle_pause()
-		get_viewport().set_input_as_handled()
-
-func _toggle_pause() -> void:
-	is_paused = not is_paused
-	if pause_menu:
-		pause_menu.visible = is_paused
-		pause_menu.mouse_filter = Control.MOUSE_FILTER_STOP if is_paused else Control.MOUSE_FILTER_IGNORE
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if is_paused else Input.MOUSE_MODE_CAPTURED
-
-func _build_pause_menu() -> void:
-	var canvas := CanvasLayer.new()
-	canvas.layer = 120
-	add_child(canvas)
-
-	pause_menu = Control.new()
-	pause_menu.name = "SpiderPauseMenu"
-	pause_menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	pause_menu.visible = false
-	pause_menu.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	canvas.add_child(pause_menu)
-
-	var bg := ColorRect.new()
-	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0, 0, 0, 0.65)
-	bg.mouse_filter = Control.MOUSE_FILTER_STOP
-	pause_menu.add_child(bg)
-
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	pause_menu.add_child(center)
-
-	var panel := PanelContainer.new()
-	panel.theme = UITheme.build()
-	panel.custom_minimum_size = Vector2(380, 320)
-	center.add_child(panel)
-
-	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 12)
-	panel.add_child(vbox)
-
-	var title := Label.new()
-	title.text = "ПАУЧИЙ БОЙ (CITY)"
-	title.theme_type_variation = "HeadingLabel"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.modulate = Color(0.9, 0.15, 0.2)
-	vbox.add_child(title)
-
-	vbox.add_child(HSeparator.new())
-
-	var btn_resume := Button.new()
-	btn_resume.text = "Продолжить бой"
-	btn_resume.custom_minimum_size = Vector2(0, 42)
-	btn_resume.pressed.connect(_toggle_pause)
-	vbox.add_child(btn_resume)
-
-	var btn_quit := Button.new()
-	btn_quit.text = "Выход в главное меню"
-	btn_quit.custom_minimum_size = Vector2(0, 42)
-	btn_quit.modulate = Color(1.0, 0.4, 0.4)
-	btn_quit.pressed.connect(func():
-		var stats = get_node_or_null("/root/GameStats")
-		if stats and stats.has_method("reset_stats"):
-			stats.reset_stats()
-		var lan = get_node_or_null("/root/LanDiscovery")
-		if lan and lan.has_method("stop_broadcast"):
-			lan.stop_broadcast()
-		var net_disconnect = get_node_or_null("/root/NetworkManager")
-		if net_disconnect and net_disconnect.has_method("disconnect_peer"):
-			net_disconnect.disconnect_peer()
-		else:
-			get_tree().change_scene_to_file("res://scenes/main_menu.tscn")
-	)
-	vbox.add_child(btn_quit)

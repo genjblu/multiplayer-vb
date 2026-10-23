@@ -23,8 +23,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("CapsuleShape3D_player")
 
 [node name="SpiderModel" parent="." instance=ExtResource("2_model")]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0, 0)
 
 [node name="CameraPivot" type="Node3D" parent="."]
+top_level = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.45, 0)
 
 [node name="SpringArm3D" type="SpringArm3D" parent="CameraPivot"]
@@ -34,6 +36,7 @@ spring_length = 3.8
 margin = 0.25
 
 [node name="Camera3D" type="Camera3D" parent="CameraPivot/SpringArm3D"]
+current = true
 fov = 78.0
 
 [node name="WebRay" type="RayCast3D" parent="CameraPivot/SpringArm3D/Camera3D"]

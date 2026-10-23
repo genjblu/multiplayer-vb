@@ -115,6 +115,10 @@ func _ready() -> void:
 
 	if is_local_player():
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		cam_pivot.top_level = true
+		cam_pivot.global_position = global_position + Vector3(0, 1.45, 0)
+		cam_rot_h = 0.0
+		cam_rot_v = deg_to_rad(10.0)
 		camera.make_current()
 		_build_spider_hud()
 	else:
@@ -128,15 +132,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-		cam_rot_h -= event.relative.x * 0.0032
-		cam_rot_v = clampf(cam_rot_v - event.relative.y * 0.0032, deg_to_rad(-75.0), deg_to_rad(70.0))
+		var sens: float = GameSettings.mouse_sensitivity if GameSettings else 0.003
+		var inv_y: float = -1.0 if (GameSettings and GameSettings.invert_y) else 1.0
+		cam_rot_h -= event.relative.x * sens
+		cam_rot_v = clampf(cam_rot_v - event.relative.y * sens * inv_y, deg_to_rad(-75.0), deg_to_rad(70.0))
 
-	# Смена курсора по ESC
-	if event.is_action_pressed("ui_cancel"):
-		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		else:
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if event is InputEventMouseButton and event.pressed:
+		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+			var is_mob: bool = OS.has_feature("mobile") or OS.get_name() in ["Android", "iOS"]
+			if not is_mob:
+				Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _physics_process(delta: float) -> void:
 	if is_local_player():
@@ -163,9 +168,10 @@ func _process_local_player(delta: float) -> void:
 	if swing_cooldown > 0.0:
 		swing_cooldown -= delta
 
-	# Вращение камеры
-	cam_pivot.rotation.y = cam_rot_h
-	spring_arm.rotation.x = cam_rot_v
+	# Вращение и слежение независимой камеры
+	cam_pivot.global_position = global_position + Vector3(0, 1.45, 0)
+	cam_pivot.rotation = Vector3(0, cam_rot_h, 0)
+	spring_arm.rotation = Vector3(cam_rot_v, 0, 0)
 
 	# 2. Обработка супер-прыжка
 	_process_super_jump(delta)
@@ -227,15 +233,16 @@ func _process_normal_movement(delta: float) -> void:
 
 	var move_dir: Vector3 = (cam_forward * -input_dir.y + cam_right * input_dir.x).normalized()
 
-	var is_sprint: bool = Input.is_action_pressed("sprint") or Input.is_key_pressed(KEY_SHIFT)
+	var is_sprint: bool = Input.is_key_pressed(KEY_SHIFT)
 	var speed: float = sprint_speed if is_sprint else base_speed
 
 	if move_dir.length_squared() > 0.01:
 		velocity.x = lerpf(velocity.x, move_dir.x * speed, delta * 14.0)
 		velocity.z = lerpf(velocity.z, move_dir.z * speed, delta * 14.0)
-		# Поворот персонажа в сторону бега
-		var target_angle: float = atan2(move_dir.x, move_dir.z)
-		rotation.y = lerp_angle(rotation.y, target_angle, delta * 14.0)
+		# Поворот модели персонажа в сторону движения
+		var target_angle: float = atan2(move_dir.x, move_dir.z) + PI
+		if model:
+			model.rotation.y = lerp_angle(model.rotation.y, target_angle, delta * 14.0)
 	else:
 		velocity.x = lerpf(velocity.x, 0.0, delta * 10.0)
 		velocity.z = lerpf(velocity.z, 0.0, delta * 10.0)
@@ -350,8 +357,8 @@ func _process_web_swing(delta: float) -> void:
 	# Поворот персонажа по вектору полета
 	if velocity.length() > 3.0:
 		var look_dir := Vector3(velocity.x, 0, velocity.z).normalized()
-		if look_dir.length_squared() > 0.01:
-			rotation.y = lerp_angle(rotation.y, atan2(look_dir.x, look_dir.z), delta * 12.0)
+		if look_dir.length_squared() > 0.01 and model:
+			model.rotation.y = lerp_angle(model.rotation.y, atan2(look_dir.x, look_dir.z) + PI, delta * 12.0)
 
 	# Если коснулись земли во время полета — мягкий переход в бег
 	if is_on_floor():
@@ -408,8 +415,8 @@ func _process_web_zip(delta: float) -> void:
 	# Стремительный полет на натянутой нити
 	velocity = to_target.normalized() * zip_speed
 	var look_dir := Vector3(velocity.x, 0, velocity.z).normalized()
-	if look_dir.length_squared() > 0.01:
-		rotation.y = atan2(look_dir.x, look_dir.z)
+	if look_dir.length_squared() > 0.01 and model:
+		model.rotation.y = atan2(look_dir.x, look_dir.z) + PI
 
 # ========================================================
 # ПЕРЕМЕЩЕНИЕ: WALL-RUN / WALL-CLIMB (БЕГ ПО СТЕНАМ)
